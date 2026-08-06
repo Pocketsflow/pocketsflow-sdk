@@ -50,6 +50,8 @@ export type {
   // Subscriptions
   Subscription,
   ListSubscriptionsParams,
+  SubscriptionOffer,
+  CreateSubscriptionOfferParams,
 
   // Webhooks
   Webhook,
