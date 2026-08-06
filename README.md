@@ -202,6 +202,23 @@ await pocketsflow.upsells.delete('upsell_id');
 
 ### Subscriptions
 
+The `subscriptions` namespace manages buyer subscriptions. Subscription offers
+(the recurring products you sell) use `subscriptionOffers`:
+
+```typescript
+// Create a subscription offer
+const newOffer = await pocketsflow.subscriptionOffers.create({
+  name: 'Pro Membership',
+  price: 29,
+  frequency: 'monthly',
+  trialPeriod: 7,
+});
+
+// List and get subscription offers
+const offers = await pocketsflow.subscriptionOffers.list();
+const offer = await pocketsflow.subscriptionOffers.get(newOffer._id);
+```
+
 ```typescript
 // List subscription customers
 const subscriptions = await pocketsflow.subscriptions.list({

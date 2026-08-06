@@ -351,6 +351,80 @@ export interface ListSubscriptionsParams extends PaginationParams, DateRangePara
   status?: 'active' | 'canceled' | 'paused';
 }
 
+/** A subscription offer — a recurring product you sell. */
+export interface SubscriptionOffer {
+  _id: string;
+  userId: string;
+  name: string;
+  subtitle?: string;
+  description?: string;
+  price: number;
+  currency?: string;
+  frequency: 'weekly' | 'monthly' | 'yearly';
+  trialPeriod?: number;
+  published?: boolean;
+  redirectBackUrl?: string;
+  slug?: string;
+  thumbnail?: string;
+  images?: string[];
+  testMode: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface CreateSubscriptionOfferParams {
+  /** Subscription offer name (required) */
+  name: string;
+  /** Recurring price in USD (required) */
+  price: number;
+  /** Billing frequency (required) */
+  frequency: 'weekly' | 'monthly' | 'yearly';
+  /** Short offer subtitle */
+  subtitle?: string;
+  /** Offer description */
+  description?: string;
+  /** Trial duration in days */
+  trialPeriod?: number;
+  /** Whether the offer is published */
+  published?: boolean;
+  /** Return URL used by the customer billing portal */
+  redirectBackUrl?: string;
+  /** Offer URL slug */
+  slug?: string;
+  /** Thumbnail URL */
+  thumbnail?: string;
+  /** Offer image URLs */
+  images?: string[];
+  /** Whether the offer is backed by a downloadable file */
+  isFile?: boolean;
+  /** File URL or uploaded file reference */
+  file?: string | Record<string, unknown>;
+  /** External offer URL */
+  url?: string;
+  /** Checkout copy and seller-facing configuration */
+  checkoutText?: string;
+  refundPolicy?: string;
+  callbackUrl?: string;
+  hasCallbackUrl?: boolean;
+  hasFirstName?: boolean;
+  hasLastName?: boolean;
+  portalText?: string;
+  privacyPolicy?: string;
+  termsOfService?: string;
+  ctaText?: string;
+  thankYouText?: string;
+  hasProductPage?: boolean;
+  showSales?: boolean;
+  showReviews?: boolean;
+  maxPrice?: number;
+  minPrice?: number;
+  design?: Record<string, unknown>;
+  colors?: Record<string, unknown>;
+  pageStyle?: Record<string, unknown>;
+  checkoutStyle?: Record<string, unknown>;
+  checkoutColors?: Record<string, unknown>;
+}
+
 // ----------------------------------------------------------------------------
 // Webhooks
 // ----------------------------------------------------------------------------

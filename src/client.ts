@@ -22,6 +22,8 @@ import {
   UpdateUpsellParams,
   Subscription,
   ListSubscriptionsParams,
+  SubscriptionOffer,
+  CreateSubscriptionOfferParams,
   Webhook,
   CreateWebhookParams,
   UpdateWebhookParams,
@@ -50,6 +52,8 @@ export class Pocketsflow {
   public discounts: DiscountsResource;
   public upsells: UpsellsResource;
   public subscriptions: SubscriptionsResource;
+  /** Subscription offers (recurring products), distinct from buyer memberships. */
+  public subscriptionOffers: SubscriptionOffersResource;
   public webhooks: WebhooksResource;
   public users: UsersResource;
   public checkout: CheckoutResource;
@@ -73,6 +77,7 @@ export class Pocketsflow {
     this.discounts = new DiscountsResource(this);
     this.upsells = new UpsellsResource(this);
     this.subscriptions = new SubscriptionsResource(this);
+    this.subscriptionOffers = new SubscriptionOffersResource(this);
     this.webhooks = new WebhooksResource(this);
     this.users = new UsersResource(this);
     this.checkout = new CheckoutResource(this);
@@ -320,6 +325,26 @@ class SubscriptionsResource {
       'POST',
       `/orders/subscriptions/refund/${stripeSubscriptionId}`
     );
+  }
+}
+
+/** Your subscription offers — the recurring products you sell. */
+class SubscriptionOffersResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** List all subscription offers */
+  async list(): Promise<SubscriptionOffer[]> {
+    return this.client.request<SubscriptionOffer[]>('GET', '/subscriptions');
+  }
+
+  /** Get a subscription offer by ID */
+  async get(id: string): Promise<SubscriptionOffer> {
+    return this.client.request<SubscriptionOffer>('GET', `/subscriptions/${id}`);
+  }
+
+  /** Create a subscription offer */
+  async create(params: CreateSubscriptionOfferParams): Promise<SubscriptionOffer> {
+    return this.client.request<SubscriptionOffer>('POST', '/subscriptions', { body: params });
   }
 }
 
