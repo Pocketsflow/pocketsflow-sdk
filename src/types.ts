@@ -69,6 +69,21 @@ export interface ProductFile {
   size?: number;
 }
 
+/**
+ * Optional params for `products.copy` (POST /products/copy/{id}).
+ *
+ * The endpoint duplicates one of your catalog items — a one-time product or
+ * a subscription offer, whichever owns the id. Omit `testMode` to copy
+ * within the source's own mode; send `{ testMode: false }` to copy a
+ * test-mode offer into live mode ("Copy to live"). The copy gets a
+ * deduplicated "Name (Copy)" name and starts unpublished when copied into
+ * live mode.
+ */
+export interface CopyCatalogItemParams {
+  /** Target mode of the copy. Omit to copy within the source's own mode. */
+  testMode?: boolean;
+}
+
 export interface CreateProductParams {
   /** Product name (required) */
   name: string;

@@ -4,6 +4,7 @@ import {
   Product,
   CreateProductParams,
   UpdateProductParams,
+  CopyCatalogItemParams,
   ProductVariant,
   CreateVariantParams,
   Order,
@@ -186,6 +187,27 @@ class ProductsResource {
   /** Delete a product */
   async delete(id: string): Promise<{ message: string }> {
     return this.client.request<{ message: string }>('DELETE', `/products/${id}`);
+  }
+
+  /**
+   * Copy a catalog item (POC-917): duplicates one of your one-time products
+   * OR a subscription offer — whichever owns the id.
+   *
+   * Send `{ testMode: false }` to copy a test-mode offer into live mode
+   * ("Copy to live"); omit params to copy within the source's own mode.
+   * The copy gets a deduplicated "Name (Copy)" name and starts unpublished
+   * when copied into live mode. A copied one-time product fires the
+   * `product.created` webhook against the copy's own mode.
+   */
+  async copy(
+    id: string,
+    params: CopyCatalogItemParams = {}
+  ): Promise<Product | SubscriptionOffer> {
+    return this.client.request<Product | SubscriptionOffer>(
+      'POST',
+      `/products/copy/${id}`,
+      { body: params }
+    );
   }
 }
 
