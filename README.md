@@ -83,6 +83,11 @@ const updated = await pocketsflow.products.update('product_id', {
 
 // Delete a product
 await pocketsflow.products.delete('product_id');
+
+// Copy a catalog item (a one-time product or a subscription offer —
+// whichever owns the id). `{ testMode: false }` copies a test-mode offer
+// into live mode; the copy starts unpublished in live mode.
+const copy = await pocketsflow.products.copy('product_id', { testMode: false });
 ```
 
 ### Product Variants
