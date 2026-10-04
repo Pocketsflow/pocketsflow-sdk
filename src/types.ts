@@ -210,6 +210,17 @@ export interface Customer {
   totalSpent: number;
   testMode: boolean;
   createdAt: string;
+  /**
+   * Every product and subscription this buyer has bought (any purchase, not
+   * just the first). Returned by `customers.list()`.
+   */
+  products?: CustomerProduct[];
+}
+
+/** A product or subscription a customer bought. */
+export interface CustomerProduct {
+  _id: string;
+  name: string;
 }
 
 export interface ListCustomersParams {
@@ -219,6 +230,57 @@ export interface ListCustomersParams {
   sortOrder?: 'asc' | 'desc';
   limit?: number;
   offset?: number;
+}
+
+// ----------------------------------------------------------------------------
+// Newsletters — email subscribers and product audiences
+// ----------------------------------------------------------------------------
+
+/** A contact on your email list (not a subscription membership). */
+export interface EmailSubscriber {
+  _id: string;
+  userId: string;
+  email: string;
+  name?: string;
+  status: 'active' | 'unsubscribed';
+  tags: string[];
+  /** Products and subscriptions this contact bought — their product audiences. */
+  productIds?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ListEmailSubscribersParams {
+  /** Only contacts in this product audience (a product or subscription ID). */
+  productId?: string;
+}
+
+/** Everyone who bought one product or subscription, as an email audience. */
+export interface ProductAudience {
+  /** Product or subscription ID. */
+  productId: string;
+  name: string;
+  kind: 'product' | 'subscription';
+  /** Contacts already on your list in this audience. */
+  subscribers: number;
+  /** Buyers of this product, on your list or not. */
+  customers: number;
+}
+
+export interface SyncAudienceParams {
+  /** Product or subscription ID. Omit to add every buyer. */
+  productId?: string;
+}
+
+export interface AudienceSyncResult {
+  /** Buyers found. */
+  customers: number;
+  /** New contacts added to your list. */
+  added: number;
+  /** Existing contacts newly linked to the product. */
+  updated: number;
+  /** Buyers who had unsubscribed: linked, but never emailed. */
+  unsubscribed: number;
 }
 
 // ----------------------------------------------------------------------------

@@ -34,6 +34,11 @@ import {
   CheckoutSession,
   Refund,
   CreateRefundParams,
+  EmailSubscriber,
+  ListEmailSubscribersParams,
+  ProductAudience,
+  SyncAudienceParams,
+  AudienceSyncResult,
 } from './types';
 
 const DEFAULT_BASE_URL = 'https://api.pocketsflow.com';
@@ -59,6 +64,8 @@ export class Pocketsflow {
   public users: UsersResource;
   public checkout: CheckoutResource;
   public refunds: RefundsResource;
+  /** Your email list: subscribers and product audiences. */
+  public newsletters: NewslettersResource;
 
   constructor(config: PocketsflowConfig) {
     if (!config.apiKey) {
@@ -83,6 +90,7 @@ export class Pocketsflow {
     this.users = new UsersResource(this);
     this.checkout = new CheckoutResource(this);
     this.refunds = new RefundsResource(this);
+    this.newsletters = new NewslettersResource(this);
   }
 
   async request<T>(
@@ -443,5 +451,52 @@ class RefundsResource {
   /** Create a refund */
   async create(params: CreateRefundParams): Promise<Refund> {
     return this.client.request<Refund>('POST', '/refunds', { body: params });
+  }
+}
+
+class NewsletterSubscribersResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** List your email subscribers, optionally only one product audience */
+  async list(params: ListEmailSubscribersParams = {}): Promise<EmailSubscriber[]> {
+    return this.client.request<EmailSubscriber[]>('GET', '/newsletters/subscribers', {
+      params,
+    });
+  }
+
+  /** Get an email subscriber by ID */
+  async get(id: string): Promise<EmailSubscriber> {
+    return this.client.request<EmailSubscriber>('GET', `/newsletters/subscribers/${id}`);
+  }
+}
+
+class AudiencesResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** List your product audiences: one per product or subscription you sell */
+  async list(): Promise<ProductAudience[]> {
+    return this.client.request<ProductAudience[]>('GET', '/newsletters/audiences');
+  }
+
+  /**
+   * Add a product's buyers to your email list (or every buyer, without a
+   * productId). Throws a 403 `PocketsflowError` when it would exceed your
+   * plan's subscriber limit.
+   */
+  async sync(params: SyncAudienceParams = {}): Promise<AudienceSyncResult> {
+    return this.client.request<AudienceSyncResult>('POST', '/newsletters/audiences/sync', {
+      body: params,
+    });
+  }
+}
+
+/** Your email list: subscribers and product audiences. */
+class NewslettersResource {
+  public subscribers: NewsletterSubscribersResource;
+  public audiences: AudiencesResource;
+
+  constructor(client: Pocketsflow) {
+    this.subscribers = new NewsletterSubscribersResource(client);
+    this.audiences = new AudiencesResource(client);
   }
 }

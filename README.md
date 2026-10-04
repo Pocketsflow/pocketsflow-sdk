@@ -130,8 +130,31 @@ const customers = await pocketsflow.customers.list({
   sortOrder: 'desc',
 });
 
+// Only buyers of one product or subscription; each customer lists every
+// product they bought in `products`
+const buyers = await pocketsflow.customers.list({ productId: 'product_id' });
+buyers[0].products; // [{ _id: 'product_id', name: 'My course' }, ...]
+
 // Get a customer
 const customer = await pocketsflow.customers.get('customer_id');
+```
+
+### Email Subscribers & Product Audiences
+
+```typescript
+// One audience per product or subscription you sell
+const audiences = await pocketsflow.newsletters.audiences.list();
+// [{ productId, name, kind: 'product', subscribers: 120, customers: 140 }, ...]
+
+// Add a product's buyers to your email list (omit productId for every buyer)
+const result = await pocketsflow.newsletters.audiences.sync({ productId: 'product_id' });
+// { customers: 140, added: 18, updated: 2, unsubscribed: 1 }
+
+// Your email subscribers, optionally only one product audience
+const subscribers = await pocketsflow.newsletters.subscribers.list({
+  productId: 'product_id',
+});
+const subscriber = await pocketsflow.newsletters.subscribers.get('subscriber_id');
 ```
 
 ### Reviews
