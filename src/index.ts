@@ -30,7 +30,15 @@ export type {
 
   // Customers
   Customer,
+  CustomerProduct,
   ListCustomersParams,
+
+  // Newsletters
+  EmailSubscriber,
+  ListEmailSubscribersParams,
+  ProductAudience,
+  SyncAudienceParams,
+  AudienceSyncResult,
 
   // Reviews
   Review,
