@@ -299,10 +299,16 @@ export interface Payment {
   /** The subscription offer this payment belongs to. Empty on one-time purchases. */
   subscriptionId?: string;
   /** The payments partner payment (receipt) id backing this sale (`pay_…`). */
-  whopPaymentId?: string;
+  partnerPaymentId?: string;
   /** The payments partner plan id this payment was charged against (`plan_…`). */
-  whopPlanId?: string;
+  partnerPlanId?: string;
   /** The payments partner membership id (`mem_…`), subscription payments only. */
+  membershipId?: string;
+  /** @deprecated Read `partnerPaymentId`. */
+  whopPaymentId?: string;
+  /** @deprecated Read `partnerPlanId`. */
+  whopPlanId?: string;
+  /** @deprecated Read `membershipId`. */
   whopMembershipId?: string;
   testMode?: boolean;
   createdAt?: string;
@@ -355,6 +361,8 @@ export interface PaymentDetail {
    * Only with `{ live: true }`: the live payment fetched from the payments
    * partner, or `null` if that lookup failed.
    */
+  paymentsPartnerLive?: Record<string, unknown> | null;
+  /** @deprecated Read `paymentsPartnerLive`. */
   whopLive?: Record<string, unknown> | null;
 }
 
@@ -641,6 +649,8 @@ export interface Subscriber {
    */
   whopMembershipId?: string;
   /** The payments partner plan id (`plan_…`) for this subscriber. */
+  partnerPlanId?: string;
+  /** @deprecated Read `partnerPlanId` (this legacy field holds the plan id). */
   whopSubscriptionId?: string;
   testMode?: boolean;
   createdAt?: string;
