@@ -115,6 +115,8 @@ export type {
   // User
   User,
   UpdateUserParams,
+  TrackingPixels,
+  TrackingPixelsUpdate,
 
   // Checkout
   CreateCheckoutParams,
