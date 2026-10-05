@@ -20,8 +20,20 @@ export interface PocketsflowConfig {
 // ----------------------------------------------------------------------------
 
 export interface PaginationParams {
+  /** 1-based page number (defaults to 1). */
   page?: number;
+  /** Items per page (defaults to 20, maximum 100 — larger values are capped at 100). */
   pageSize?: number;
+}
+
+/** Page metadata returned by the paginated list endpoints. */
+export interface Pagination {
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+  /** Whether `currentPage + 1` has results. */
+  hasMore: boolean;
 }
 
 export interface PaginatedResponse<T> {
@@ -158,7 +170,12 @@ export interface CreateVariantParams {
 // Orders
 // ----------------------------------------------------------------------------
 
-export interface Order {
+/**
+ * An order as listed by `GET /orders`: a one-time sale plus its product,
+ * customer reference, fee breakdown and purchased upsells. Subscription
+ * payments are not orders — list them with `payments.list()`.
+ */
+export interface Order extends Payment, OrderFees {
   _id: string;
   userId: string;
   productId: string;
@@ -166,20 +183,77 @@ export interface Order {
   grossAmount: number;
   netAmount: number;
   taxAmount: number;
+  /** @deprecated Legacy processor fee on older sales; read `processingFee` / `fee`. */
   stripeFee?: number;
+  /** @deprecated Legacy processor fee on older sales; read `processingFee` / `fee`. */
   paypalFee?: number;
   affiliateCut?: number;
   currency: string;
+  /** Buyer country (ISO code). */
   country?: string;
   isRefunded: boolean;
   isDisputed: boolean;
   testMode: boolean;
-  product?: Product;
+  /** The purchased product (null if it was deleted). */
+  product?: Product | null;
   customer?: {
-    _id: string;
+    /** Customer id (null if there is no customer record). */
+    _id: string | null;
     buyerEmail: string;
   };
+  /** Applied discount id, if any. */
+  discountId?: string;
+  /** Purchased variant id, if any. */
+  variantId?: string;
+  /** Gross amount collected (= `grossAmount`). Decimal, not cents. */
+  gross?: number;
+  /** Tax collected (= `taxAmount`). Decimal, not cents. */
+  taxes?: number;
+  /** Amount paid for the legacy upsell. Decimal, not cents. */
+  upsellAmount?: number;
+  /** Legacy single upsell product, if one was bought. */
+  upsellProduct?: Product | null;
+  /** Upsells bought with this order. */
+  purchasedUpsells?: PurchasedUpsell[];
   createdAt: string;
+}
+
+/** An upsell bought together with an order. */
+export interface PurchasedUpsell {
+  upsellId?: string;
+  productId?: string;
+  name?: string;
+  /** Decimal amount, not cents. */
+  amount?: number;
+  currency?: string;
+  purchasedAt?: string;
+  product?: Product | null;
+}
+
+/** Fee breakdown of a sale. Every amount is decimal in major units, not cents. */
+export interface OrderFees {
+  /** Pocketsflow platform fee, as locked at checkout (order currency). */
+  platformFee?: number;
+  /** `stored` = locked at checkout; `estimated` = older sale (2% estimate); `none` = no fee. */
+  platformFeeSource?: 'stored' | 'estimated' | 'none';
+  /** Payment processing fee (excludes affiliate commission — see `affiliateFee`). */
+  processingFee?: number;
+  /** Affiliate commission deducted from this sale. */
+  affiliateFee?: number;
+  /** Affiliate commission paid out of this sale. */
+  affiliateCut?: number;
+  /** platformFee + processingFee. Null until the settled amount is known. */
+  totalTransactionCost?: number | null;
+  /** totalTransactionCost + affiliateFee. Null until the settled amount is known. */
+  totalDeductions?: number | null;
+  /** totalTransactionCost as a percentage of the pre-tax amount (`7.9` = 7.9%). */
+  effectiveFeeRate?: number | null;
+  /** Legacy processor fee (older card / PayPal sales only). */
+  fee?: number;
+  /** amountBeforeTax − affiliateCut − legacy processor fee. */
+  net?: number;
+  /** Stored settled net amount, or null when not recorded. */
+  netAmount?: number | null;
 }
 
 export interface ListOrdersParams extends PaginationParams, DateRangeParams {
@@ -188,13 +262,108 @@ export interface ListOrdersParams extends PaginationParams, DateRangeParams {
 
 export interface OrdersResponse {
   orders: Order[];
-  pagination: {
-    totalCount: number;
-    totalPages: number;
-    currentPage: number;
-    pageSize: number;
-    hasMore: boolean;
+  pagination: Pagination;
+}
+
+// ----------------------------------------------------------------------------
+// Payments — the ledger of every sale (one-time and subscription)
+// ----------------------------------------------------------------------------
+
+/**
+ * A payment (a sale): a one-time product purchase or a subscription charge
+ * (the initial charge or a renewal). Amounts are decimal in major units of
+ * `currency`, not cents.
+ */
+export interface Payment {
+  _id: string;
+  buyerEmail?: string;
+  firstName?: string;
+  lastName?: string;
+  /** Charged amount (after tax), in the payment currency. */
+  amount?: number;
+  /** Amount before tax was applied. */
+  amountBeforeTax?: number;
+  /** Gross amount collected from the buyer. */
+  grossAmount?: number;
+  /** Tax collected on this payment. */
+  taxAmount?: number;
+  currency?: string;
+  isRefunded?: boolean;
+  isDisputed?: boolean;
+  /** `true` for subscription payments (initial + renewals). */
+  isSubscription?: boolean;
+  /** Subscription payments only: `initial` for the first charge, `renewal` afterwards. */
+  billingReason?: 'initial' | 'renewal';
+  /** The product purchased. Empty on subscription payments — use `subscriptionId`. */
+  productId?: string;
+  /** The subscription offer this payment belongs to. Empty on one-time purchases. */
+  subscriptionId?: string;
+  /** The payments partner payment (receipt) id backing this sale (`pay_…`). */
+  partnerPaymentId?: string;
+  /** The payments partner plan id this payment was charged against (`plan_…`). */
+  partnerPlanId?: string;
+  /** The payments partner membership id (`mem_…`), subscription payments only. */
+  membershipId?: string;
+  /** @deprecated Read `partnerPaymentId`. */
+  whopPaymentId?: string;
+  /** @deprecated Read `partnerPlanId`. */
+  whopPlanId?: string;
+  /** @deprecated Read `membershipId`. */
+  whopMembershipId?: string;
+  testMode?: boolean;
+  createdAt?: string;
+}
+
+export interface ListPaymentsParams extends PaginationParams, DateRangeParams {
+  /** `one_time`, `subscription`, or `all` (default). */
+  type?: 'one_time' | 'subscription' | 'all';
+  /** Only payments for this product. */
+  productId?: string;
+  /** Only payments for this subscription offer. */
+  subscriptionId?: string;
+}
+
+export interface PaymentsResponse {
+  payments: Payment[];
+  pagination: Pagination;
+}
+
+export interface GetPaymentParams {
+  /** Also fetch the authoritative live payment from the payments partner. */
+  live?: boolean;
+}
+
+/** `GET /payments/{id}`: one payment with its product or offer and customer. */
+export interface PaymentDetail {
+  payment: Payment & {
+    /** Legacy processor fee (older card / PayPal sales). */
+    fee?: number;
+    /** Net to the seller (amountBeforeTax − affiliateCut − legacy processor fee). */
+    net?: number;
+    /** The raw stored payment payload from the payments partner. */
+    metadata?: Record<string, unknown>;
   };
+  /** The purchased product (one-time purchases only). */
+  product: Product | null;
+  /** The subscription offer (subscription payments only). */
+  subscription: SubscriptionOffer | null;
+  /** The buyer's customer record. */
+  customer: Customer | null;
+  /** The stored payments partner payload for this payment. */
+  paymentsPartner?: Record<string, unknown>;
+  /**
+   * The stored payments partner payload for this payment.
+   * @deprecated Read `paymentsPartner` (fall back to this field on API
+   * responses that do not carry it yet).
+   */
+  whop?: Record<string, unknown>;
+  /**
+   * Only with `{ live: true }`: the live payment fetched from the payments
+   * partner, or `null` if that lookup failed.
+   */
+  paymentsPartnerLive?: Record<string, unknown> | null;
+  /** @deprecated Read `paymentsPartnerLive`. */
+  whopLive?: Record<string, unknown> | null;
 }
 
 // ----------------------------------------------------------------------------
@@ -425,7 +594,117 @@ export interface Subscription {
 }
 
 export interface ListSubscriptionsParams extends PaginationParams, DateRangeParams {
+  /** Only subscriptions to this subscription offer. */
+  productId?: string;
+  /**
+   * @deprecated Ignored by the API. Filter by status with
+   * `subscribers.list({ status })` instead.
+   */
   status?: 'active' | 'canceled' | 'paused';
+}
+
+/** Live membership status of a subscriber, maintained from payments partner events. */
+export type SubscriberStatus =
+  | 'incomplete'
+  | 'incomplete_expired'
+  | 'trialing'
+  | 'active'
+  | 'past_due'
+  | 'canceled'
+  | 'unpaid'
+  | 'succeeded'
+  | 'refunded'
+  | 'paused';
+
+/** A buyer with a membership in one of your subscription offers. */
+export interface Subscriber {
+  _id: string;
+  buyerEmail?: string;
+  firstName?: string;
+  lastName?: string;
+  country?: string;
+  /** The subscription offer this subscriber belongs to. */
+  subscriptionId?: string;
+  /** The joined subscription offer. */
+  subscription?: SubscriptionOffer | null;
+  status?: SubscriberStatus;
+  /** Whether the membership is currently active. */
+  active?: boolean;
+  /** Whether the membership is scheduled to cancel at the end of the current period. */
+  cancelAtPeriodEnd?: boolean;
+  /**
+   * The subscriber's hosted self-service portal link, including its
+   * `?token=…` capability. Send it to the buyer exactly as returned.
+   */
+  portalUrl?: string;
+  /**
+   * The payments partner membership id (`mem_…`). Accepted as `id` by
+   * `subscribers.cancel()`, `.pause()` and `.resume()`.
+   */
+  membershipId?: string;
+  /**
+   * The payments partner membership id (`mem_…`).
+   * @deprecated Read `membershipId` (fall back to this field on API
+   * responses that do not carry it yet).
+   */
+  whopMembershipId?: string;
+  /** The payments partner plan id (`plan_…`) for this subscriber. */
+  partnerPlanId?: string;
+  /** @deprecated Read `partnerPlanId` (this legacy field holds the plan id). */
+  whopSubscriptionId?: string;
+  testMode?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ListSubscribersParams extends PaginationParams {
+  status?: SubscriberStatus;
+  /** Only subscribers with this email. */
+  buyerEmail?: string;
+  /** Alias of `buyerEmail`. */
+  email?: string;
+  /** Only subscribers of this subscription offer. */
+  subscriptionId?: string;
+}
+
+export interface SubscribersResponse {
+  subscribers: Subscriber[];
+  pagination: Pagination;
+}
+
+export interface GetSubscriberParams {
+  /** Also fetch the authoritative membership from the payments partner. */
+  live?: boolean;
+}
+
+/** `GET /subscriptions/subscribers/{id}`: one subscriber and its payment history. */
+export interface SubscriberDetail {
+  subscriber: Subscriber;
+  subscription: SubscriptionOffer | null;
+  customer: Customer | null;
+  /** Live membership status. */
+  status: SubscriberStatus | string;
+  /** Every subscription payment: the initial charge plus every renewal. */
+  payments: Payment[];
+  /** Only with `{ live: true }`: the live membership from the payments partner. */
+  membership?: Record<string, unknown> | null;
+  /**
+   * Only with `{ live: true }`: the live membership from the payments partner.
+   * @deprecated Read `membership` (fall back to this field on API responses
+   * that do not carry it yet).
+   */
+  whopMembership?: Record<string, unknown> | null;
+}
+
+/** Result of `subscribers.cancel()`, `.pause()` and `.resume()`. */
+export interface MembershipActionResult {
+  success: boolean;
+  status?: string;
+  cancelAtPeriodEnd?: boolean;
+  /** Present on `pause()`. */
+  paused?: boolean;
+  /** Link where the membership can be managed. */
+  manageUrl?: string;
 }
 
 /** A subscription offer — a recurring product you sell. */
@@ -513,23 +792,43 @@ export interface Webhook {
   events: string[];
   description?: string;
   active: boolean;
-  secret: string;
+  /**
+   * Signing secret. Returned by `webhooks.create()`, `webhooks.get()` and
+   * `webhooks.rotateSecret()` only — never by `list()` or `update()`.
+   */
+  secret?: string;
+  /** Mode of the endpoint — it only receives events from that mode. */
   testMode: boolean;
   createdAt: string;
+  updatedAt?: string;
+}
+
+/** Response of `webhooks.create()`. Store `secret` to verify deliveries. */
+export interface CreatedWebhook {
+  /** Webhook id. */
+  id: string;
+  url: string;
+  events: string[];
+  description?: string;
+  /** Signing secret for verifying deliveries. */
+  secret: string;
 }
 
 export interface CreateWebhookParams {
-  /** Webhook endpoint URL (required) */
+  /** Endpoint URL (required). Must be https:// and publicly reachable. */
   url: string;
-  /** Events to subscribe to (required) */
+  /** Events to subscribe to — a non-empty list (required) */
   events: WebhookEvent[];
-  /** Webhook description */
+  /** Optional description (at most 500 characters) */
   description?: string;
-  /** Whether webhook is active (defaults to true) */
+  /**
+   * @deprecated Ignored by the API: new webhooks always start active. Use
+   * `webhooks.update(id, { active: false })` to pause one.
+   */
   active?: boolean;
 }
 
-/** Available webhook events */
+/** Webhook event types you can subscribe to. */
 export type WebhookEvent =
   | 'order.completed'
   | 'order.refunded'
@@ -538,26 +837,144 @@ export type WebhookEvent =
   | 'product.deleted'
   | 'review.created'
   | 'customer.created'
+  | 'customer.subscription.created'
   | 'customer.subscription.updated'
   | 'customer.subscription.deleted'
-  | 'invoice.payment_succeeded'
-  | 'invoice.payment_failed'
-  | 'invoice.created'
-  | 'invoice.upcoming'
-  | 'payment_intent.succeeded'
-  | 'payment_intent.payment_failed'
-  | 'customer.subscription.trial_will_end'
   | 'customer.subscription.pause'
   | 'customer.subscription.resumed'
-  | 'identity.verification_session.verified'
-  | 'identity.verification_session.processing'
-  | 'identity.verification_session.requires_input';
+  | 'customer.subscription.trial_will_end'
+  | 'invoice.created'
+  | 'invoice.upcoming'
+  | 'invoice.payment_succeeded'
+  | 'invoice.payment_failed'
+  | 'payment_intent.succeeded'
+  | 'payment_intent.payment_failed'
+  | 'credit.granted'
+  | 'credit.balance_changed'
+  | 'credit.auto_refill.succeeded'
+  | 'credit.auto_refill.failed'
+  | 'credit.consent.enabled'
+  | 'credit.consent.disabled';
 
 export interface UpdateWebhookParams {
+  /** New https:// endpoint URL */
   url?: string;
+  /** Replaces the subscribed events (a non-empty list of `WebhookEvent` values) */
   events?: string[];
+  /** At most 500 characters */
   description?: string;
+  /** `false` pauses deliveries */
   active?: boolean;
+}
+
+/** Response of `webhooks.rotateSecret()`. */
+export interface WebhookSecretRotation {
+  /** Webhook id. */
+  id: string;
+  /** The new signing secret — deliveries are signed with it immediately. */
+  secret: string;
+}
+
+/** Response of `webhooks.test()`. */
+export interface WebhookTestResult {
+  message: 'Test webhook sent' | 'Test webhook delivery failed' | string;
+  /** The event type that was sent. */
+  event?: string;
+  /** The event id (`evt_…`). */
+  eventId?: string;
+  /** Id of the delivery-log entry (`webhooks.deliveries.get()`). */
+  deliveryId?: string;
+  /** Whether your endpoint answered 2xx. */
+  delivered?: boolean;
+  /** HTTP status your endpoint returned, if any. */
+  status?: number;
+  durationMs?: number;
+  /** Failure reason, if any. */
+  error?: string;
+  /** Legacy shape, kept for older clients. */
+  results?: Array<Record<string, unknown>>;
+}
+
+/** One webhook delivery attempt from the delivery log (kept for 30 days). */
+export interface WebhookDelivery {
+  _id: string;
+  /** The endpoint it was sent to. */
+  webhookId: string;
+  /** Endpoint URL at the time of sending. */
+  url?: string;
+  event: WebhookEvent | 'test.event' | string;
+  /** The event id (`evt_…`) — shared by retries and redeliveries. */
+  eventId?: string;
+  /** Attempt number (1 = first try). */
+  attempt?: number;
+  /** Whether the endpoint answered 2xx. */
+  isSuccessful?: boolean;
+  /** HTTP status the endpoint returned, if any. */
+  status?: number;
+  durationMs?: number;
+  /** Failure reason, if any. */
+  error?: string;
+  /** `true` for `webhooks.test()` deliveries. */
+  isTest?: boolean;
+  /** The delivery this one replayed. */
+  redeliveryOf?: string;
+  /** The exact JSON body that was sent (a string). */
+  webhookData?: string;
+  testMode?: boolean;
+  sentDate?: string;
+  deliveredAt?: string;
+  /** When the log entry is deleted. */
+  expiresAt?: string;
+}
+
+export interface ListWebhookDeliveriesParams extends PaginationParams {
+  /** Only deliveries to this endpoint. */
+  webhookId?: string;
+  /** Only deliveries of this event type. */
+  event?: WebhookEvent | 'test.event';
+}
+
+export interface WebhookDeliveriesResponse {
+  deliveredWebhooks: WebhookDelivery[];
+  pagination: Pagination;
+}
+
+/** Response of `webhooks.deliveries.redeliver()`. */
+export interface WebhookRedeliveryResult {
+  message: 'Webhook redelivered' | 'Webhook redelivery failed' | string;
+  /** Whether your endpoint answered 2xx. */
+  delivered: boolean;
+  /** Id of the new delivery-log entry. */
+  deliveryId?: string;
+  eventId?: string;
+  event?: string;
+  attempt?: number;
+  /** HTTP status your endpoint returned, if any. */
+  status?: number;
+  durationMs?: number;
+  error?: string;
+}
+
+/**
+ * The JSON body of a webhook delivery: the envelope fields (`id`, `type`,
+ * `created`, `webhookId`) sit next to the event's own fields.
+ */
+export interface WebhookEventPayload {
+  /** Event id (`evt_…`) — same as the `X-Pocketsflow-Event-Id` header. Retries share it. */
+  id: string;
+  /** Event type — same as the `X-Pocketsflow-Event` header. */
+  type: WebhookEvent | 'test.event' | string;
+  /** When the event was created, Unix seconds. */
+  created: number;
+  /** The endpoint this delivery was sent to. */
+  webhookId: string;
+  /** `true` on deliveries sent by `webhooks.test()`. */
+  test?: boolean;
+  /** Echo of the checkout `clientReferenceId` (order and subscription events). */
+  clientReferenceId?: string | null;
+  /** Echo of the checkout `metadata` (order and subscription events). */
+  metadata?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 // ----------------------------------------------------------------------------

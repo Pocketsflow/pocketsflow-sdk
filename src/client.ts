@@ -23,11 +23,27 @@ import {
   UpdateUpsellParams,
   Subscription,
   ListSubscriptionsParams,
+  SubscriberDetail,
+  ListSubscribersParams,
+  SubscribersResponse,
+  GetSubscriberParams,
+  MembershipActionResult,
+  PaymentDetail,
+  ListPaymentsParams,
+  PaymentsResponse,
+  GetPaymentParams,
   SubscriptionOffer,
   CreateSubscriptionOfferParams,
   Webhook,
+  CreatedWebhook,
   CreateWebhookParams,
   UpdateWebhookParams,
+  WebhookSecretRotation,
+  WebhookTestResult,
+  WebhookDelivery,
+  ListWebhookDeliveriesParams,
+  WebhookDeliveriesResponse,
+  WebhookRedeliveryResult,
   User,
   UpdateUserParams,
   CreateCheckoutParams,
@@ -44,6 +60,17 @@ import {
 const DEFAULT_BASE_URL = 'https://api.pocketsflow.com';
 const DEFAULT_TIMEOUT = 30000;
 
+/** Encode a caller-supplied id for use as one path segment. */
+const seg = (id: string): string => encodeURIComponent(id);
+
+/** Read `{ [key]: value }` envelopes, tolerating an already-unwrapped body. */
+function unwrap<T>(res: unknown, key: string): T {
+  if (res && typeof res === 'object' && !Array.isArray(res) && key in res) {
+    return (res as Record<string, unknown>)[key] as T;
+  }
+  return res as T;
+}
+
 export class Pocketsflow {
   private apiKey: string;
   private baseUrl: string;
@@ -53,11 +80,15 @@ export class Pocketsflow {
   public products: ProductsResource;
   public variants: VariantsResource;
   public orders: OrdersResource;
+  /** The payment ledger: every one-time and subscription payment. */
+  public payments: PaymentsResource;
   public customers: CustomersResource;
   public reviews: ReviewsResource;
   public discounts: DiscountsResource;
   public upsells: UpsellsResource;
   public subscriptions: SubscriptionsResource;
+  /** Buyers with a membership in one of your subscription offers. */
+  public subscribers: SubscribersResource;
   /** Subscription offers (recurring products), distinct from buyer memberships. */
   public subscriptionOffers: SubscriptionOffersResource;
   public webhooks: WebhooksResource;
@@ -80,11 +111,13 @@ export class Pocketsflow {
     this.products = new ProductsResource(this);
     this.variants = new VariantsResource(this);
     this.orders = new OrdersResource(this);
+    this.payments = new PaymentsResource(this);
     this.customers = new CustomersResource(this);
     this.reviews = new ReviewsResource(this);
     this.discounts = new DiscountsResource(this);
     this.upsells = new UpsellsResource(this);
     this.subscriptions = new SubscriptionsResource(this);
+    this.subscribers = new SubscribersResource(this);
     this.subscriptionOffers = new SubscriptionOffersResource(this);
     this.webhooks = new WebhooksResource(this);
     this.users = new UsersResource(this);
@@ -247,6 +280,27 @@ class OrdersResource {
   }
 }
 
+/** The payment ledger: one-time purchases and subscription charges. */
+class PaymentsResource {
+  constructor(private client: Pocketsflow) {}
+
+  /**
+   * List payments, newest first: one-time purchases AND subscription payments
+   * (the initial charge plus every renewal). Paginated: `pageSize` is at most 100.
+   */
+  async list(params: ListPaymentsParams = {}): Promise<PaymentsResponse> {
+    return this.client.request<PaymentsResponse>('GET', '/payments', { params });
+  }
+
+  /**
+   * Get one payment with its product or subscription offer and customer.
+   * Pass `{ live: true }` to also fetch the live payment from the payments partner.
+   */
+  async get(id: string, params: GetPaymentParams = {}): Promise<PaymentDetail> {
+    return this.client.request<PaymentDetail>('GET', `/payments/${seg(id)}`, { params });
+  }
+}
+
 class CustomersResource {
   constructor(private client: Pocketsflow) {}
 
@@ -331,7 +385,10 @@ class UpsellsResource {
 class SubscriptionsResource {
   constructor(private client: Pocketsflow) {}
 
-  /** List subscription customers */
+  /**
+   * List subscription customers (legacy `POST /orders/subscriptions`).
+   * @deprecated Use `subscribers.list()`, the documented subscriber list.
+   */
   async list(params: ListSubscriptionsParams = {}): Promise<any> {
     return this.client.request<any>('POST', '/orders/subscriptions', { body: params });
   }
@@ -341,7 +398,10 @@ class SubscriptionsResource {
     return this.client.request<Subscription>('GET', `/orders/subscriptions/${id}`);
   }
 
-  /** Cancel a subscription */
+  /**
+   * Cancel a legacy card subscription immediately, by its `sub_…` id. For
+   * memberships (`mem_…` ids or subscriber ids) use `subscribers.cancel()`.
+   */
   async cancel(stripeSubscriptionId: string): Promise<{ message: string }> {
     return this.client.request<{ message: string }>(
       'POST',
@@ -349,11 +409,72 @@ class SubscriptionsResource {
     );
   }
 
-  /** Refund a subscription */
+  /** Refund a legacy card subscription, by its `sub_…` id. */
   async refund(stripeSubscriptionId: string): Promise<{ message: string }> {
     return this.client.request<{ message: string }>(
       'POST',
       `/orders/subscriptions/refund/${stripeSubscriptionId}`
+    );
+  }
+}
+
+/** Buyers with a membership in one of your subscription offers. */
+class SubscribersResource {
+  constructor(private client: Pocketsflow) {}
+
+  /**
+   * List subscribers, newest first, with their live `status`, `portalUrl` and
+   * the joined subscription offer. Paginated: `pageSize` is at most 100.
+   */
+  async list(params: ListSubscribersParams = {}): Promise<SubscribersResponse> {
+    return this.client.request<SubscribersResponse>('GET', '/subscriptions/subscribers', {
+      params,
+    });
+  }
+
+  /**
+   * Get a subscriber with its offer, customer record and full payment history.
+   * Pass `{ live: true }` to also fetch the live membership from the payments partner.
+   */
+  async get(id: string, params: GetSubscriberParams = {}): Promise<SubscriberDetail> {
+    return this.client.request<SubscriberDetail>(
+      'GET',
+      `/subscriptions/subscribers/${seg(id)}`,
+      { params }
+    );
+  }
+
+  /**
+   * Cancel a membership at the end of the current billing period (access
+   * continues until then). `id` is the subscriber `_id` or a membership id
+   * (`mem_…`) — not a `sub_…` id.
+   */
+  async cancel(id: string): Promise<MembershipActionResult> {
+    return this.client.request<MembershipActionResult>(
+      'POST',
+      `/subscriptions/${seg(id)}/cancel`
+    );
+  }
+
+  /**
+   * Pause payment collection on a membership. The buyer keeps access and is
+   * not charged until `resume()`. `id` is the subscriber `_id` or `mem_…` id.
+   */
+  async pause(id: string): Promise<MembershipActionResult> {
+    return this.client.request<MembershipActionResult>(
+      'POST',
+      `/subscriptions/${seg(id)}/pause`
+    );
+  }
+
+  /**
+   * Resume a paused membership, or undo a pending cancel-at-period-end.
+   * `id` is the subscriber `_id` or `mem_…` id.
+   */
+  async resume(id: string): Promise<MembershipActionResult> {
+    return this.client.request<MembershipActionResult>(
+      'POST',
+      `/subscriptions/${seg(id)}/resume`
     );
   }
 }
@@ -378,37 +499,101 @@ class SubscriptionOffersResource {
   }
 }
 
-class WebhooksResource {
+/** The webhook delivery log (entries are kept for 30 days). */
+class WebhookDeliveriesResource {
   constructor(private client: Pocketsflow) {}
 
-  /** List all webhooks */
+  /**
+   * List delivery attempts in the key's mode (including tests and
+   * redeliveries), newest first. Paginated: `pageSize` is at most 100.
+   */
+  async list(params: ListWebhookDeliveriesParams = {}): Promise<WebhookDeliveriesResponse> {
+    return this.client.request<WebhookDeliveriesResponse>('GET', '/delivered-webhooks', {
+      params,
+    });
+  }
+
+  /** Get one delivery, including the exact body that was sent (`webhookData`). */
+  async get(id: string): Promise<WebhookDelivery> {
+    const res = await this.client.request<unknown>('GET', `/delivered-webhooks/${seg(id)}`);
+    return unwrap<WebhookDelivery>(res, 'deliveredWebhook');
+  }
+
+  /**
+   * Send a logged delivery's body to its endpoint again (same event id,
+   * freshly signed). Resolves even when your endpoint fails — check `delivered`.
+   */
+  async redeliver(id: string): Promise<WebhookRedeliveryResult> {
+    return this.client.request<WebhookRedeliveryResult>(
+      'POST',
+      `/delivered-webhooks/${seg(id)}/redeliver`
+    );
+  }
+}
+
+class WebhooksResource {
+  /** The delivery log: list, inspect and replay deliveries. */
+  public deliveries: WebhookDeliveriesResource;
+
+  constructor(private client: Pocketsflow) {
+    this.deliveries = new WebhookDeliveriesResource(client);
+  }
+
+  /** List your webhook endpoints in the key's mode, newest first (without secrets). */
   async list(): Promise<Webhook[]> {
-    return this.client.request<Webhook[]>('GET', '/webhooks');
+    const res = await this.client.request<unknown>('GET', '/webhooks');
+    return unwrap<Webhook[]>(res, 'webhooks');
   }
 
-  /** Get a webhook by ID */
+  /** Get a webhook endpoint by ID, including its signing `secret`. */
   async get(id: string): Promise<Webhook> {
-    return this.client.request<Webhook>('GET', `/webhooks/${id}`);
+    const res = await this.client.request<unknown>('GET', `/webhooks/${seg(id)}`);
+    return unwrap<Webhook>(res, 'webhook');
   }
 
-  /** Create a new webhook */
-  async create(params: CreateWebhookParams): Promise<Webhook> {
-    return this.client.request<Webhook>('POST', '/webhooks', { body: params });
+  /**
+   * Register an endpoint for the selected events (in the key's mode). The
+   * response carries the signing `secret` — store it to verify deliveries.
+   */
+  async create(params: CreateWebhookParams): Promise<CreatedWebhook> {
+    return this.client.request<CreatedWebhook>('POST', '/webhooks', { body: params });
   }
 
-  /** Update a webhook */
+  /**
+   * Update an endpoint's `url`, `events`, `description` or `active` flag
+   * (`PATCH /webhooks/{id}`). Only the fields you send change. The returned
+   * webhook does not include the `secret`.
+   */
   async update(id: string, params: UpdateWebhookParams): Promise<Webhook> {
-    return this.client.request<Webhook>('PUT', `/webhooks/${id}`, { body: params });
+    const res = await this.client.request<unknown>('PATCH', `/webhooks/${seg(id)}`, {
+      body: params,
+    });
+    return unwrap<Webhook>(res, 'webhook');
   }
 
-  /** Delete a webhook */
+  /** Delete a webhook endpoint */
   async delete(id: string): Promise<{ message: string }> {
-    return this.client.request<{ message: string }>('DELETE', `/webhooks/${id}`);
+    return this.client.request<{ message: string }>('DELETE', `/webhooks/${seg(id)}`);
   }
 
-  /** Test a webhook */
-  async test(id: string): Promise<{ message: string }> {
-    return this.client.request<{ message: string }>('POST', `/webhooks/${id}/test`);
+  /**
+   * Replace the endpoint's signing secret and return the new one. Deliveries
+   * are signed with the new secret immediately — update your verifier first.
+   */
+  async rotateSecret(id: string): Promise<WebhookSecretRotation> {
+    return this.client.request<WebhookSecretRotation>(
+      'POST',
+      `/webhooks/${seg(id)}/rotate-secret`
+    );
+  }
+
+  /**
+   * Send a sample event to this endpoint only and return the outcome. The
+   * attempt is recorded in the delivery log. Resolves even when your endpoint
+   * fails — check `delivered`.
+   */
+  async test(id: string): Promise<WebhookTestResult> {
+    return this.client.request<WebhookTestResult>('POST', `/webhooks/${seg(id)}/test`);
   }
 }
 

@@ -3,6 +3,25 @@
 
 export { Pocketsflow } from './client';
 
+// Webhook signature verification
+export {
+  verifyWebhookSignature,
+  verifyWebhookSignatureV1,
+  constructWebhookEvent,
+  generateWebhookSignatureHeader,
+  WEBHOOK_SIGNATURE_V2_HEADER,
+  WEBHOOK_SIGNATURE_HEADER,
+  WEBHOOK_EVENT_ID_HEADER,
+  WEBHOOK_EVENT_HEADER,
+  DEFAULT_WEBHOOK_TOLERANCE_SECONDS,
+} from './webhooks';
+export type {
+  WebhookPayload,
+  WebhookHeaders,
+  VerifyWebhookSignatureOptions,
+  ConstructWebhookEventOptions,
+} from './webhooks';
+
 // Export all types
 export type {
   // Configuration
@@ -10,6 +29,7 @@ export type {
 
   // Common
   PaginationParams,
+  Pagination,
   PaginatedResponse,
   DateRangeParams,
 
@@ -18,6 +38,7 @@ export type {
   ProductFile,
   CreateProductParams,
   UpdateProductParams,
+  CopyCatalogItemParams,
 
   // Variants
   ProductVariant,
@@ -25,8 +46,17 @@ export type {
 
   // Orders
   Order,
+  OrderFees,
+  PurchasedUpsell,
   ListOrdersParams,
   OrdersResponse,
+
+  // Payments
+  Payment,
+  PaymentDetail,
+  ListPaymentsParams,
+  PaymentsResponse,
+  GetPaymentParams,
 
   // Customers
   Customer,
@@ -58,14 +88,29 @@ export type {
   // Subscriptions
   Subscription,
   ListSubscriptionsParams,
+  Subscriber,
+  SubscriberStatus,
+  SubscriberDetail,
+  ListSubscribersParams,
+  SubscribersResponse,
+  GetSubscriberParams,
+  MembershipActionResult,
   SubscriptionOffer,
   CreateSubscriptionOfferParams,
 
   // Webhooks
   Webhook,
+  CreatedWebhook,
   CreateWebhookParams,
   UpdateWebhookParams,
   WebhookEvent,
+  WebhookEventPayload,
+  WebhookSecretRotation,
+  WebhookTestResult,
+  WebhookDelivery,
+  ListWebhookDeliveriesParams,
+  WebhookDeliveriesResponse,
+  WebhookRedeliveryResult,
 
   // User
   User,

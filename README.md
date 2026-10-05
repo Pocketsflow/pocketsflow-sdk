@@ -45,15 +45,38 @@ const pocketsflow = new Pocketsflow({
 });
 ```
 
-### Test Mode
+### Test mode and live mode
 
-Use a test mode API key (`pk_test_...`) to interact with test data:
+The key prefix decides the mode, whatever the test-mode toggle in the
+dashboard says:
+
+- a `pk_test_...` key always reads and writes **test-mode** data;
+- a `pk_live_...` key always reads and writes **live** data.
+
+Lists return that mode's data, and anything you create (products, discounts,
+webhooks, ...) lands in that mode. Webhook endpoints created with a test key
+only receive test-mode events.
 
 ```typescript
 const pocketsflow = new Pocketsflow({
   apiKey: 'pk_test_your_test_key_here',
 });
+
+const me = await pocketsflow.users.me();
+me.testMode; // true for a pk_test_ key
 ```
+
+Reads and updates by id act on your own items in either mode, so keep test and
+live ids apart in your integration.
+
+### Pagination
+
+`orders.list()`, `payments.list()`, `subscribers.list()` and
+`webhooks.deliveries.list()` are paginated: `page` (1-based, default `1`) and
+`pageSize` (default `20`, **maximum `100`** — larger values are capped). They
+resolve to `{ <items>, pagination: { totalCount, totalPages, currentPage,
+pageSize, hasMore } }`; keep requesting `page + 1` while `hasMore` is `true`.
+Other list methods return the full array.
 
 ## Resources
 
@@ -118,6 +141,28 @@ const { orders, pagination } = await pocketsflow.orders.list({
 
 // Get a specific order
 const order = await pocketsflow.orders.get('order_id');
+```
+
+`orders` are one-time purchases. Subscription charges are in `payments`.
+
+### Payments
+
+The ledger of every sale: one-time purchases **and** subscription payments
+(the initial charge plus every renewal).
+
+```typescript
+const { payments, pagination } = await pocketsflow.payments.list({
+  type: 'subscription', // 'one_time' | 'subscription' | 'all' (default)
+  page: 1,
+  pageSize: 100, // maximum 100
+  subscriptionId: 'offer_id', // optional filter (or productId)
+});
+
+// One payment with its product or subscription offer and customer.
+// `{ live: true }` also fetches the live payment from the payments partner.
+const detail = await pocketsflow.payments.get('payment_id', { live: true });
+detail.payment.amount;
+detail.paymentsPartner; // stored payments partner payload
 ```
 
 ### Customers
@@ -257,40 +302,156 @@ const subscriptions = await pocketsflow.subscriptions.list({
 // Get a subscription
 const subscription = await pocketsflow.subscriptions.get('subscription_id');
 
-// Cancel a subscription
+// Cancel a legacy card subscription immediately (by its sub_... id)
 await pocketsflow.subscriptions.cancel('stripe_subscription_id');
 
-// Refund a subscription
+// Refund a legacy card subscription (by its sub_... id)
 await pocketsflow.subscriptions.refund('stripe_subscription_id');
+```
+
+### Subscribers
+
+Buyers with a membership in one of your subscription offers:
+
+```typescript
+const { subscribers, pagination } = await pocketsflow.subscribers.list({
+  status: 'active', // optional
+  subscriptionId: 'offer_id', // optional
+  pageSize: 50, // maximum 100
+});
+
+const s = subscribers[0];
+s.membershipId; // mem_...
+s.portalUrl; // hand this self-service link to the buyer as is
+
+// One subscriber, its offer, customer and every payment (initial + renewals).
+// `{ live: true }` also fetches the live membership as `membership`.
+const { subscriber, payments } = await pocketsflow.subscribers.get('subscriber_id');
+
+// Manage the membership (subscriber _id or mem_... id)
+await pocketsflow.subscribers.cancel('mem_123'); // at the end of the billing period
+await pocketsflow.subscribers.pause('mem_123'); // stop charging, keep access
+await pocketsflow.subscribers.resume('mem_123'); // resume, or undo a pending cancel
 ```
 
 ### Webhooks
 
 ```typescript
-// List all webhooks
+// List your endpoints (secrets are omitted)
 const webhooks = await pocketsflow.webhooks.list();
 
-// Get a webhook
+// Get one, including its signing secret
 const webhook = await pocketsflow.webhooks.get('webhook_id');
 
-// Create a webhook
-const webhook = await pocketsflow.webhooks.create({
+// Create an endpoint — store the returned secret
+const { id, secret } = await pocketsflow.webhooks.create({
   url: 'https://your-server.com/webhook',
-  events: ['order.created', 'order.refunded'],
+  events: ['order.completed', 'order.refunded'],
   description: 'My webhook',
 });
 
-// Update a webhook
+// Update (PATCH): only the fields you send change
 const updated = await pocketsflow.webhooks.update('webhook_id', {
-  events: ['order.created', 'order.refunded', 'subscription.created'],
-  active: true,
+  events: ['order.completed', 'order.refunded', 'customer.subscription.created'],
+  active: false, // pause deliveries
 });
 
-// Test a webhook
-await pocketsflow.webhooks.test('webhook_id');
+// Rotate the signing secret (takes effect immediately)
+const rotated = await pocketsflow.webhooks.rotateSecret('webhook_id');
+rotated.secret;
 
-// Delete a webhook
+// Send a sample event to this endpoint and see the outcome
+const result = await pocketsflow.webhooks.test('webhook_id');
+result.delivered; // whether your endpoint answered 2xx
+result.deliveryId;
+
+// Delete an endpoint
 await pocketsflow.webhooks.delete('webhook_id');
+```
+
+#### Delivery log
+
+Every delivery attempt (including tests and redeliveries) is logged for 30 days:
+
+```typescript
+const { deliveredWebhooks, pagination } = await pocketsflow.webhooks.deliveries.list({
+  webhookId: 'webhook_id', // optional
+  event: 'order.completed', // optional
+  pageSize: 100, // maximum 100
+});
+
+const delivery = await pocketsflow.webhooks.deliveries.get('delivery_id');
+delivery.webhookData; // the exact body that was sent
+
+// Replay a delivery your endpoint missed (same event id, freshly signed)
+const redelivery = await pocketsflow.webhooks.deliveries.redeliver('delivery_id');
+redelivery.delivered;
+```
+
+#### Verifying webhook signatures
+
+Each delivery is a `POST` with a JSON body and these headers:
+
+| Header | Value |
+| --- | --- |
+| `X-Pocketsflow-Event` | The event type, e.g. `order.completed` |
+| `X-Pocketsflow-Event-Id` | The event id (`evt_...`), shared by retries — de-duplicate on it |
+| `X-Pocketsflow-Signature-V2` | `t=<unix seconds>,v1=<hex HMAC-SHA256(secret, t + "." + rawBody)>` |
+| `X-Pocketsflow-Signature` | Legacy: hex HMAC-SHA256(secret, rawBody) |
+
+Verify `X-Pocketsflow-Signature-V2` against the **raw** request body, before
+parsing JSON. `constructWebhookEvent` checks the signature in constant time,
+rejects timestamps more than 300 seconds from now (replay protection), and
+returns the parsed event:
+
+```typescript
+import express from 'express';
+import { constructWebhookEvent, PocketsflowError } from 'pocketsflow';
+
+const app = express();
+
+app.post(
+  '/webhooks/pocketsflow',
+  express.raw({ type: 'application/json' }), // keep the raw bytes
+  (req, res) => {
+    let event;
+    try {
+      event = constructWebhookEvent(req.body, req.headers, process.env.POCKETSFLOW_WEBHOOK_SECRET!);
+    } catch (err) {
+      if (err instanceof PocketsflowError) return res.sendStatus(400);
+      throw err;
+    }
+
+    // Retries share event.id (= X-Pocketsflow-Event-Id): handle each id once.
+    switch (event.type) {
+      case 'order.completed':
+        // ...
+        break;
+    }
+    res.sendStatus(200);
+  }
+);
+```
+
+Lower-level helpers:
+
+```typescript
+import {
+  verifyWebhookSignature,
+  verifyWebhookSignatureV1,
+  generateWebhookSignatureHeader,
+} from 'pocketsflow';
+
+// V2: returns false for a missing, malformed, wrong or stale signature
+verifyWebhookSignature(rawBody, req.headers['x-pocketsflow-signature-v2'], secret, {
+  toleranceSeconds: 300, // default
+});
+
+// Legacy V1 (no timestamp, so no replay protection) still works
+verifyWebhookSignatureV1(rawBody, req.headers['x-pocketsflow-signature'], secret);
+
+// Build a valid V2 header to test your handler
+const header = generateWebhookSignatureHeader(rawBody, secret);
 ```
 
 ### User / Account
