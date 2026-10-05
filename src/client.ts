@@ -7,11 +7,12 @@ import {
   CopyCatalogItemParams,
   ProductVariant,
   CreateVariantParams,
-  Order,
+  Customer,
   ListOrdersParams,
   OrdersResponse,
-  Customer,
+  OrderDetail,
   ListCustomersParams,
+  CustomerDetail,
   Review,
   ListReviewsParams,
   Discount,
@@ -21,8 +22,8 @@ import {
   UpsellsResponse,
   CreateUpsellParams,
   UpdateUpsellParams,
-  Subscription,
   ListSubscriptionsParams,
+  SubscriberOrderHistory,
   SubscriberDetail,
   ListSubscribersParams,
   SubscribersResponse,
@@ -34,6 +35,7 @@ import {
   GetPaymentParams,
   SubscriptionOffer,
   CreateSubscriptionOfferParams,
+  DeletedSubscriptionOffer,
   Webhook,
   CreatedWebhook,
   CreateWebhookParams,
@@ -48,13 +50,35 @@ import {
   UpdateUserParams,
   CreateCheckoutParams,
   CheckoutSession,
-  Refund,
-  CreateRefundParams,
+  RefundPolicy,
+  CreateRefundPolicyParams,
+  UpdateRefundPolicyParams,
   EmailSubscriber,
   ListEmailSubscribersParams,
   ProductAudience,
   SyncAudienceParams,
   AudienceSyncResult,
+  Post,
+  ListPostsParams,
+  CreatePostParams,
+  UpdatePostParams,
+  SendPostResult,
+  SendEmailParams,
+  SendEmailResult,
+  CreatorPage,
+  CreateCreatorPageParams,
+  UpdateCreatorPageParams,
+  CreatorPageUsernameUpdate,
+  ImageUploadInput,
+  UploadImageOptions,
+  UploadedImage,
+  Partner,
+  PartnerListParams,
+  PartnerListResponse,
+  PartnerStats,
+  ReferredUser,
+  ReferralSale,
+  ReferralRegistration,
 } from './types';
 
 const DEFAULT_BASE_URL = 'https://api.pocketsflow.com';
@@ -95,8 +119,14 @@ export class Pocketsflow {
   public users: UsersResource;
   public checkout: CheckoutResource;
   public refunds: RefundsResource;
-  /** Your email list: subscribers and product audiences. */
+  /** Your email list: subscribers, product audiences, posts and one-off emails. */
   public newsletters: NewslettersResource;
+  /** Your Link in Bio page (one per account). */
+  public creatorPage: CreatorPageResource;
+  /** Hosted image uploads (thumbnails, product and page images). */
+  public images: ImagesResource;
+  /** The partner (referral) program. */
+  public partners: PartnersResource;
 
   constructor(config: PocketsflowConfig) {
     if (!config.apiKey) {
@@ -124,6 +154,9 @@ export class Pocketsflow {
     this.checkout = new CheckoutResource(this);
     this.refunds = new RefundsResource(this);
     this.newsletters = new NewslettersResource(this);
+    this.creatorPage = new CreatorPageResource(this);
+    this.images = new ImagesResource(this);
+    this.partners = new PartnersResource(this);
   }
 
   async request<T>(
@@ -144,14 +177,16 @@ export class Pocketsflow {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
+    // Multipart bodies (image uploads) go as-is: fetch sets the boundary.
+    const isForm = typeof FormData !== 'undefined' && options.body instanceof FormData;
+    const headers: Record<string, string> = { 'Authorization': `Bearer ${this.apiKey}` };
+    if (!isForm) headers['Content-Type'] = 'application/json';
+
     try {
       const response = await fetch(url.toString(), {
         method,
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: options.body ? JSON.stringify(options.body) : undefined,
+        headers,
+        body: isForm ? options.body : options.body ? JSON.stringify(options.body) : undefined,
         signal: controller.signal,
       });
 
@@ -274,9 +309,12 @@ class OrdersResource {
     return this.client.request<OrdersResponse>('GET', '/orders', { params });
   }
 
-  /** Get an order by ID */
-  async get(id: string): Promise<Order> {
-    return this.client.request<Order>('GET', `/orders/${id}`);
+  /**
+   * Get an order by ID: the sale (with its fee breakdown) plus its product,
+   * customer, review and upsells.
+   */
+  async get(id: string): Promise<OrderDetail> {
+    return this.client.request<OrderDetail>('GET', `/orders/${id}`);
   }
 }
 
@@ -304,14 +342,14 @@ class PaymentsResource {
 class CustomersResource {
   constructor(private client: Pocketsflow) {}
 
-  /** List all customers */
+  /** List all customers, each with every product they bought (`products`) */
   async list(params: ListCustomersParams = {}): Promise<Customer[]> {
     return this.client.request<Customer[]>('GET', '/customers', { params });
   }
 
-  /** Get a customer by ID */
-  async get(id: string): Promise<Customer> {
-    return this.client.request<Customer>('GET', `/customers/${id}`);
+  /** Get a customer with their stats, orders, subscriptions and reviews */
+  async get(id: string): Promise<CustomerDetail> {
+    return this.client.request<CustomerDetail>('GET', `/customers/${id}`);
   }
 }
 
@@ -350,6 +388,27 @@ class DiscountsResource {
   /** Delete a discount */
   async delete(id: string): Promise<{ message: string }> {
     return this.client.request<{ message: string }>('DELETE', `/discounts/${id}`);
+  }
+
+  /**
+   * Look up a discount code as a buyer would at checkout: resolves to the
+   * discount when `code` is active and applies to `productId` (a product or
+   * subscription offer). Throws a 404 `PocketsflowError` otherwise. Public
+   * endpoint: it does not need your API key.
+   */
+  async apply(code: string, productId: string): Promise<Discount> {
+    return this.client.request<Discount>(
+      'GET',
+      `/discounts/apply/${seg(code)}/${seg(productId)}`
+    );
+  }
+
+  /**
+   * Whether any active discount applies to this product or subscription
+   * offer (e.g. to show a "Have a code?" field). Public endpoint.
+   */
+  async checkProduct(productId: string): Promise<boolean> {
+    return this.client.request<boolean>('GET', `/discounts/check-product/${seg(productId)}`);
   }
 }
 
@@ -393,14 +452,22 @@ class SubscriptionsResource {
     return this.client.request<any>('POST', '/orders/subscriptions', { body: params });
   }
 
-  /** Get a subscription by ID */
-  async get(id: string): Promise<Subscription> {
-    return this.client.request<Subscription>('GET', `/orders/subscriptions/${id}`);
+  /**
+   * Get a subscriber with its offer, customer record and payment history
+   * (`GET /orders/subscriptions/{id}`). `subscribers.get()` returns the same
+   * data with the subscriber under `subscriber`.
+   */
+  async get(id: string): Promise<SubscriberOrderHistory> {
+    return this.client.request<SubscriberOrderHistory>(
+      'GET',
+      `/orders/subscriptions/${seg(id)}`
+    );
   }
 
   /**
-   * Cancel a legacy card subscription immediately, by its `sub_…` id. For
-   * memberships (`mem_…` ids or subscriber ids) use `subscribers.cancel()`.
+   * Cancel a legacy card subscription immediately, by its `sub_…` id.
+   * @deprecated This route is no longer served by the API (it answers 404).
+   * Use `subscribers.cancel()` with the subscriber `_id` or `mem_…` id.
    */
   async cancel(stripeSubscriptionId: string): Promise<{ message: string }> {
     return this.client.request<{ message: string }>(
@@ -409,7 +476,11 @@ class SubscriptionsResource {
     );
   }
 
-  /** Refund a legacy card subscription, by its `sub_…` id. */
+  /**
+   * Refund a legacy card subscription, by its `sub_…` id.
+   * @deprecated This route is no longer served by the API (it answers 404).
+   * Refund payments from the dashboard.
+   */
   async refund(stripeSubscriptionId: string): Promise<{ message: string }> {
     return this.client.request<{ message: string }>(
       'POST',
@@ -496,6 +567,14 @@ class SubscriptionOffersResource {
   /** Create a subscription offer */
   async create(params: CreateSubscriptionOfferParams): Promise<SubscriptionOffer> {
     return this.client.request<SubscriptionOffer>('POST', '/subscriptions', { body: params });
+  }
+
+  /**
+   * Delete a subscription offer. Existing subscribers keep their memberships;
+   * manage them with `subscribers.*`.
+   */
+  async delete(id: string): Promise<DeletedSubscriptionOffer> {
+    return this.client.request<DeletedSubscriptionOffer>('DELETE', `/subscriptions/${seg(id)}`);
   }
 }
 
@@ -620,22 +699,36 @@ class CheckoutResource {
   }
 }
 
+/**
+ * Refund policies: the refund terms shown on your products' checkout and
+ * product pages. (Refunding a payment is done from the dashboard.)
+ */
 class RefundsResource {
   constructor(private client: Pocketsflow) {}
 
-  /** List all refunds */
-  async list(): Promise<Refund[]> {
-    return this.client.request<Refund[]>('GET', '/refunds');
+  /** List your refund policies, with how many products use each (`appliedTo`) */
+  async list(): Promise<RefundPolicy[]> {
+    return this.client.request<RefundPolicy[]>('GET', '/refunds');
   }
 
-  /** Get a refund by ID */
-  async get(id: string): Promise<Refund> {
-    return this.client.request<Refund>('GET', `/refunds/${id}`);
+  /** Get a refund policy by ID */
+  async get(id: string): Promise<RefundPolicy> {
+    return this.client.request<RefundPolicy>('GET', `/refunds/${id}`);
   }
 
-  /** Create a refund */
-  async create(params: CreateRefundParams): Promise<Refund> {
-    return this.client.request<Refund>('POST', '/refunds', { body: params });
+  /** Create a refund policy */
+  async create(params: CreateRefundPolicyParams): Promise<RefundPolicy> {
+    return this.client.request<RefundPolicy>('POST', '/refunds', { body: params });
+  }
+
+  /** Update a refund policy (only the fields you send change) */
+  async update(id: string, params: UpdateRefundPolicyParams): Promise<RefundPolicy> {
+    return this.client.request<RefundPolicy>('POST', `/refunds/${seg(id)}`, { body: params });
+  }
+
+  /** Delete a refund policy; resolves to the deleted policy */
+  async delete(id: string): Promise<RefundPolicy> {
+    return this.client.request<RefundPolicy>('DELETE', `/refunds/${seg(id)}`);
   }
 }
 
@@ -652,6 +745,14 @@ class NewsletterSubscribersResource {
   /** Get an email subscriber by ID */
   async get(id: string): Promise<EmailSubscriber> {
     return this.client.request<EmailSubscriber>('GET', `/newsletters/subscribers/${id}`);
+  }
+
+  /** Remove a contact from your email list; resolves to the removed subscriber */
+  async delete(id: string): Promise<EmailSubscriber> {
+    return this.client.request<EmailSubscriber>(
+      'DELETE',
+      `/newsletters/subscribers/${seg(id)}`
+    );
   }
 }
 
@@ -675,13 +776,178 @@ class AudiencesResource {
   }
 }
 
-/** Your email list: subscribers and product audiences. */
+/** Newsletter posts: email campaigns to your list. */
+class PostsResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** List your posts, optionally only one `status` */
+  async list(params: ListPostsParams = {}): Promise<Post[]> {
+    return this.client.request<Post[]>('GET', '/newsletters/posts', { params });
+  }
+
+  /** Get a post by ID */
+  async get(id: string): Promise<Post> {
+    return this.client.request<Post>('GET', `/newsletters/posts/${seg(id)}`);
+  }
+
+  /**
+   * Create a post (a draft by default). Pick recipients with `sendToAll`,
+   * `productIds` (product audiences), `subscriberIds` or `tags`.
+   */
+  async create(params: CreatePostParams): Promise<Post> {
+    return this.client.request<Post>('POST', '/newsletters/posts', { body: params });
+  }
+
+  /** Update a post (only the fields you send change) */
+  async update(id: string, params: UpdatePostParams): Promise<Post> {
+    return this.client.request<Post>('POST', `/newsletters/posts/${seg(id)}`, {
+      body: params,
+    });
+  }
+
+  /** Delete a post; resolves to the deleted post */
+  async delete(id: string): Promise<Post> {
+    return this.client.request<Post>('DELETE', `/newsletters/posts/${seg(id)}`);
+  }
+
+  /** Queue a post for sending now to its recipients */
+  async send(id: string): Promise<SendPostResult> {
+    return this.client.request<SendPostResult>('POST', `/newsletters/posts/${seg(id)}/send`);
+  }
+}
+
+/** Your email list: subscribers, product audiences, posts and one-off emails. */
 class NewslettersResource {
   public subscribers: NewsletterSubscribersResource;
   public audiences: AudiencesResource;
+  public posts: PostsResource;
 
-  constructor(client: Pocketsflow) {
+  constructor(private client: Pocketsflow) {
     this.subscribers = new NewsletterSubscribersResource(client);
     this.audiences = new AudiencesResource(client);
+    this.posts = new PostsResource(client);
+  }
+
+  /**
+   * Send a one-off email (e.g. a transactional message) to 1 – 100
+   * recipients. Unsubscribed recipients are skipped — check `skipped`.
+   */
+  async send(params: SendEmailParams): Promise<SendEmailResult> {
+    return this.client.request<SendEmailResult>('POST', '/newsletters/send', { body: params });
+  }
+}
+
+/** Your Link in Bio page (one per account). */
+class CreatorPageResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Get your page */
+  async get(): Promise<CreatorPage> {
+    return this.client.request<CreatorPage>('GET', '/creator-pages');
+  }
+
+  /** Create your page (one per account) */
+  async create(params: CreateCreatorPageParams): Promise<CreatorPage> {
+    return this.client.request<CreatorPage>('POST', '/creator-pages', { body: params });
+  }
+
+  /** Update your page (`PUT`; only the fields you send change) */
+  async update(params: UpdateCreatorPageParams): Promise<CreatorPage> {
+    return this.client.request<CreatorPage>('PUT', '/creator-pages', { body: params });
+  }
+
+  /** Delete your page */
+  async delete(): Promise<{ message: string }> {
+    return this.client.request<{ message: string }>('DELETE', '/creator-pages');
+  }
+
+  /** Change only your page's username (3 – 30 letters, numbers, `_` or `-`) */
+  async updateUsername(username: string): Promise<CreatorPageUsernameUpdate> {
+    return this.client.request<CreatorPageUsernameUpdate>('PATCH', '/creator-pages/username', {
+      body: { username },
+    });
+  }
+
+  /**
+   * Check whether a username is free. Resolves when it is available; throws
+   * a 400 `PocketsflowError` when it is taken or malformed.
+   */
+  async checkUsername(username: string): Promise<{ message: string }> {
+    return this.client.request<{ message: string }>(
+      'GET',
+      `/creator-pages/check-username/${seg(username)}`
+    );
+  }
+}
+
+/** Hosted image uploads. */
+class ImagesResource {
+  constructor(private client: Pocketsflow) {}
+
+  /**
+   * Upload an image (multipart field `image`) and get its hosted URL — use it
+   * as a product `thumbnail`, in `images`, or on your creator page. PNG,
+   * JPEG, WebP, GIF and AVIF are accepted. Needs a runtime with global
+   * `FormData` and `Blob` (Node 18+).
+   */
+  async upload(image: ImageUploadInput, options: UploadImageOptions = {}): Promise<UploadedImage> {
+    const blob =
+      image instanceof Blob
+        ? image
+        : new Blob([image as ArrayBuffer], options.contentType ? { type: options.contentType } : {});
+    const form = new FormData();
+    form.append('image', blob, options.filename || 'image');
+    return this.client.request<UploadedImage>('POST', '/images', { body: form });
+  }
+}
+
+/** The partner (referral) program. */
+class PartnersResource {
+  constructor(private client: Pocketsflow) {}
+
+  /**
+   * Join the partner program. Needs a connected payout account (403
+   * otherwise); throws 409 if you are already a partner.
+   */
+  async create(): Promise<Partner> {
+    return this.client.request<Partner>('POST', '/partners');
+  }
+
+  /** Get your partner profile (404 if you are not a partner) */
+  async get(): Promise<Partner> {
+    return this.client.request<Partner>('GET', '/partners');
+  }
+
+  /**
+   * Attribute your account to a partner's referral code. Only within the
+   * first days after signing up, and only once.
+   */
+  async registerReferral(referralCode: string): Promise<ReferralRegistration> {
+    return this.client.request<ReferralRegistration>('POST', '/partners/register-referral', {
+      body: { referralCode },
+    });
+  }
+
+  /** Sellers who signed up with your code, newest first. `limit` is at most 100. */
+  async listReferrals(params: PartnerListParams = {}): Promise<PartnerListResponse<ReferredUser>> {
+    return this.client.request<PartnerListResponse<ReferredUser>>('GET', '/partners/referrals', {
+      params,
+    });
+  }
+
+  /** Sales made by the sellers you referred, with your commission on each. */
+  async listReferralSales(
+    params: PartnerListParams = {}
+  ): Promise<PartnerListResponse<ReferralSale>> {
+    return this.client.request<PartnerListResponse<ReferralSale>>(
+      'GET',
+      '/partners/referrals/sales',
+      { params }
+    );
+  }
+
+  /** Your partner totals: signups, sales, revenue and commission */
+  async stats(): Promise<PartnerStats> {
+    return this.client.request<PartnerStats>('GET', '/partners/stats');
   }
 }

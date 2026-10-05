@@ -31,7 +31,6 @@ const product = await pocketsflow.products.get('product_id');
 const newProduct = await pocketsflow.products.create({
   name: 'My Digital Product',
   price: 29.99,
-  currency: 'USD',
 });
 ```
 
@@ -76,7 +75,10 @@ live ids apart in your integration.
 `pageSize` (default `20`, **maximum `100`** — larger values are capped). They
 resolve to `{ <items>, pagination: { totalCount, totalPages, currentPage,
 pageSize, hasMore } }`; keep requesting `page + 1` while `hasMore` is `true`.
-Other list methods return the full array.
+`partners.listReferrals()` / `.listReferralSales()` take `page` and `limit`
+(maximum `100`) and resolve to `{ data, pagination: { currentPage, totalPages,
+totalItems, hasNextPage, hasPrevPage, limit } }`. Other list methods return
+the full array.
 
 ## Resources
 
@@ -89,19 +91,21 @@ const products = await pocketsflow.products.list();
 // Get a product
 const product = await pocketsflow.products.get('product_id');
 
-// Create a product
+// Create a product (prices are in your account currency)
 const product = await pocketsflow.products.create({
   name: 'Premium Course',
   description: 'Learn everything about...',
   price: 99.99,
-  currency: 'USD',
-  type: 'one-time', // or 'subscription'
+  compareAtPrice: 149.99, // optional struck-through price
+  productType: 'course', // 'file' | 'url' | 'course' | 'credits'
+  thumbnail: imageUrl, // e.g. from images.upload()
 });
 
-// Update a product
+// Update a product (only the fields you send change)
 const updated = await pocketsflow.products.update('product_id', {
   name: 'Updated Name',
   price: 149.99,
+  published: false,
 });
 
 // Delete a product
@@ -139,8 +143,10 @@ const { orders, pagination } = await pocketsflow.orders.list({
   productId: 'product_id', // optional filter
 });
 
-// Get a specific order
-const order = await pocketsflow.orders.get('order_id');
+// Get one order: the sale with its fee breakdown, plus its product,
+// customer, review and upsells
+const { sale, product, customer, review } = await pocketsflow.orders.get('order_id');
+sale.platformFee;
 ```
 
 `orders` are one-time purchases. Subscription charges are in `payments`.
@@ -170,8 +176,7 @@ detail.paymentsPartner; // stored payments partner payload
 ```typescript
 // List all customers
 const customers = await pocketsflow.customers.list({
-  email: 'customer@example.com', // optional filter
-  sortBy: 'createdAt',
+  sortBy: 'createdAt', // 'email' | 'country' | 'numberOfOrders' | 'createdAt'
   sortOrder: 'desc',
 });
 
@@ -180,8 +185,8 @@ const customers = await pocketsflow.customers.list({
 const buyers = await pocketsflow.customers.list({ productId: 'product_id' });
 buyers[0].products; // [{ _id: 'product_id', name: 'My course' }, ...]
 
-// Get a customer
-const customer = await pocketsflow.customers.get('customer_id');
+// Get a customer with their stats, orders, subscriptions and reviews
+const { customer, stats, orders, subscriptions } = await pocketsflow.customers.get('customer_id');
 ```
 
 ### Email Subscribers & Product Audiences
@@ -200,6 +205,42 @@ const subscribers = await pocketsflow.newsletters.subscribers.list({
   productId: 'product_id',
 });
 const subscriber = await pocketsflow.newsletters.subscribers.get('subscriber_id');
+
+// Remove a contact from your list
+await pocketsflow.newsletters.subscribers.delete('subscriber_id');
+```
+
+### Newsletter Posts & One-off Emails
+
+```typescript
+// Draft a post to one product audience, then send it now
+const post = await pocketsflow.newsletters.posts.create({
+  name: 'Launch announcement',
+  subject: 'Version 2 is here',
+  contentHtml: '<p>Hello!</p>',
+  productIds: ['product_id'], // or sendToAll: true, subscriberIds, tags
+});
+await pocketsflow.newsletters.posts.send(post._id);
+
+// Or schedule it
+await pocketsflow.newsletters.posts.update(post._id, {
+  status: 'scheduled',
+  scheduledAt: '2026-11-01T09:00:00Z',
+  scheduledTimezone: 'Europe/Paris',
+});
+
+const drafts = await pocketsflow.newsletters.posts.list({ status: 'draft' });
+const one = await pocketsflow.newsletters.posts.get('post_id');
+await pocketsflow.newsletters.posts.delete('post_id');
+
+// Send a one-off email to 1 - 100 recipients (unsubscribed ones are skipped)
+const sent = await pocketsflow.newsletters.send({
+  to: ['buyer@example.com'],
+  subject: 'Your access link',
+  html: '<p>Here it is.</p>',
+});
+sent.status; // 'sent' | 'skipped'
+sent.skipped; // addresses that were not emailed
 ```
 
 ### Reviews
@@ -208,10 +249,8 @@ const subscriber = await pocketsflow.newsletters.subscribers.get('subscriber_id'
 // List all reviews
 const reviews = await pocketsflow.reviews.list();
 
-// Filter by product
-const productReviews = await pocketsflow.reviews.list({
-  productId: 'product_id',
-});
+// Reviews of one product
+const productReviews = reviews.filter((r) => r.productId === 'product_id');
 ```
 
 ### Discounts
@@ -241,6 +280,13 @@ const updated = await pocketsflow.discounts.update('discount_id', {
 
 // Delete a discount
 await pocketsflow.discounts.delete('discount_id');
+
+// Check a code the way the checkout does (public endpoints: no API key needed).
+// Resolves to the discount, or throws a 404 PocketsflowError.
+const applied = await pocketsflow.discounts.apply('SUMMER20', 'product_id');
+
+// Does any active discount apply to this product or subscription offer?
+const hasDiscount = await pocketsflow.discounts.checkProduct('product_id'); // boolean
 ```
 
 ### Upsells
@@ -290,24 +336,20 @@ const newOffer = await pocketsflow.subscriptionOffers.create({
 // List and get subscription offers
 const offers = await pocketsflow.subscriptionOffers.list();
 const offer = await pocketsflow.subscriptionOffers.get(newOffer._id);
+
+// Delete a subscription offer
+await pocketsflow.subscriptionOffers.delete(newOffer._id);
 ```
 
 ```typescript
-// List subscription customers
-const subscriptions = await pocketsflow.subscriptions.list({
-  page: 1,
-  pageSize: 20,
-});
-
-// Get a subscription
-const subscription = await pocketsflow.subscriptions.get('subscription_id');
-
-// Cancel a legacy card subscription immediately (by its sub_... id)
-await pocketsflow.subscriptions.cancel('stripe_subscription_id');
-
-// Refund a legacy card subscription (by its sub_... id)
-await pocketsflow.subscriptions.refund('stripe_subscription_id');
+// A subscriber with its offer, customer and payment history
+// (same data as subscribers.get(), under `subscriptionCustomer`)
+const { subscriptionCustomer, payments } = await pocketsflow.subscriptions.get('subscriber_id');
 ```
+
+`subscriptions.list()`, `subscriptions.cancel()` and `subscriptions.refund()`
+are deprecated: list and manage memberships with `subscribers` below
+(`subscriptions.cancel()` / `.refund()` call routes the API no longer serves).
 
 ### Subscribers
 
@@ -343,7 +385,8 @@ const webhooks = await pocketsflow.webhooks.list();
 // Get one, including its signing secret
 const webhook = await pocketsflow.webhooks.get('webhook_id');
 
-// Create an endpoint — store the returned secret
+// Create an endpoint — store the returned secret.
+// WEBHOOK_EVENTS (exported) lists every event type.
 const { id, secret } = await pocketsflow.webhooks.create({
   url: 'https://your-server.com/webhook',
   events: ['order.completed', 'order.refunded'],
@@ -501,21 +544,81 @@ const session = await pocketsflow.checkout.create({
 console.log(session.url); // https://...pocketsflow.com/checkout/...
 ```
 
-### Refunds
+`productId` (a product or subscription offer) is the only required field.
+Optional: `successUrl`, `cancelUrl`, `customerEmail` (+ `lockEmail: true` to
+stop the buyer changing it), `discountCode`, and `clientReferenceId` /
+`metadata`, which come back on the order and subscription webhook events.
+
+### Refund Policies
+
+`refunds` manages refund **policies**: the refund terms shown on your products'
+checkout and product pages. (Refunding a payment is done from the dashboard.)
 
 ```typescript
-// List all refunds
-const refunds = await pocketsflow.refunds.list();
-
-// Get a refund
-const refund = await pocketsflow.refunds.get('refund_id');
-
-// Create a refund
-const refund = await pocketsflow.refunds.create({
-  orderId: 'order_id',
-  amount: 29.99, // optional, defaults to full refund
-  reason: 'Customer requested refund',
+const policy = await pocketsflow.refunds.create({
+  name: '14-day guarantee',
+  policy: 'Full refund within 14 days, no questions asked.',
+  period: 14,
+  periodType: 'days', // or 'weeks'
 });
+
+const policies = await pocketsflow.refunds.list(); // each has `appliedTo`
+const one = await pocketsflow.refunds.get(policy._id);
+await pocketsflow.refunds.update(policy._id, { period: 30 });
+await pocketsflow.refunds.delete(policy._id);
+```
+
+### Images
+
+Upload an image and use its hosted URL as a product `thumbnail`, in `images`,
+or on your creator page. PNG, JPEG, WebP, GIF and AVIF are accepted. Needs
+global `FormData` / `Blob` (Node 18+).
+
+```typescript
+import { readFile } from 'node:fs/promises';
+
+const { imageUrl } = await pocketsflow.images.upload(await readFile('./cover.png'), {
+  filename: 'cover.png',
+  contentType: 'image/png',
+});
+// A Blob or File works too: pocketsflow.images.upload(file)
+```
+
+### Creator Page (Link in Bio)
+
+One page per account:
+
+```typescript
+await pocketsflow.creatorPage.checkUsername('jane'); // throws 400 if taken
+const page = await pocketsflow.creatorPage.create({
+  username: 'jane',
+  creatorName: 'Jane Doe',
+  creatorBio: 'I make courses.',
+  socialLinks: [{ name: 'instagram', url: 'https://instagram.com/jane' }],
+  selectedProductIds: ['product_id'],
+});
+
+await pocketsflow.creatorPage.update({ template: 'template2' });
+await pocketsflow.creatorPage.updateUsername('jane_doe');
+const current = await pocketsflow.creatorPage.get();
+await pocketsflow.creatorPage.delete();
+```
+
+### Partners (referral program)
+
+```typescript
+const partner = await pocketsflow.partners.create(); // needs a connected payout account
+partner.referralCode;
+
+const me = await pocketsflow.partners.get();
+const stats = await pocketsflow.partners.stats(); // signups, sales, revenue, commission
+
+// Paginated with page / limit (maximum 100)
+const { data: referrals, pagination } = await pocketsflow.partners.listReferrals({ page: 1, limit: 50 });
+const { data: sales } = await pocketsflow.partners.listReferralSales();
+
+// Attribute your own (new) account to a partner's code
+await pocketsflow.partners.registerReferral('REFCODE');
 ```
 
 ## Error Handling
@@ -550,7 +653,6 @@ import {
 const params: CreateProductParams = {
   name: 'My Product',
   price: 29.99,
-  currency: 'USD',
 };
 
 const product: Product = await pocketsflow.products.create(params);

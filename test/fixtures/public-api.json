@@ -1,0 +1,418 @@
+{
+  "//": "Snapshot of the public API contract (apps/backend/src/publicApiSpec.ts, served at https://api.pocketsflow.com/docs.json). Refresh it when the API changes; test/api-coverage.test.mjs fails until every operation has an SDK method.",
+  "apiVersion": "1.0.0",
+  "operations": [
+    {
+      "method": "GET",
+      "path": "/products",
+      "operationId": "listProducts"
+    },
+    {
+      "method": "POST",
+      "path": "/products",
+      "operationId": "createProduct"
+    },
+    {
+      "method": "GET",
+      "path": "/products/{id}",
+      "operationId": "getProduct"
+    },
+    {
+      "method": "DELETE",
+      "path": "/products/{id}",
+      "operationId": "deleteProduct"
+    },
+    {
+      "method": "POST",
+      "path": "/products/update/{id}",
+      "operationId": "updateProduct"
+    },
+    {
+      "method": "POST",
+      "path": "/products/copy/{id}",
+      "operationId": "copyProduct"
+    },
+    {
+      "method": "GET",
+      "path": "/customers",
+      "operationId": "listCustomers"
+    },
+    {
+      "method": "GET",
+      "path": "/customers/{id}",
+      "operationId": "getCustomer"
+    },
+    {
+      "method": "GET",
+      "path": "/orders",
+      "operationId": "listOrders"
+    },
+    {
+      "method": "GET",
+      "path": "/orders/{id}",
+      "operationId": "getOrder"
+    },
+    {
+      "method": "GET",
+      "path": "/orders/subscriptions/{id}",
+      "operationId": "getSubscriberOrderHistory"
+    },
+    {
+      "method": "GET",
+      "path": "/payments",
+      "operationId": "listPayments"
+    },
+    {
+      "method": "GET",
+      "path": "/payments/{id}",
+      "operationId": "getPayment"
+    },
+    {
+      "method": "GET",
+      "path": "/reviews",
+      "operationId": "listReviews"
+    },
+    {
+      "method": "GET",
+      "path": "/discounts",
+      "operationId": "listDiscounts"
+    },
+    {
+      "method": "POST",
+      "path": "/discounts",
+      "operationId": "createDiscount"
+    },
+    {
+      "method": "GET",
+      "path": "/discounts/{id}",
+      "operationId": "getDiscount"
+    },
+    {
+      "method": "POST",
+      "path": "/discounts/{id}",
+      "operationId": "updateDiscount"
+    },
+    {
+      "method": "DELETE",
+      "path": "/discounts/{id}",
+      "operationId": "deleteDiscount"
+    },
+    {
+      "method": "GET",
+      "path": "/discounts/apply/{discountCode}/{productId}",
+      "operationId": "applyDiscountCode"
+    },
+    {
+      "method": "GET",
+      "path": "/discounts/check-product/{productId}",
+      "operationId": "checkProductDiscounts"
+    },
+    {
+      "method": "GET",
+      "path": "/upsells",
+      "operationId": "listUpsells"
+    },
+    {
+      "method": "POST",
+      "path": "/upsells",
+      "operationId": "createUpsell"
+    },
+    {
+      "method": "GET",
+      "path": "/upsells/{id}",
+      "operationId": "getUpsell"
+    },
+    {
+      "method": "POST",
+      "path": "/upsells/{id}",
+      "operationId": "updateUpsell"
+    },
+    {
+      "method": "DELETE",
+      "path": "/upsells/{id}",
+      "operationId": "deleteUpsell"
+    },
+    {
+      "method": "GET",
+      "path": "/subscriptions",
+      "operationId": "listSubscriptionOffers"
+    },
+    {
+      "method": "POST",
+      "path": "/subscriptions",
+      "operationId": "createSubscriptionOffer"
+    },
+    {
+      "method": "GET",
+      "path": "/subscriptions/subscribers",
+      "operationId": "listSubscribers"
+    },
+    {
+      "method": "GET",
+      "path": "/subscriptions/subscribers/{id}",
+      "operationId": "getSubscriber"
+    },
+    {
+      "method": "GET",
+      "path": "/subscriptions/{id}",
+      "operationId": "getSubscriptionOffer"
+    },
+    {
+      "method": "DELETE",
+      "path": "/subscriptions/{id}",
+      "operationId": "deleteSubscriptionOffer"
+    },
+    {
+      "method": "POST",
+      "path": "/subscriptions/{id}/cancel",
+      "operationId": "cancelSubscription"
+    },
+    {
+      "method": "POST",
+      "path": "/subscriptions/{id}/pause",
+      "operationId": "pauseSubscription"
+    },
+    {
+      "method": "POST",
+      "path": "/subscriptions/{id}/resume",
+      "operationId": "resumeSubscription"
+    },
+    {
+      "method": "GET",
+      "path": "/webhooks",
+      "operationId": "listWebhooks"
+    },
+    {
+      "method": "POST",
+      "path": "/webhooks",
+      "operationId": "createWebhook"
+    },
+    {
+      "method": "GET",
+      "path": "/webhooks/{id}",
+      "operationId": "getWebhook"
+    },
+    {
+      "method": "PATCH",
+      "path": "/webhooks/{id}",
+      "operationId": "updateWebhook"
+    },
+    {
+      "method": "DELETE",
+      "path": "/webhooks/{id}",
+      "operationId": "deleteWebhook"
+    },
+    {
+      "method": "POST",
+      "path": "/webhooks/{id}/rotate-secret",
+      "operationId": "rotateWebhookSecret"
+    },
+    {
+      "method": "POST",
+      "path": "/webhooks/{id}/test",
+      "operationId": "testWebhook"
+    },
+    {
+      "method": "GET",
+      "path": "/delivered-webhooks",
+      "operationId": "listWebhookDeliveries"
+    },
+    {
+      "method": "GET",
+      "path": "/delivered-webhooks/{id}",
+      "operationId": "getWebhookDelivery"
+    },
+    {
+      "method": "POST",
+      "path": "/delivered-webhooks/{id}/redeliver",
+      "operationId": "redeliverWebhook"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "operationId": "getCurrentUser"
+    },
+    {
+      "method": "GET",
+      "path": "/creator-pages",
+      "operationId": "getCreatorPage"
+    },
+    {
+      "method": "POST",
+      "path": "/creator-pages",
+      "operationId": "createCreatorPage"
+    },
+    {
+      "method": "PUT",
+      "path": "/creator-pages",
+      "operationId": "updateCreatorPage"
+    },
+    {
+      "method": "DELETE",
+      "path": "/creator-pages",
+      "operationId": "deleteCreatorPage"
+    },
+    {
+      "method": "PATCH",
+      "path": "/creator-pages/username",
+      "operationId": "updateCreatorPageUsername"
+    },
+    {
+      "method": "GET",
+      "path": "/creator-pages/check-username/{username}",
+      "operationId": "checkCreatorPageUsername"
+    },
+    {
+      "method": "GET",
+      "path": "/newsletters/posts",
+      "operationId": "listPosts"
+    },
+    {
+      "method": "POST",
+      "path": "/newsletters/posts",
+      "operationId": "createPost"
+    },
+    {
+      "method": "GET",
+      "path": "/newsletters/posts/{id}",
+      "operationId": "getPost"
+    },
+    {
+      "method": "POST",
+      "path": "/newsletters/posts/{id}",
+      "operationId": "updatePost"
+    },
+    {
+      "method": "DELETE",
+      "path": "/newsletters/posts/{id}",
+      "operationId": "deletePost"
+    },
+    {
+      "method": "POST",
+      "path": "/newsletters/posts/{id}/send",
+      "operationId": "sendPost"
+    },
+    {
+      "method": "POST",
+      "path": "/newsletters/send",
+      "operationId": "sendEmail"
+    },
+    {
+      "method": "GET",
+      "path": "/newsletters/audiences",
+      "operationId": "listProductAudiences"
+    },
+    {
+      "method": "POST",
+      "path": "/newsletters/audiences/sync",
+      "operationId": "syncProductAudience"
+    },
+    {
+      "method": "GET",
+      "path": "/newsletters/subscribers",
+      "operationId": "listEmailSubscribers"
+    },
+    {
+      "method": "GET",
+      "path": "/newsletters/subscribers/{id}",
+      "operationId": "getEmailSubscriber"
+    },
+    {
+      "method": "DELETE",
+      "path": "/newsletters/subscribers/{id}",
+      "operationId": "deleteEmailSubscriber"
+    },
+    {
+      "method": "POST",
+      "path": "/images",
+      "operationId": "uploadImage"
+    },
+    {
+      "method": "POST",
+      "path": "/refunds",
+      "operationId": "createRefundPolicy"
+    },
+    {
+      "method": "GET",
+      "path": "/refunds",
+      "operationId": "listRefundPolicies"
+    },
+    {
+      "method": "GET",
+      "path": "/refunds/{id}",
+      "operationId": "getRefundPolicy"
+    },
+    {
+      "method": "POST",
+      "path": "/refunds/{id}",
+      "operationId": "updateRefundPolicy"
+    },
+    {
+      "method": "DELETE",
+      "path": "/refunds/{id}",
+      "operationId": "deleteRefundPolicy"
+    },
+    {
+      "method": "POST",
+      "path": "/checkout/sessions",
+      "operationId": "createCheckoutSession"
+    },
+    {
+      "method": "POST",
+      "path": "/partners",
+      "operationId": "createPartner"
+    },
+    {
+      "method": "GET",
+      "path": "/partners",
+      "operationId": "getPartner"
+    },
+    {
+      "method": "POST",
+      "path": "/partners/register-referral",
+      "operationId": "registerReferral"
+    },
+    {
+      "method": "GET",
+      "path": "/partners/referrals",
+      "operationId": "listReferrals"
+    },
+    {
+      "method": "GET",
+      "path": "/partners/referrals/sales",
+      "operationId": "listReferralSales"
+    },
+    {
+      "method": "GET",
+      "path": "/partners/stats",
+      "operationId": "getPartnerStats"
+    }
+  ],
+  "webhookEvents": [
+    "order.completed",
+    "order.refunded",
+    "product.created",
+    "product.updated",
+    "product.deleted",
+    "review.created",
+    "customer.created",
+    "customer.subscription.created",
+    "customer.subscription.updated",
+    "customer.subscription.deleted",
+    "customer.subscription.pause",
+    "customer.subscription.resumed",
+    "customer.subscription.trial_will_end",
+    "invoice.created",
+    "invoice.upcoming",
+    "invoice.payment_succeeded",
+    "invoice.payment_failed",
+    "payment_intent.succeeded",
+    "payment_intent.payment_failed",
+    "credit.granted",
+    "credit.balance_changed",
+    "credit.auto_refill.succeeded",
+    "credit.auto_refill.failed",
+    "credit.consent.enabled",
+    "credit.consent.disabled"
+  ]
+}
