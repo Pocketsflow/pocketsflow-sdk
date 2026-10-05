@@ -981,7 +981,7 @@ export interface WebhookEventPayload {
 // User / Account
 // ----------------------------------------------------------------------------
 
-export interface User {
+export interface User extends TrackingPixels {
   _id: string;
   userId: string;
   email: string;
@@ -996,7 +996,44 @@ export interface User {
   createdFirstProduct?: boolean;
 }
 
-export interface UpdateUserParams {
+/** The ad-platform pixel IDs a seller has saved (Settings → Tracking pixels). */
+export interface TrackingPixels {
+  /** Meta (Facebook) Pixel ID: 15 or 16 digits. */
+  facebookPixel?: string;
+  /** Google tag ID: G-XXXXXXX (Google Analytics 4), AW-XXXXXXXXX (Google Ads) or GT-XXXXXXX. */
+  googlePixel?: string;
+  /** Google Tag Manager container ID: GTM-XXXXXXX. */
+  googleTagManager?: string;
+  /** TikTok Pixel ID: 16 to 24 uppercase letters and numbers (usually 20). */
+  tiktokPixel?: string;
+  /** Pinterest Tag ID: 10 to 16 digits (usually 13). */
+  pinterestTag?: string;
+  /** Snap Pixel ID: a UUID. */
+  snapchatPixel?: string;
+  /** X (Twitter) Pixel ID: 4 to 8 lowercase letters and numbers, e.g. o1abc. */
+  twitterPixel?: string;
+  /** X (Twitter) event ID for the Purchase conversion: tw-<pixel>-<event>. */
+  twitterPurchaseEventId?: string;
+  /** LinkedIn Insight Tag partner ID: 4 to 10 digits. */
+  linkedinPartnerId?: string;
+  /** LinkedIn conversion ID for the Purchase conversion: 4 to 12 digits. */
+  linkedinConversionId?: string;
+  /** Reddit Pixel ID: a2_ or t2_ followed by letters and numbers. */
+  redditPixel?: string;
+  /** Microsoft Advertising UET tag ID: 5 to 12 digits. */
+  microsoftUetTag?: string;
+}
+
+/**
+ * Tracking pixel IDs on update. The API normalises each ID to its
+ * platform's format and rejects a malformed one with 400; an empty string
+ * or null clears it.
+ */
+export type TrackingPixelsUpdate = {
+  [K in keyof TrackingPixels]?: string | null;
+};
+
+export interface UpdateUserParams extends TrackingPixelsUpdate {
   firstName?: string;
   lastName?: string;
   currency?: string;

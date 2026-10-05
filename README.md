@@ -466,7 +466,23 @@ const updated = await pocketsflow.users.update({
   lastName: 'Doe',
   currency: 'USD',
 });
+
+// Tracking pixels: they fire on your product page, checkout and order
+// confirmation. A malformed ID is rejected with 400; '' or null clears one.
+await pocketsflow.users.update({
+  facebookPixel: '123456789012345',
+  googlePixel: 'G-ABC123XYZ9',
+  googleTagManager: 'GTM-ABC1234',
+  tiktokPixel: 'C4A1B2C3D4E5F6G7H8I9',
+  redditPixel: 'a2_abc123def456',
+  pinterestTag: null, // clear
+});
 ```
+
+Supported pixel fields: `facebookPixel`, `googlePixel`, `googleTagManager`,
+`tiktokPixel`, `pinterestTag`, `snapchatPixel`, `twitterPixel`,
+`twitterPurchaseEventId`, `linkedinPartnerId`, `linkedinConversionId`,
+`redditPixel`, `microsoftUetTag`.
 
 ### Checkout Sessions
 
