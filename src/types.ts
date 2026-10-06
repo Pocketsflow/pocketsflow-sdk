@@ -60,19 +60,60 @@ export interface Product {
   _id: string;
   userId: string;
   name: string;
+  subtitle?: string;
   description?: string;
   price: number;
+  /** Struck-through "was" price shown next to `price`. */
+  compareAtPrice?: number;
+  /** @deprecated Not returned by the API; products are priced in your account currency. */
   currency: string;
+  /** @deprecated Not returned by the API. Subscriptions are `SubscriptionOffer`s. */
   type: 'one-time' | 'subscription';
+  /** @deprecated Not returned by the API. */
   billingInterval?: 'month' | 'year';
+  /** @deprecated Not returned by the API; read `published`. */
   active: boolean;
   published: boolean;
+  /** Pay-what-you-want pricing. */
+  payWant?: boolean;
+  minPrice?: number;
+  maxPrice?: number;
+  /** Whether the product has its own product page (`unknown` on older products). */
+  hasProductPage?: 'yes' | 'no' | 'unknown';
   slug?: string;
+  thumbnail?: string;
   images?: string[];
+  /** What the buyer gets: a file, a URL, a course or credits. */
+  productType?: ProductType;
+  /** Delivered file (for `productType: 'file'`). */
+  file?: string;
+  /** Delivered URL (for `productType: 'url'`). */
+  url?: string;
+  /** @deprecated Not returned by the API; read `file`. */
   files?: ProductFile[];
+  refundPolicy?: string;
+  showSales?: boolean;
+  showReviews?: boolean;
+  hasFirstName?: boolean;
+  hasLastName?: boolean;
+  ctaText?: string;
+  checkoutText?: string;
+  thankYouText?: string;
+  /** Credits products only: automatic top-off settings. */
+  creditAutoRefill?: CreditAutoRefill;
   testMode: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+/** What a product or subscription offer delivers. */
+export type ProductType = 'file' | 'url' | 'course' | 'credits';
+
+/** Credits products: automatic top-off of a buyer's balance. */
+export interface CreditAutoRefill {
+  enabled?: boolean;
+  /** Amount to top off, in cents (0 – 100,000,000). */
+  topOffCents?: number;
 }
 
 export interface ProductFile {
@@ -96,52 +137,71 @@ export interface CopyCatalogItemParams {
   testMode?: boolean;
 }
 
-export interface CreateProductParams {
-  /** Product name (required) */
-  name: string;
+/** Writable product fields, shared by `products.create()` and `products.update()`. */
+export interface ProductFields {
+  /** Product price (defaults to 0) */
+  price?: number;
+  /** Struck-through "was" price shown next to `price` */
+  compareAtPrice?: number;
   /** Product description */
   description?: string;
-  /** Product price (required, defaults to 0) */
-  price: number;
   /** Product subtitle */
   subtitle?: string;
-  /** Whether customer can pay what they want */
+  /** Whether product is published (defaults to true) */
+  published?: boolean;
+  /** Product slug for URL */
+  slug?: string;
+  /** Thumbnail image URL (upload one with `images.upload()`) */
+  thumbnail?: string;
+  /** Product image URLs */
+  images?: string[];
+  /** Whether the product has its own product page */
+  hasProductPage?: 'yes' | 'no';
+  /** Whether customer can pay what they want (defaults to false) */
   payWant?: boolean;
   /** Minimum price for pay-what-you-want */
   minPrice?: number;
   /** Maximum price for pay-what-you-want */
   maxPrice?: number;
-  /** Whether product is published */
-  published?: boolean;
-  /** Product slug for URL */
-  slug?: string;
-  /** Thumbnail image URL */
-  thumbnail?: string;
-  /** Product images array */
-  images?: string[];
-  /** Call to action text */
-  ctaText?: string;
-  /** Show sales count */
-  showSales?: boolean;
-  /** Show reviews */
-  showReviews?: boolean;
   /** Refund policy text */
   refundPolicy?: string;
-  /** Callback URL for redirects */
-  callbackUrl?: string;
-  /** Collect first name */
+  /** Show sales count (defaults to true) */
+  showSales?: boolean;
+  /** Show reviews (defaults to true) */
+  showReviews?: boolean;
+  /** Collect first name (defaults to false) */
   hasFirstName?: boolean;
-  /** Collect last name */
+  /** Collect last name (defaults to false) */
   hasLastName?: boolean;
+  /** What the buyer gets: a file, a URL, a course or credits */
+  productType?: ProductType;
+  /** Delivered file (for `productType: 'file'`) */
+  file?: string;
+  /** Delivered URL (for `productType: 'url'`) */
+  url?: string;
+  /** Call to action text */
+  ctaText?: string;
+  /** Checkout page copy */
+  checkoutText?: string;
+  /** Thank-you page copy */
+  thankYouText?: string;
+  /** Credits products only: automatic top-off settings */
+  creditAutoRefill?: CreditAutoRefill;
 }
 
-export interface UpdateProductParams {
+export interface CreateProductParams extends ProductFields {
+  /** Product name (required) */
+  name: string;
+  /** @deprecated Not part of the documented API. */
+  callbackUrl?: string;
+}
+
+export interface UpdateProductParams extends ProductFields {
   name?: string;
-  description?: string;
-  price?: number;
+  /** @deprecated Ignored by the API; products are priced in your account currency. */
   currency?: string;
+  /** @deprecated Ignored by the API; use `published`. */
   active?: boolean;
-  published?: boolean;
 }
 
 // ----------------------------------------------------------------------------
@@ -260,6 +320,31 @@ export interface ListOrdersParams extends PaginationParams, DateRangeParams {
   productId?: string;
 }
 
+/**
+ * `GET /orders/{id}`: one sale with its fee breakdown, the product (or
+ * subscription offer), customer, review and upsells.
+ */
+export interface OrderDetail {
+  /** The sale, with its fee breakdown. */
+  sale: Payment & OrderFees;
+  /** The purchased product or subscription offer (null if deleted). */
+  product: Product | SubscriptionOffer | null;
+  /** The subscription offer, for subscription payments. */
+  subscription: SubscriptionOffer | null;
+  customer: Customer | null;
+  /** The buyer's review of this purchase, if any. */
+  review: Review | null;
+  /** Legacy single upsell product, if one was bought. */
+  upsellProduct: Product | null;
+  /** The upsell that was accepted, if any. */
+  upsell: Upsell | null;
+  /** Amount paid for the legacy upsell. Decimal, not cents. */
+  upsellAmount?: number;
+  upsellMetadata?: Record<string, unknown> | null;
+  /** Upsells bought with this order. */
+  purchasedUpsells?: PurchasedUpsell[];
+}
+
 export interface OrdersResponse {
   orders: Order[];
   pagination: Pagination;
@@ -374,11 +459,18 @@ export interface Customer {
   _id: string;
   userId: string;
   buyerEmail: string;
+  firstName?: string;
+  lastName?: string;
   country?: string;
+  /** The product or subscription of the buyer's first purchase. */
+  productId?: string;
+  /** Number of orders. Returned by `customers.list()`. */
   numberOfOrders: number;
+  /** @deprecated Not returned by the API; `customers.get()` returns `stats`. */
   totalSpent: number;
   testMode: boolean;
   createdAt: string;
+  updatedAt?: string;
   /**
    * Every product and subscription this buyer has bought (any purchase, not
    * just the first). Returned by `customers.list()`.
@@ -393,12 +485,30 @@ export interface CustomerProduct {
 }
 
 export interface ListCustomersParams {
-  email?: string;
+  /** Only buyers of this product or subscription offer. */
   productId?: string;
+  /** Defaults to `createdAt`. */
   sortBy?: 'email' | 'country' | 'numberOfOrders' | 'createdAt';
+  /** Defaults to `desc`. */
   sortOrder?: 'asc' | 'desc';
+  /** @deprecated Ignored by the API; filter the returned list instead. */
+  email?: string;
+  /** @deprecated Ignored by the API: the full list is returned. */
   limit?: number;
+  /** @deprecated Ignored by the API: the full list is returned. */
   offset?: number;
+}
+
+/** `GET /customers/{id}`: a customer with their stats and history. */
+export interface CustomerDetail {
+  customer: Customer;
+  /** Headline numbers: `sales`, `orders`, `subscriptions` and `since`. */
+  stats: Array<{ id: 'sales' | 'orders' | 'subscriptions' | 'since' | string; value: unknown }>;
+  /** The buyer's one-time payments. */
+  orders: Payment[];
+  /** The buyer's subscription memberships. */
+  subscriptions: Subscriber[];
+  reviews: Review[];
 }
 
 // ----------------------------------------------------------------------------
@@ -452,6 +562,106 @@ export interface AudienceSyncResult {
   unsubscribed: number;
 }
 
+export type PostStatus = 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed' | 'automation';
+
+/** A newsletter post (an email campaign) sent to your email list. */
+export interface Post {
+  _id: string;
+  name: string;
+  subject?: string;
+  /** Inbox preview text. */
+  preview?: string;
+  fromName?: string;
+  fromEmail?: string;
+  replyToEmail?: string;
+  contentHtml?: string;
+  contentJson?: Record<string, unknown> | null;
+  status: PostStatus;
+  scheduledAt?: string;
+  scheduledTimezone?: string;
+  sentAt?: string;
+  sentCount?: number;
+  failedCount?: number;
+  /** Why a send failed, if it did. */
+  failureReason?: 'SEND_ALLOWANCE_EXCEEDED' | 'SELLER_BLOCKED';
+  /** Send to every active subscriber. */
+  sendToAll?: boolean;
+  subscriberIds?: string[];
+  /** Product audiences to send to. */
+  productIds?: string[];
+  tags?: string[];
+  source?: 'dashboard' | 'api';
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ListPostsParams {
+  status?: PostStatus;
+}
+
+/** Writable post fields, shared by `newsletters.posts.create()` and `.update()`. */
+export interface PostFields {
+  subject?: string;
+  /** Inbox preview text. */
+  preview?: string;
+  contentHtml?: string;
+  contentJson?: Record<string, unknown>;
+  fromName?: string;
+  replyToEmail?: string;
+  /** Defaults to `draft`. `scheduled` needs `scheduledAt`. */
+  status?: 'draft' | 'scheduled' | 'automation';
+  /** ISO 8601 date-time. */
+  scheduledAt?: string;
+  /** IANA time zone of `scheduledAt` (defaults to `UTC`). */
+  scheduledTimezone?: string;
+  /** Send to every active subscriber (defaults to false). */
+  sendToAll?: boolean;
+  subscriberIds?: string[];
+  /** Product audiences to send to. */
+  productIds?: string[];
+  tags?: string[];
+}
+
+export interface CreatePostParams extends PostFields {
+  /** Internal post name (required). */
+  name: string;
+}
+
+export interface UpdatePostParams extends PostFields {
+  name?: string;
+}
+
+/** Response of `newsletters.posts.send()`. */
+export interface SendPostResult {
+  message: 'Post queued for sending' | 'Post is already sending' | string;
+  post: Post;
+}
+
+/** Params of `newsletters.send()`: a one-off transactional email. */
+export interface SendEmailParams {
+  /** One address, or 1 – 100 addresses. */
+  to: string | string[];
+  subject: string;
+  html?: string;
+  text?: string;
+  fromName?: string;
+  replyTo?: string;
+  /** Inbox preview text. */
+  preview?: string;
+}
+
+/** Response of `newsletters.send()`. */
+export interface SendEmailResult {
+  /** Message id, or null when every recipient was skipped. */
+  id: string | null;
+  /** Recipients the email was sent to. */
+  accepted: string[];
+  /** Recipients skipped (for example, unsubscribed). */
+  skipped: string[];
+  skippedCount: number;
+  status: 'sent' | 'skipped';
+}
+
 // ----------------------------------------------------------------------------
 // Reviews
 // ----------------------------------------------------------------------------
@@ -459,15 +669,20 @@ export interface AudienceSyncResult {
 export interface Review {
   _id: string;
   productId: string;
+  /** The sale the review was left on. */
+  saleId?: string;
+  /** @deprecated Not returned by the API. */
   userId: string;
   buyerEmail: string;
   rating: number;
   review?: string;
   testMode: boolean;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface ListReviewsParams {
+  /** @deprecated Ignored by the API; filter the returned list by `productId`. */
   productId?: string;
 }
 
@@ -484,10 +699,13 @@ export interface Discount {
   valueType: 'percentage' | 'fixed';
   active: boolean;
   mainProductIds: string[];
-  expiration?: string;
+  /** ISO 8601 date-time, or null for no expiry. */
+  expiration?: string | null;
+  /** Times redeemed. */
   used?: number;
   testMode: boolean;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface CreateDiscountParams {
@@ -503,8 +721,8 @@ export interface CreateDiscountParams {
   active?: boolean;
   /** Product IDs this discount applies to (required) */
   mainProductIds: string[];
-  /** Expiration date (ISO 8601 string) */
-  expiration?: string;
+  /** Expiration date-time (ISO 8601), or null for no expiry */
+  expiration?: string | null;
 }
 
 export interface UpdateDiscountParams {
@@ -514,35 +732,64 @@ export interface UpdateDiscountParams {
   valueType?: 'percentage' | 'fixed';
   active?: boolean;
   mainProductIds?: string[];
-  expiration?: string;
+  /** ISO 8601 date-time, or null to remove the expiry */
+  expiration?: string | null;
 }
 
 // ----------------------------------------------------------------------------
 // Upsells
 // ----------------------------------------------------------------------------
 
-export interface Upsell {
+/** Checkout styling of an upsell (colors are CSS colors, fonts are font names). */
+export interface UpsellStyle {
+  upsellBackground?: string;
+  upsellBorder?: string;
+  upsellHeadline?: string;
+  upsellDescriptionColor?: string;
+  upsellCheckboxColor?: string;
+  upsellCheckboxBackground?: string;
+  upsellHeadingFont?: string;
+  upsellBodyFont?: string;
+}
+
+export interface Upsell extends UpsellStyle {
   _id: string;
+  /** @deprecated Not returned by the API. */
   userId: string;
   name: string;
   mainProductIds: string[];
   upsellProductId: string;
   upsellPrice: number;
+  /** Struck-through "was" price shown next to `upsellPrice`. */
+  compareAtPrice?: number;
   upsellDescription?: string;
   primaryButtonText?: string;
   secondaryButtonText?: string;
   offer?: string;
   active: boolean;
+  /** Whether the upsell is offered on the checkout page. */
+  showAtCheckout?: boolean;
   testMode: boolean;
   createdAt: string;
+  updatedAt?: string;
+}
+
+/** A sale that included an upsell (`upsells.list()`). */
+export interface SaleWithUpsell {
+  _id: string;
+  saleId?: string;
+  upsellId?: string;
+  /** Decimal amount, not cents. */
+  upsellAmount?: number;
+  createdAt?: string;
 }
 
 export interface UpsellsResponse {
   upsells: Upsell[];
-  salesWithUpsells: any[];
+  salesWithUpsells: SaleWithUpsell[];
 }
 
-export interface CreateUpsellParams {
+export interface CreateUpsellParams extends UpsellStyle {
   /** Upsell name */
   name?: string;
   /** Offer text/headline */
@@ -553,6 +800,8 @@ export interface CreateUpsellParams {
   upsellProductId: string;
   /** Upsell price (required) */
   upsellPrice: number;
+  /** Struck-through "was" price */
+  compareAtPrice?: number;
   /** Upsell description shown to customer */
   upsellDescription?: string;
   /** Primary button text (e.g., "Yes, add this!") */
@@ -563,11 +812,12 @@ export interface CreateUpsellParams {
   active?: boolean;
 }
 
-export interface UpdateUpsellParams {
+export interface UpdateUpsellParams extends UpsellStyle {
   name?: string;
   mainProductIds?: string[];
   upsellProductId?: string;
   upsellPrice?: number;
+  compareAtPrice?: number;
   upsellDescription?: string;
   primaryButtonText?: string;
   secondaryButtonText?: string;
@@ -579,6 +829,7 @@ export interface UpdateUpsellParams {
 // Subscriptions
 // ----------------------------------------------------------------------------
 
+/** @deprecated `subscriptions.get()` now resolves to `SubscriberOrderHistory`. */
 export interface Subscription {
   _id: string;
   userId: string;
@@ -696,6 +947,21 @@ export interface SubscriberDetail {
   whopMembership?: Record<string, unknown> | null;
 }
 
+/**
+ * `GET /orders/subscriptions/{id}` (`subscriptions.get()`): a subscriber with
+ * its offer, customer record and payment history. Same data as
+ * `subscribers.get()`, with the subscriber under `subscriptionCustomer`.
+ */
+export interface SubscriberOrderHistory {
+  subscriptionCustomer: Subscriber;
+  subscription: SubscriptionOffer | null;
+  customer: Customer | null;
+  /** Live membership status. */
+  status: SubscriberStatus | string;
+  /** Every subscription payment: the initial charge plus every renewal. */
+  payments: Payment[];
+}
+
 /** Result of `subscribers.cancel()`, `.pause()` and `.resume()`. */
 export interface MembershipActionResult {
   success: boolean;
@@ -723,9 +989,20 @@ export interface SubscriptionOffer {
   slug?: string;
   thumbnail?: string;
   images?: string[];
+  /** What the subscriber gets: a file, a URL, a course or credits. */
+  productType?: ProductType;
+  /** Credits offers only: automatic top-off settings. */
+  creditAutoRefill?: CreditAutoRefill;
   testMode: boolean;
   createdAt: string;
   updatedAt?: string;
+}
+
+/** Response of `subscriptionOffers.delete()`. */
+export interface DeletedSubscriptionOffer {
+  message: string;
+  /** Id of the deleted offer. */
+  id?: string;
 }
 
 export interface CreateSubscriptionOfferParams {
@@ -757,6 +1034,10 @@ export interface CreateSubscriptionOfferParams {
   file?: string | Record<string, unknown>;
   /** External offer URL */
   url?: string;
+  /** What the subscriber gets: a file, a URL, a course or credits */
+  productType?: ProductType;
+  /** Credits offers only: automatic top-off settings */
+  creditAutoRefill?: CreditAutoRefill;
   /** Checkout copy and seller-facing configuration */
   checkoutText?: string;
   refundPolicy?: string;
@@ -828,33 +1109,37 @@ export interface CreateWebhookParams {
   active?: boolean;
 }
 
+/** Every webhook event type you can subscribe to (mirrors the public API). */
+export const WEBHOOK_EVENTS = [
+  'order.completed',
+  'order.refunded',
+  'product.created',
+  'product.updated',
+  'product.deleted',
+  'review.created',
+  'customer.created',
+  'customer.subscription.created',
+  'customer.subscription.updated',
+  'customer.subscription.deleted',
+  'customer.subscription.pause',
+  'customer.subscription.resumed',
+  'customer.subscription.trial_will_end',
+  'invoice.created',
+  'invoice.upcoming',
+  'invoice.payment_succeeded',
+  'invoice.payment_failed',
+  'payment_intent.succeeded',
+  'payment_intent.payment_failed',
+  'credit.granted',
+  'credit.balance_changed',
+  'credit.auto_refill.succeeded',
+  'credit.auto_refill.failed',
+  'credit.consent.enabled',
+  'credit.consent.disabled',
+] as const;
+
 /** Webhook event types you can subscribe to. */
-export type WebhookEvent =
-  | 'order.completed'
-  | 'order.refunded'
-  | 'product.created'
-  | 'product.updated'
-  | 'product.deleted'
-  | 'review.created'
-  | 'customer.created'
-  | 'customer.subscription.created'
-  | 'customer.subscription.updated'
-  | 'customer.subscription.deleted'
-  | 'customer.subscription.pause'
-  | 'customer.subscription.resumed'
-  | 'customer.subscription.trial_will_end'
-  | 'invoice.created'
-  | 'invoice.upcoming'
-  | 'invoice.payment_succeeded'
-  | 'invoice.payment_failed'
-  | 'payment_intent.succeeded'
-  | 'payment_intent.payment_failed'
-  | 'credit.granted'
-  | 'credit.balance_changed'
-  | 'credit.auto_refill.succeeded'
-  | 'credit.auto_refill.failed'
-  | 'credit.consent.enabled'
-  | 'credit.consent.disabled';
+export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number];
 
 export interface UpdateWebhookParams {
   /** New https:// endpoint URL */
@@ -988,12 +1273,25 @@ export interface User extends TrackingPixels {
   name?: string;
   firstName?: string;
   lastName?: string;
+  /** Public creator / store name. */
+  creatorName?: string;
   subdomain?: string;
   currency: string;
   country?: string;
+  /** `true` for a `pk_test_` key. */
   testMode: boolean;
+  /** Whether the account can currently take payments. */
+  canSell?: boolean;
   hasSales: boolean;
   createdFirstProduct?: boolean;
+  /** Text on buyers' card statements. */
+  statementDescriptor?: string;
+  /** Profile picture URL. */
+  picture?: string;
+  /** Pocketsflow plan. */
+  currentPlan?: 'free' | 'tier1' | 'tier2' | 'tier3' | 'tier4';
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /** The ad-platform pixel IDs a seller has saved (Settings → Tracking pixels). */
@@ -1047,11 +1345,24 @@ export interface UpdateUserParams extends TrackingPixelsUpdate {
 // ----------------------------------------------------------------------------
 
 export interface CreateCheckoutParams {
+  /** A product or subscription offer id (required). */
   productId: string;
-  successUrl: string;
-  cancelUrl: string;
+  /** Where the buyer lands after paying. */
+  successUrl?: string;
+  /** Where the buyer lands if they leave the checkout. */
+  cancelUrl?: string;
+  /** Prefill the buyer's email. */
   customerEmail?: string;
+  /** With `customerEmail`: stop the buyer from changing it. */
+  lockEmail?: boolean;
+  /**
+   * Your own reference for this checkout (at most 256 characters), echoed as
+   * `clientReferenceId` on the order and subscription webhook events.
+   */
+  clientReferenceId?: string;
+  /** Pre-apply a discount code. */
   discountCode?: string;
+  /** Echoed as `metadata` on the order and subscription webhook events. */
   metadata?: Record<string, any>;
 }
 
@@ -1064,19 +1375,278 @@ export interface CheckoutSession {
 // Refunds
 // ----------------------------------------------------------------------------
 
-export interface Refund {
+/**
+ * A refund policy: the refund terms shown on your products' checkout and
+ * product pages (`refunds.*`). Refunding a payment is done from the dashboard.
+ */
+export interface RefundPolicy {
   _id: string;
-  orderId: string;
-  amount: number;
-  reason?: string;
-  status: 'pending' | 'completed' | 'failed';
-  createdAt: string;
+  name?: string;
+  /** Policy text. */
+  policy?: string;
+  /** Refund window length, in `periodType` units (0 = no refunds). */
+  period?: number;
+  periodType?: 'days' | 'weeks';
+  /** Number of products using this policy. */
+  appliedTo?: number;
+  testMode?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface CreateRefundParams {
-  orderId: string;
+export interface CreateRefundPolicyParams {
+  name?: string;
+  /** Policy text. */
+  policy?: string;
+  /** Refund window length (defaults to 0). */
+  period?: number;
+  /** Defaults to `days`. */
+  periodType?: 'days' | 'weeks';
+}
+
+export type UpdateRefundPolicyParams = CreateRefundPolicyParams;
+
+/**
+ * @deprecated `refunds.*` manages refund policies; use `RefundPolicy`.
+ * The order-refund fields below were never returned by the API.
+ */
+export interface Refund extends RefundPolicy {
+  /** @deprecated Never returned by the API. */
+  orderId?: string;
+  /** @deprecated Never returned by the API. */
   amount?: number;
+  /** @deprecated Never returned by the API. */
   reason?: string;
+  /** @deprecated Never returned by the API. */
+  status?: 'pending' | 'completed' | 'failed';
+}
+
+/**
+ * @deprecated `refunds.create()` creates a refund policy; use
+ * `CreateRefundPolicyParams`. The order-refund fields are ignored by the API.
+ */
+export interface CreateRefundParams extends CreateRefundPolicyParams {
+  /** @deprecated Ignored by the API. */
+  orderId?: string;
+  /** @deprecated Ignored by the API. */
+  amount?: number;
+  /** @deprecated Ignored by the API. */
+  reason?: string;
+}
+
+// ----------------------------------------------------------------------------
+// Creator page (Link in Bio)
+// ----------------------------------------------------------------------------
+
+/** A link on your creator page. */
+export interface CreatorPageLink {
+  _id?: string;
+  /** Platform or link name, e.g. `instagram`. */
+  name: string;
+  url: string;
+  /** Display label overriding `name`. */
+  customName?: string;
+}
+
+export type CreatorPageTemplate =
+  | 'template1'
+  | 'template2'
+  | 'template3'
+  | 'template4'
+  | 'template5'
+  | 'template6'
+  | 'template7'
+  | 'template8';
+
+/** Your Link in Bio page (one per account). */
+export interface CreatorPage {
+  _id: string;
+  userId: string;
+  creatorName?: string;
+  creatorBio?: string;
+  username: string;
+  profilePicture?: string;
+  coverImage?: string;
+  images?: string[];
+  template?: CreatorPageTemplate | string;
+  theme?: Record<string, unknown>;
+  themeV2?: Record<string, unknown>;
+  /** Google Analytics 4 measurement id (`G-…`). */
+  gaMeasurementId?: string;
+  socialLinks?: CreatorPageLink[];
+  regularLinks?: CreatorPageLink[];
+  /** Products shown on the page. */
+  selectedProductIds?: string[];
+  /** Subscription offers shown on the page. */
+  selectedSubscriptionIds?: string[];
+  catalogVisibilityConfigured?: boolean;
+  subscriberForm?: Record<string, unknown>;
+  bookingEnabled?: boolean;
+  bookingButtonLabel?: string;
+  showFirstName?: boolean;
+  showLastName?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** Writable creator page fields, shared by `creatorPage.create()` and `.update()`. */
+export interface CreatorPageFields {
+  /** At most 1000 characters. */
+  creatorName?: string;
+  /** At most 1000 characters. */
+  creatorBio?: string;
+  /** 3 – 30 letters, numbers, `_` or `-`. */
+  username?: string;
+  /** At most 20. */
+  socialLinks?: CreatorPageLink[];
+  /** At most 20. */
+  regularLinks?: CreatorPageLink[];
+  profilePicture?: string;
+  coverImage?: string;
+  images?: string[];
+  template?: CreatorPageTemplate;
+  theme?: Record<string, unknown>;
+  themeV2?: Record<string, unknown>;
+  /** Google Analytics 4 measurement id (`G-…`), or `''` to clear it. */
+  gaMeasurementId?: string;
+  selectedProductIds?: string[];
+  selectedSubscriptionIds?: string[];
+  subscriberForm?: Record<string, unknown>;
+  bookingEnabled?: boolean;
+  bookingButtonLabel?: string;
+  /** Defaults to true. */
+  showFirstName?: boolean;
+  /** Defaults to true. */
+  showLastName?: boolean;
+}
+
+export interface CreateCreatorPageParams extends CreatorPageFields {
+  /** 3 – 30 letters, numbers, `_` or `-` (required). */
+  username: string;
+}
+
+export type UpdateCreatorPageParams = CreatorPageFields;
+
+/** Response of `creatorPage.updateUsername()`. */
+export interface CreatorPageUsernameUpdate {
+  username: string;
+  message?: string;
+}
+
+// ----------------------------------------------------------------------------
+// Images
+// ----------------------------------------------------------------------------
+
+/** An image to upload: a `Blob`/`File`, a Node `Buffer`, or raw bytes. */
+export type ImageUploadInput = Blob | ArrayBuffer | ArrayBufferView;
+
+export interface UploadImageOptions {
+  /** File name sent with the upload (defaults to `image`). */
+  filename?: string;
+  /**
+   * MIME type of raw bytes. The API sniffs the real type from the bytes:
+   * PNG, JPEG, WebP, GIF and AVIF are accepted (others get 415).
+   */
+  contentType?: string;
+}
+
+/** Response of `images.upload()`. */
+export interface UploadedImage {
+  /** Hosted URL of the image. */
+  imageUrl: string;
+}
+
+// ----------------------------------------------------------------------------
+// Partners (referral program)
+// ----------------------------------------------------------------------------
+
+/** Your partner (referral) profile. */
+export interface Partner {
+  _id: string;
+  userId: string;
+  referralCode: string;
+  /** Commission percentage of the Pocketsflow platform fee (`20` = 20%). */
+  commissionRate: number;
+  active: boolean;
+  totalSignups: number;
+  totalSales: number;
+  totalRevenue: number;
+  totalCommission: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** Page metadata of the partner list endpoints. */
+export interface PartnerPagination {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+  limit: number;
+}
+
+export interface PartnerListParams {
+  /** 1-based page number (defaults to 1). */
+  page?: number;
+  /** Items per page (defaults to 20, maximum 100). */
+  limit?: number;
+}
+
+/** A seller who signed up with your referral code. */
+export interface ReferredUser {
+  _id?: string;
+  userId: string;
+  email?: string;
+  name?: string;
+  given_name?: string;
+  family_name?: string;
+  country?: string;
+  createdAt?: string;
+  /** Number of live sales. */
+  totalSales: number;
+  /** Live revenue, in USD. */
+  totalRevenue: number;
+  [key: string]: unknown;
+}
+
+/** A sale made by a seller you referred. */
+export interface ReferralSale {
+  createdAt?: string;
+  userId?: string;
+  merchantName?: string;
+  amount?: number;
+  grossAmount?: number;
+  currency?: string;
+  revenueUsd?: number;
+  isSubscription?: boolean;
+  partnerCut?: number;
+  /** Your commission on this sale. */
+  commission?: number;
+}
+
+export interface PartnerListResponse<T> {
+  data: T[];
+  pagination: PartnerPagination;
+}
+
+/** Response of `partners.stats()`. */
+export interface PartnerStats {
+  referralCode: string;
+  /** Commission percentage (`20` = 20%). */
+  commissionRate: number;
+  totalSignups: number;
+  totalSales: number;
+  totalRevenue: number;
+  totalCommission: number;
+  active: boolean;
+  createdAt?: string;
+}
+
+/** Response of `partners.registerReferral()`. */
+export interface ReferralRegistration {
+  message: string;
+  referralCode?: string;
 }
 
 // ----------------------------------------------------------------------------

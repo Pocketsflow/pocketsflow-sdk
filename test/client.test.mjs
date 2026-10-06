@@ -160,3 +160,130 @@ test('no method calls a route removed from the public API', async () => {
     assert.notEqual(c.method, 'PUT');
   }
 });
+
+test('images.upload sends multipart field `image` without a JSON content type', async () => {
+  nextBody = { imageUrl: 'https://cdn.example.test/image.png' };
+  const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  const res = await pf().images.upload(png, { filename: 'cover.png', contentType: 'image/png' });
+  const call = only();
+  assert.equal(call.method, 'POST');
+  assert.equal(call.url.pathname, '/images');
+  assert.equal(call.headers.Authorization, 'Bearer pk_test_123');
+  assert.equal(call.headers['Content-Type'], undefined);
+  assert.ok(call.body instanceof FormData);
+  const file = call.body.get('image');
+  assert.equal(file.name, 'cover.png');
+  assert.equal(file.type, 'image/png');
+  assert.deepEqual(Buffer.from(await file.arrayBuffer()), png);
+  assert.equal(res.imageUrl, 'https://cdn.example.test/image.png');
+});
+
+test('images.upload accepts a Blob as is', async () => {
+  const blob = new Blob([new Uint8Array([1, 2, 3])], { type: 'image/webp' });
+  await pf().images.upload(blob);
+  const file = only().body.get('image');
+  assert.equal(file.type, 'image/webp');
+  assert.equal(file.name, 'image');
+});
+
+test('JSON requests keep the JSON content type', async () => {
+  await pf().refunds.update('r1', { period: 30, periodType: 'days' });
+  const call = only();
+  assert.equal(call.method, 'POST');
+  assert.equal(call.url.pathname, '/refunds/r1');
+  assert.equal(call.headers['Content-Type'], 'application/json');
+  assert.deepEqual(JSON.parse(call.body), { period: 30, periodType: 'days' });
+});
+
+test('discounts.apply encodes the code and checkProduct resolves to a boolean', async () => {
+  nextBody = { _id: 'd1', code: 'SAVE 10' };
+  const discount = await pf().discounts.apply('SAVE 10', 'p/1');
+  assert.equal(calls[0].url.pathname, '/discounts/apply/SAVE%2010/p%2F1');
+  assert.equal(discount._id, 'd1');
+
+  nextBody = false;
+  const has = await pf().discounts.checkProduct('p1');
+  assert.equal(calls[1].url.pathname, '/discounts/check-product/p1');
+  assert.equal(has, false);
+});
+
+test('creatorPage methods', async () => {
+  const client = pf();
+  await client.creatorPage.get();
+  await client.creatorPage.create({ username: 'jane', creatorBio: 'Hi' });
+  await client.creatorPage.update({ creatorBio: 'Hello' });
+  await client.creatorPage.updateUsername('jane_doe');
+  await client.creatorPage.checkUsername('jane_doe');
+  await client.creatorPage.delete();
+  assert.deepEqual(
+    calls.map((c) => `${c.method} ${c.url.pathname}`),
+    [
+      'GET /creator-pages',
+      'POST /creator-pages',
+      'PUT /creator-pages',
+      'PATCH /creator-pages/username',
+      'GET /creator-pages/check-username/jane_doe',
+      'DELETE /creator-pages',
+    ]
+  );
+  assert.deepEqual(JSON.parse(calls[3].body), { username: 'jane_doe' });
+});
+
+test('newsletters.posts and newsletters.send', async () => {
+  const client = pf();
+  await client.newsletters.posts.list({ status: 'draft' });
+  await client.newsletters.posts.create({ name: 'Launch', productIds: ['p1'] });
+  await client.newsletters.posts.send('post1');
+  await client.newsletters.send({ to: ['a@b.test', 'c@d.test'], subject: 'Hi', text: 'Hello' });
+  await client.newsletters.subscribers.delete('s1');
+  assert.deepEqual(
+    calls.map((c) => `${c.method} ${c.url.pathname}`),
+    [
+      'GET /newsletters/posts',
+      'POST /newsletters/posts',
+      'POST /newsletters/posts/post1/send',
+      'POST /newsletters/send',
+      'DELETE /newsletters/subscribers/s1',
+    ]
+  );
+  assert.equal(calls[0].url.searchParams.get('status'), 'draft');
+  assert.deepEqual(JSON.parse(calls[3].body).to, ['a@b.test', 'c@d.test']);
+});
+
+test('partners list methods send page / limit', async () => {
+  const client = pf();
+  await client.partners.listReferrals({ page: 2, limit: 50 });
+  await client.partners.listReferralSales({ limit: 10 });
+  await client.partners.registerReferral('REF123');
+  assert.equal(calls[0].url.pathname, '/partners/referrals');
+  assert.deepEqual(Object.fromEntries(calls[0].url.searchParams), { page: '2', limit: '50' });
+  assert.equal(calls[1].url.pathname, '/partners/referrals/sales');
+  assert.deepEqual(JSON.parse(calls[2].body), { referralCode: 'REF123' });
+});
+
+test('checkout.create sends clientReferenceId and lockEmail', async () => {
+  nextBody = { id: 'cs_1', url: 'https://checkout.example.test/cs_1' };
+  const session = await pf().checkout.create({
+    productId: 'p1',
+    customerEmail: 'a@b.test',
+    lockEmail: true,
+    clientReferenceId: 'ref-1',
+  });
+  const call = only();
+  assert.equal(call.url.pathname, '/checkout/sessions');
+  assert.deepEqual(JSON.parse(call.body), {
+    productId: 'p1',
+    customerEmail: 'a@b.test',
+    lockEmail: true,
+    clientReferenceId: 'ref-1',
+  });
+  assert.equal(session.url, 'https://checkout.example.test/cs_1');
+});
+
+test('subscriptionOffers.delete -> DELETE /subscriptions/{id}', async () => {
+  nextBody = { message: 'Subscription deleted', id: 'o1' };
+  const res = await pf().subscriptionOffers.delete('o1');
+  assert.equal(only().method, 'DELETE');
+  assert.equal(only().url.pathname, '/subscriptions/o1');
+  assert.equal(res.id, 'o1');
+});

@@ -36,6 +36,9 @@ export type {
   // Products
   Product,
   ProductFile,
+  ProductType,
+  CreditAutoRefill,
+  ProductFields,
   CreateProductParams,
   UpdateProductParams,
   CopyCatalogItemParams,
@@ -50,6 +53,7 @@ export type {
   PurchasedUpsell,
   ListOrdersParams,
   OrdersResponse,
+  OrderDetail,
 
   // Payments
   Payment,
@@ -62,6 +66,7 @@ export type {
   Customer,
   CustomerProduct,
   ListCustomersParams,
+  CustomerDetail,
 
   // Newsletters
   EmailSubscriber,
@@ -69,6 +74,15 @@ export type {
   ProductAudience,
   SyncAudienceParams,
   AudienceSyncResult,
+  Post,
+  PostStatus,
+  PostFields,
+  ListPostsParams,
+  CreatePostParams,
+  UpdatePostParams,
+  SendPostResult,
+  SendEmailParams,
+  SendEmailResult,
 
   // Reviews
   Review,
@@ -81,6 +95,8 @@ export type {
 
   // Upsells
   Upsell,
+  UpsellStyle,
+  SaleWithUpsell,
   UpsellsResponse,
   CreateUpsellParams,
   UpdateUpsellParams,
@@ -95,8 +111,10 @@ export type {
   SubscribersResponse,
   GetSubscriberParams,
   MembershipActionResult,
+  SubscriberOrderHistory,
   SubscriptionOffer,
   CreateSubscriptionOfferParams,
+  DeletedSubscriptionOffer,
 
   // Webhooks
   Webhook,
@@ -122,12 +140,39 @@ export type {
   CreateCheckoutParams,
   CheckoutSession,
 
-  // Refunds
+  // Refund policies
+  RefundPolicy,
+  CreateRefundPolicyParams,
+  UpdateRefundPolicyParams,
   Refund,
   CreateRefundParams,
+
+  // Creator page (Link in Bio)
+  CreatorPage,
+  CreatorPageLink,
+  CreatorPageTemplate,
+  CreatorPageFields,
+  CreateCreatorPageParams,
+  UpdateCreatorPageParams,
+  CreatorPageUsernameUpdate,
+
+  // Images
+  ImageUploadInput,
+  UploadImageOptions,
+  UploadedImage,
+
+  // Partners
+  Partner,
+  PartnerPagination,
+  PartnerListParams,
+  PartnerListResponse,
+  PartnerStats,
+  ReferredUser,
+  ReferralSale,
+  ReferralRegistration,
 
   // Errors
   ApiError,
 } from './types';
 
-export { PocketsflowError } from './types';
+export { PocketsflowError, WEBHOOK_EVENTS } from './types';
