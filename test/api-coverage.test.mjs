@@ -106,6 +106,60 @@ const SDK = {
   listReferrals: () => pf.partners.listReferrals(),
   listReferralSales: () => pf.partners.listReferralSales(),
   getPartnerStats: () => pf.partners.stats(),
+  setProductAbandonedCheckout: () => pf.products.setAbandonedCheckout(ID, true),
+  getEntitlements: () => pf.plans.entitlements(),
+  listPlans: () => pf.plans.list(),
+  updateTrackingPixels: () => pf.users.updateTrackingPixels({ facebookPixel: null }),
+  getWeeklyReport: () => pf.weeklyReport.get(),
+  getWeeklyReportSettings: () => pf.weeklyReport.getSettings(),
+  updateWeeklyReportSettings: () => pf.weeklyReport.updateSettings({ enabled: false }),
+  getAbandonedCheckoutSummary: () => pf.checkout.abandonedSummary(),
+  getStoreBadge: () => pf.storeBadge.get(),
+  updateStoreBadge: () => pf.storeBadge.update({ showPoweredBy: true }),
+  validateLicenseKey: () => pf.licenses.validate({ productId: ID, licenseKey: 'K' }),
+  activateLicenseKey: () => pf.licenses.activate({ productId: ID, licenseKey: 'K' }),
+  deactivateLicenseKey: () =>
+    pf.licenses.deactivate({ productId: ID, licenseKey: 'K', instanceId: 'ins_1' }),
+  listLicenseKeys: () => pf.licenses.list(),
+  getLicenseKey: () => pf.licenses.get(ID),
+  disableLicenseKey: () => pf.licenses.disable(ID),
+  enableLicenseKey: () => pf.licenses.enable(ID),
+  resetLicenseKeyActivations: () => pf.licenses.resetActivations(ID),
+  listTrackedLinks: () => pf.trackedLinks.list(),
+  createTrackedLink: () => pf.trackedLinks.create({ destination: 'https://x.test/p' }),
+  getTrackedLinkStats: () => pf.trackedLinks.get(ID),
+  updateTrackedLink: () => pf.trackedLinks.update(ID, { archived: true }),
+  checkTrackedLinkSlug: () => pf.trackedLinks.checkSlug('ig-bio'),
+  getTeam: () => pf.team.get(),
+  listTeamActivity: () => pf.team.activity(),
+  inviteTeamMember: () => pf.team.invites.create({ email: 'a@b.test', role: 'member' }),
+  resendTeamInvite: () => pf.team.invites.resend(ID),
+  cancelTeamInvite: () => pf.team.invites.cancel(ID),
+  updateTeamMember: () => pf.team.members.update(ID, { role: 'admin' }),
+  removeTeamMember: () => pf.team.members.remove(ID),
+  createTeam: () => pf.team.teams.create({ name: 'Support' }),
+  updateTeam: () => pf.team.teams.update(ID, { name: 'Ops' }),
+  deleteTeam: () => pf.team.teams.delete(ID),
+  getPostPurchaseOffer: () => pf.postPurchaseOffers.get(ID),
+  updatePostPurchaseOffer: () => pf.postPurchaseOffers.update(ID, { enabled: false }),
+  getSocialProofSettings: () => pf.socialProof.getSettings(ID),
+  updateSocialProofSettings: () => pf.socialProof.updateSettings(ID, { enabled: false }),
+  getSocialProof: () => pf.socialProof.get(ID),
+  listFunnelTemplates: () => pf.funnels.templates(),
+  listFunnels: () => pf.funnels.list(),
+  createFunnel: () =>
+    pf.funnels.create({
+      templateId: 'welcome',
+      leadMagnetProductId: ID,
+      offerProductId: 'id_2',
+      offerUrl: 'https://x.test/offer',
+    }),
+  getFunnel: () => pf.funnels.get(ID),
+  renameFunnel: () => pf.funnels.rename(ID, 'Spring funnel'),
+  deleteFunnel: () => pf.funnels.delete(ID),
+  activateFunnel: () => pf.funnels.activate(ID),
+  pauseFunnel: () => pf.funnels.pause(ID),
+  getFunnelStats: () => pf.funnels.stats(ID),
 };
 
 /** `/discounts/apply/{discountCode}/{productId}` -> a matcher for the real path. */
@@ -113,7 +167,7 @@ const pathPattern = (path) =>
   new RegExp(`^${path.replace(/\{[^}]+\}/g, '[^/]+')}$`);
 
 test('the fixture lists the public API operations', () => {
-  assert.ok(spec.operations.length >= 77);
+  assert.ok(spec.operations.length >= 124);
 });
 
 test('every public API operation has an SDK method', () => {

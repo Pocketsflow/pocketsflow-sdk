@@ -101,9 +101,39 @@ export interface Product {
   thankYouText?: string;
   /** Credits products only: automatic top-off settings. */
   creditAutoRefill?: CreditAutoRefill;
+  /**
+   * Abandoned checkout recovery (Growth plan): a buyer who leaves this
+   * product's checkout gets one recovery email. On by default. Read-only
+   * here — change it with `products.setAbandonedCheckout()`.
+   */
+  abandonedCheckoutEnabled?: boolean;
+  /** Offer "This is a gift" at checkout. */
+  allowGifts?: boolean;
+  /** `available` (default), `preorder` or `waitlist`. */
+  availability?: ProductAvailability;
+  /** Pre-order release date (ISO 8601), while `availability` is `preorder`. */
+  releaseAt?: string | null;
+  /** When the product was last released from pre-order (read-only). */
+  releasedAt?: string;
+  /** License keys issued with every sale of this product. */
+  licenseKeys?: ProductLicenseKeySettings;
   testMode: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+/**
+ * `available`: on sale as usual. `preorder`: buyers pay now and the content
+ * unlocks on `releaseAt`. `waitlist`: no checkout; the page collects emails.
+ */
+export type ProductAvailability = 'available' | 'preorder' | 'waitlist';
+
+/** License key settings of a product. */
+export interface ProductLicenseKeySettings {
+  /** Every sale of this product gets one key. */
+  enabled?: boolean;
+  /** Activations per key (1 – 10,000), or null for unlimited. */
+  activationLimit?: number | null;
 }
 
 /** What a product or subscription offer delivers. */
@@ -187,6 +217,14 @@ export interface ProductFields {
   thankYouText?: string;
   /** Credits products only: automatic top-off settings */
   creditAutoRefill?: CreditAutoRefill;
+  /** Offer "This is a gift" at checkout (defaults to true) */
+  allowGifts?: boolean;
+  /** `available` (default), `preorder` (needs `releaseAt`) or `waitlist` */
+  availability?: ProductAvailability;
+  /** Pre-order release date (ISO 8601): in the future, at most two years away */
+  releaseAt?: string | null;
+  /** Issue a license key with every sale */
+  licenseKeys?: ProductLicenseKeySettings;
 }
 
 export interface CreateProductParams extends ProductFields {
@@ -294,6 +332,12 @@ export interface PurchasedUpsell {
 export interface OrderFees {
   /** Pocketsflow platform fee, as locked at checkout (order currency). */
   platformFee?: number;
+  /**
+   * The rate `platformFee` was charged at, as a proportion: `0.02` (2%),
+   * `0.01` on Volume, `0.005` on Volume Max. `0.02` when `platformFeeSource`
+   * is `estimated`, null when it is `none`.
+   */
+  platformFeeRate?: number | null;
   /** `stored` = locked at checkout; `estimated` = older sale (2% estimate); `none` = no fee. */
   platformFeeSource?: 'stored' | 'estimated' | 'none';
   /** Payment processing fee (excludes affiliate commission — see `affiliateFee`). */
@@ -1136,6 +1180,8 @@ export const WEBHOOK_EVENTS = [
   'credit.auto_refill.failed',
   'credit.consent.enabled',
   'credit.consent.disabled',
+  'order.post_purchase_accepted',
+  'funnel.lead',
 ] as const;
 
 /** Webhook event types you can subscribe to. */
@@ -1262,6 +1308,54 @@ export interface WebhookEventPayload {
   [key: string]: unknown;
 }
 
+/**
+ * `order.post_purchase_accepted`: a buyer took the one-click offer shown
+ * after checkout and the payment settled. The new order also fires
+ * `order.completed`.
+ */
+export interface OrderPostPurchaseAcceptedEvent extends WebhookEventPayload {
+  type: 'order.post_purchase_accepted';
+  order: { id: string; paymentIntentId: string };
+  /** The order the offer followed. */
+  parentOrder: { id: string };
+  /** The offered product the buyer took. */
+  product: { id: string; name: string };
+  /** The product of the order the offer followed. */
+  parentProduct: { id: string };
+  /** Major units of `currency` (`9.6` = $9.60). */
+  amount: number;
+  /** Lowercase ISO currency code. */
+  currency: string;
+  discountPercent: number;
+  customer: { email: string };
+}
+
+/** `funnel.lead`: someone claimed a sales funnel's lead magnet (a new lead). */
+export interface FunnelLeadEvent extends WebhookEventPayload {
+  type: 'funnel.lead';
+  funnel: {
+    id: string;
+    name: string;
+    leadMagnetProductId: string;
+    offerProductId: string | null;
+  };
+  lead: {
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    /** The email-list contact, if one exists. */
+    subscriberId: string | null;
+    /** Whether the contact is subscribed to your emails. */
+    subscribed: boolean;
+    /** The funnel's lead tag on that contact. */
+    tag: string | null;
+  };
+  /** The $0 order of the claim. */
+  order: { id: string | null };
+  /** ISO 8601 date-time. */
+  capturedAt: string;
+}
+
 // ----------------------------------------------------------------------------
 // User / Account
 // ----------------------------------------------------------------------------
@@ -1288,8 +1382,14 @@ export interface User extends TrackingPixels {
   statementDescriptor?: string;
   /** Profile picture URL. */
   picture?: string;
-  /** Pocketsflow plan. */
-  currentPlan?: 'free' | 'tier1' | 'tier2' | 'tier3' | 'tier4';
+  /**
+   * The plan the account subscribed to. A canceled plan keeps this value
+   * until its paid period ends — read the plan that applies right now from
+   * `users.entitlements()`.
+   */
+  currentPlan?: PlanId;
+  /** How the plan is billed. */
+  billingInterval?: 'month' | 'year';
   createdAt?: string;
   updatedAt?: string;
 }
@@ -1330,6 +1430,13 @@ export interface TrackingPixels {
 export type TrackingPixelsUpdate = {
   [K in keyof TrackingPixels]?: string | null;
 };
+
+/**
+ * Params of `users.updateTrackingPixels()`. Adding or changing a pixel needs
+ * the Starter plan (`adPixels`, else `FeatureLockedError`); `''` or `null`
+ * removes one. A malformed id is a 400 whose `body.field` names the field.
+ */
+export type UpdateTrackingPixelsParams = TrackingPixelsUpdate;
 
 export interface UpdateUserParams extends TrackingPixelsUpdate {
   firstName?: string;
@@ -1650,6 +1757,906 @@ export interface ReferralRegistration {
 }
 
 // ----------------------------------------------------------------------------
+// Plans and entitlements
+// ----------------------------------------------------------------------------
+
+/**
+ * A Pocketsflow plan id: `tier1` is Starter, `tier2` Growth, `tier3` Pro,
+ * `tier4` Scale. `enterprise` is contact-us and never listed by `plans.list()`.
+ */
+export type PlanId =
+  | 'free'
+  | 'tier1'
+  | 'tier2'
+  | 'tier3'
+  | 'tier4'
+  | 'volume'
+  | 'volume_max'
+  | 'enterprise';
+
+/**
+ * A plan-gated feature. New keys ship often, so any string is accepted too.
+ */
+export type FeatureKey =
+  | 'removeBadge'
+  | 'customDomains'
+  | 'premiumTemplates'
+  | 'adPixels'
+  | 'trackedLinks'
+  | 'pdfStamping'
+  | 'limitedDrops'
+  | 'upsells'
+  | 'abandonedCheckout'
+  | 'affiliates'
+  | 'teams'
+  | 'paymentPlans'
+  | 'exitOffers'
+  | 'postPurchaseUpsells'
+  | 'socialProof'
+  | 'salesFunnels'
+  | 'paidNewsletter'
+  | 'fairPricing'
+  | 'revenueSplits'
+  | 'earlyBirdPricing'
+  | 'flashSales'
+  | 'bundles'
+  | 'tieredDiscounts'
+  | 'audienceSegments'
+  | 'winbackEmails'
+  | 'uniqueCoupons'
+  | 'embedForms'
+  | 'testimonials'
+  | 'resendNonOpeners'
+  | 'dripContent'
+  | 'downloadLimits'
+  | 'attributionSurvey'
+  | 'loyalty'
+  | 'advancedAnalytics'
+  | 'failedPaymentRecovery'
+  | 'cancellationSaveOffers'
+  | 'abTests'
+  | 'memberships'
+  | 'sheetsSync'
+  | 'usagePricing'
+  | 'mrrReports'
+  | 'introPricing'
+  | 'browseAbandonment'
+  | 'personalDeadlines'
+  | 'tieredAffiliates'
+  | 'customerCrm'
+  | 'benchmarks'
+  | 'prioritySupport'
+  | 'lowerFee'
+  | 'migration'
+  | 'accountManager'
+  | 'disputeCover'
+  | (string & {});
+
+/** Whether the account may use one feature, and why. */
+export interface FeatureEntitlement {
+  allowed: boolean;
+  /** The cheapest plan that includes the feature. */
+  requiredPlan: PlanId;
+  /** Display name of `requiredPlan`, e.g. `Growth`. */
+  requiredPlanName: string;
+  /**
+   * `plan`: included in the plan. `grandfathered`: kept for a while after
+   * gating started. `not_enforced`: not gated yet. `locked`: needs an upgrade.
+   */
+  reason: 'plan' | 'grandfathered' | 'not_enforced' | 'locked';
+  /** ISO date the grandfathered access ends; only with reason `grandfathered`. */
+  grandfatheredUntil: string | null;
+}
+
+/** `GET /users/entitlements`: what the account's active plan unlocks. */
+export interface Entitlements {
+  /** The ACTIVE plan (a lapsed paid plan reads `free`). */
+  plan: PlanId;
+  planName: string;
+  billingInterval: 'month' | 'year';
+  /** Platform fee on new sales: `0.02`, `0.01` (Volume), `0.005` (Volume Max). */
+  feeRate: number;
+  /** Team seats; null = unlimited. */
+  seats: number | null;
+  /** Whether features that existed before plan gating are gated yet. */
+  enforced: boolean;
+  features: Record<FeatureKey, FeatureEntitlement>;
+}
+
+/** `Entitlements` as returned by the SDK, with a `can()` helper. */
+export interface EntitlementsResult extends Entitlements {
+  /**
+   * `true` when `features[key].allowed` is `true`; `false` for an unknown key.
+   * Not enumerable, so it never shows up in `JSON.stringify()`.
+   */
+  can(key: FeatureKey): boolean;
+}
+
+/** One self-serve plan (`plans.list()`). Prices are in USD. */
+export interface Plan {
+  plan: Exclude<PlanId, 'enterprise'>;
+  name: string;
+  pricePerMonth: number;
+  /** Ten times the monthly price (two months free); 0 on free. */
+  pricePerYear: number;
+  /** Platform fee on every sale while the plan is active, as a proportion. */
+  feeRate: number;
+  /** Team seats; null = unlimited. */
+  seats: number | null;
+  minSubscribers: number;
+  maxSubscribers: number;
+  /** Included email sends per calendar month (UTC). */
+  maxSendsPerMonth: number;
+  /** Maximum size of one uploaded file, in MB. */
+  maxUploadMb: number;
+  isPopular?: boolean;
+  /** Feature keys the plan includes. */
+  features: FeatureKey[];
+}
+
+// ----------------------------------------------------------------------------
+// Abandoned checkout
+// ----------------------------------------------------------------------------
+
+/** `GET /checkout/abandoned/summary`: lost live checkouts of the last 30 days. */
+export interface AbandonedCheckoutSummary {
+  count: number;
+  /** Decimal USD amount (USD checkouts only). */
+  amountUsd: number;
+  /** Always 30. */
+  windowDays: number;
+}
+
+/** Response of `products.setAbandonedCheckout()`. */
+export interface ProductAbandonedCheckout {
+  abandonedCheckoutEnabled: boolean;
+}
+
+// ----------------------------------------------------------------------------
+// Weekly growth report
+// ----------------------------------------------------------------------------
+
+export interface WeeklyReportSettings {
+  /** Whether the Monday email is on (default true). */
+  enabled: boolean;
+  /** IANA time zone the report follows (`UTC` when unknown). */
+  timeZone: string;
+  /** ISO date-time of the next Monday 08:00 in `timeZone`. */
+  nextSendAt: string;
+}
+
+export interface UpdateWeeklyReportSettingsParams {
+  enabled: boolean;
+}
+
+export interface WeeklyReportPeriod {
+  /** Paid revenue in the account currency (cents kept). */
+  revenue: number;
+  /** Paid orders (unique paid payments). */
+  orders: number;
+  /** Unique visitors. */
+  visitors: number;
+  /** Percent: (orders + new subscribers) / visitors * 100, one decimal. */
+  conversionRate: number;
+}
+
+export type WeeklyReportNextStepId =
+  | 'publish-first-product'
+  | 'convert-visits'
+  | 'order-bump'
+  | 'recover-checkouts'
+  | 'send-newsletter'
+  | 'grow-reach';
+
+/** The one suggestion at the end of the report. */
+export interface WeeklyReportNextStep {
+  id: WeeklyReportNextStepId;
+  title: string;
+  body: string;
+  /** Button label. */
+  cta: string;
+  /** Dashboard path on app.pocketsflow.com, e.g. `/upsells/new?unlock=upsells`. */
+  path: string;
+  feature?: 'upsells' | 'abandonedCheckout' | 'affiliates';
+  /** True when the account's plan doesn't include `feature`. */
+  locked?: boolean;
+  /** e.g. `Growth` when locked. */
+  requiredPlanName?: string;
+}
+
+export interface WeeklyReport {
+  userId: string;
+  email: string;
+  firstName: string;
+  storeName: string;
+  /** ISO code every money figure is in (the account currency). */
+  currency: string;
+  timeZone: string;
+  /** ISO week covered, e.g. `2026-W42`. */
+  weekKey: string;
+  /** e.g. `Oct 12 – Oct 18`. */
+  weekLabel: string;
+  periodStart: string;
+  periodEnd: string;
+  current: WeeklyReportPeriod;
+  previous: WeeklyReportPeriod;
+  /** Rounded percent vs the week before; null when that week had no revenue. */
+  revenueChangePct: number | null;
+  bestSeller: { id: string; name: string; orders: number; revenue: number } | null;
+  /** `source` is a referrer host / utm_source, or `direct`. */
+  topSource: { source: string; label: string; visitors: number } | null;
+  nextStep: WeeklyReportNextStep;
+}
+
+/** `GET /users/weekly-report/preview`: the email as it would be sent now. */
+export interface WeeklyReportPreview {
+  subject: string;
+  html: string;
+  text: string;
+  report: WeeklyReport;
+}
+
+// ----------------------------------------------------------------------------
+// Tracked links
+// ----------------------------------------------------------------------------
+
+export type TrackedLinkChannel =
+  | 'instagram'
+  | 'tiktok'
+  | 'youtube'
+  | 'x'
+  | 'facebook'
+  | 'email'
+  | 'ads'
+  | 'other';
+
+export interface TrackedLinkUtm {
+  source: string;
+  medium: string;
+  campaign: string;
+}
+
+/** A short link on your store that counts clicks, visitors and sales. */
+export interface TrackedLink {
+  _id: string;
+  slug: string;
+  label: string;
+  channel: TrackedLinkChannel;
+  /** Absolute https URL on your own store. */
+  destination: string;
+  utm: TrackedLinkUtm;
+  archived: boolean;
+  /** e.g. `https://redmug.pocketsflow.com/go/ig-bio`. */
+  shortUrl: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TrackedLinkStats {
+  clicks: number;
+  visitors: number;
+  sales: number;
+  /** Account currency. */
+  revenue: number;
+  /** Percent: sales per unique visitor. */
+  conversionRate: number;
+}
+
+export interface TrackedLinkDay {
+  /** `YYYY-MM-DD`, a local day (see `timezoneOffsetMinutes`). */
+  date: string;
+  clicks: number;
+  visitors: number;
+  sales: number;
+  revenue: number;
+}
+
+/**
+ * Stats window of the tracked link reads. Defaults: from the (first) link's
+ * creation to now; ranges are capped at 366 days.
+ */
+export interface TrackedLinkStatsParams {
+  /** ISO 8601 date-time. */
+  startDate?: string;
+  /** ISO 8601 date-time. */
+  endDate?: string;
+  /**
+   * Your UTC offset as `Date#getTimezoneOffset()` minutes (UTC − local), so
+   * daily rows follow your local days. -840 – 840, defaults to 0.
+   */
+  timezoneOffsetMinutes?: number;
+}
+
+export interface ListTrackedLinksParams extends TrackedLinkStatsParams {
+  /** Include archived links. */
+  archived?: boolean;
+}
+
+/** A listed link: stats and the daily sparkline are null below Starter. */
+export interface TrackedLinkWithStats extends TrackedLink {
+  stats: TrackedLinkStats | null;
+  spark: number[] | null;
+}
+
+/** Response of `trackedLinks.list()`. */
+export interface TrackedLinkListResponse {
+  links: TrackedLinkWithStats[];
+  archivedCount: number;
+  /** Short URL prefix, e.g. `https://redmug.pocketsflow.com/go/`. */
+  shortBase: string;
+  /** True below Starter: every stats field is null. */
+  statsLocked: boolean;
+  currency: string | null;
+  totals: TrackedLinkStats | null;
+  channels: Array<TrackedLinkStats & { channel: TrackedLinkChannel; links: number }> | null;
+  daily: TrackedLinkDay[] | null;
+  range: { start: string; end: string };
+}
+
+/** Response of `trackedLinks.get()`: one link with its stats. */
+export interface TrackedLinkStatsResponse {
+  link: TrackedLink;
+  statsLocked: boolean;
+  stats: TrackedLinkStats | null;
+  daily: TrackedLinkDay[] | null;
+  countries: Array<{ country: string; clicks: number; visitors: number }> | null;
+  currency: string | null;
+  range: { start: string; end: string };
+}
+
+export interface CreateTrackedLinkParams {
+  /** Absolute URL on your own store (required). */
+  destination: string;
+  /** Letters, numbers and hyphens (up to 48). Generated when omitted. */
+  slug?: string;
+  /** At most 80 characters. */
+  label?: string;
+  /** Defaults to `other`. */
+  channel?: TrackedLinkChannel;
+  /** Blank values are derived from the channel and slug. */
+  utm?: Partial<TrackedLinkUtm>;
+}
+
+/**
+ * Only the fields you send change. The slug never changes once a link
+ * exists. Archiving is free; other edits need the Starter plan.
+ */
+export interface UpdateTrackedLinkParams {
+  label?: string;
+  destination?: string;
+  channel?: TrackedLinkChannel;
+  utm?: Partial<TrackedLinkUtm>;
+  archived?: boolean;
+}
+
+/** Response of `trackedLinks.checkSlug()`. */
+export interface TrackedLinkSlugCheck {
+  /** The normalized slug. */
+  slug: string;
+  valid: boolean;
+  available: boolean;
+  message?: string;
+  /** A free alternative when the slug is taken. */
+  suggestion?: string;
+}
+
+// ----------------------------------------------------------------------------
+// Store badge ("Powered by Pocketsflow")
+// ----------------------------------------------------------------------------
+
+/** Badge referral rewards: free months earned by stores you referred. */
+export interface StoreBadgeFreeMonths {
+  earned: number;
+  applied: number;
+  banked: number;
+  earnedThisYear: number;
+  /** 12. */
+  yearlyCap: number;
+}
+
+/** The badge's referral numbers (`storeBadge.referralStats()`). */
+export interface StoreBadgeReferralStats {
+  /** Badge referral code: `PF-` + 10 lowercase letters and numbers. */
+  code: string;
+  /** `https://www.pocketsflow.com/?ref=<code>`. */
+  link: string;
+  clicks: number;
+  /** Stores that signed up through the badge. */
+  signups: number;
+  /** Referred stores whose first payment is inside the 14-day clearance. */
+  clearing: number;
+  freeMonths: StoreBadgeFreeMonths;
+}
+
+/** Response of `storeBadge.get()` / `.update()`. */
+export interface StoreBadge extends StoreBadgeReferralStats {
+  /** Your saved choice (default true). */
+  showPoweredBy: boolean;
+  /** Whether buyers see the badge now (false only when hidden AND the plan allows it). */
+  visible: boolean;
+  /** Whether the current plan may hide it (Starter or higher). */
+  canHide: boolean;
+  requiredPlan: PlanId;
+  /** e.g. `Starter`. */
+  requiredPlanName: string;
+}
+
+export interface UpdateStoreBadgeParams {
+  /** `false` needs the Starter plan or higher (`FeatureLockedError` otherwise). */
+  showPoweredBy: boolean;
+}
+
+// ----------------------------------------------------------------------------
+// Team (Growth `teams`)
+// ----------------------------------------------------------------------------
+
+export type TeamRole = 'owner' | 'admin' | 'member';
+
+/** A dashboard area a team can open. */
+export type TeamArea = 'products' | 'orders' | 'emails' | 'marketing' | 'analytics' | 'developers';
+
+export interface TeamMember {
+  id: string;
+  userId: string;
+  email: string;
+  name: string | null;
+  picture: string | null;
+  role: TeamRole;
+  teamIds: string[];
+  status: 'active' | 'paused';
+  pausedReason: 'manual' | 'seat_limit' | null;
+  /** ISO 8601 date-time. */
+  joinedAt: string;
+}
+
+export interface TeamInvite {
+  id: string;
+  email: string;
+  role: TeamRole;
+  teamIds: string[];
+  /** ISO 8601 date-time, 7 days after sending / resending. */
+  expiresAt: string;
+  expired: boolean;
+  /** Display name of who sent it. */
+  invitedBy: string | null;
+  createdAt: string;
+  resendCount: number;
+}
+
+/** A team: a named group of members with access to some areas. */
+export interface Team {
+  id: string;
+  name: string;
+  areas: TeamArea[];
+  memberCount: number;
+}
+
+/** A team as returned by `team.teams.create()` / `.update()`. */
+export interface TeamRecord {
+  id: string;
+  storeUserId: string;
+  name: string;
+  areas: TeamArea[];
+  createdAt: string;
+}
+
+/** Response of `team.get()`. */
+export interface TeamOverview {
+  store: { storeUserId: string; name: string; subdomain: string | null };
+  viewer: { userId: string; role: TeamRole; isPrimaryOwner: boolean };
+  plan: { id: PlanId; name: string };
+  /** Whether the plan includes teams (Growth or higher). */
+  teamsAllowed: boolean;
+  /** `limit` is null for unlimited seats. The owner counts in `used`. */
+  seats: { limit: number | null; used: number; pending: number; paused: number };
+  primaryOwner: {
+    userId: string;
+    email: string | null;
+    name: string | null;
+    picture: string | null;
+    role: 'owner';
+  };
+  members: TeamMember[];
+  invites: TeamInvite[];
+  teams: Team[];
+}
+
+export type TeamActivityAction =
+  | 'invite.created'
+  | 'invite.resent'
+  | 'invite.canceled'
+  | 'invite.accepted'
+  | 'member.updated'
+  | 'member.removed'
+  | 'member.left'
+  | 'member.paused_by_plan'
+  | 'member.resumed_by_plan'
+  | 'team.created'
+  | 'team.updated'
+  | 'team.deleted'
+  | 'request'
+  | (string & {});
+
+/** One entry of the team activity log. */
+export interface TeamActivity {
+  id: string;
+  /** ISO 8601 date-time. */
+  at: string;
+  action: TeamActivityAction;
+  actor: {
+    userId: string;
+    name: string | null;
+    email: string | null;
+    role: TeamRole | null;
+    /** True for automatic changes (e.g. seats paused by a plan change). */
+    system: boolean;
+  };
+  targetType: string | null;
+  /** e.g. `PUT /products/665f…` for a `request`. */
+  targetLabel: string | null;
+  area: TeamArea | null;
+  meta: Record<string, unknown> | null;
+}
+
+export interface ListTeamActivityParams {
+  /** ISO date-time: entries strictly older than this (pass `nextBefore`). */
+  before?: string;
+  /** 1 – 100 (defaults to 50). */
+  limit?: number;
+}
+
+/** Response of `team.activity()`. */
+export interface TeamActivityResponse {
+  items: TeamActivity[];
+  /** Pass as `before` for the next page; null on the last page. */
+  nextBefore: string | null;
+}
+
+export interface InviteTeamMemberParams {
+  email: string;
+  role: TeamRole;
+  teamIds?: string[];
+}
+
+/** Response of `team.invites.create()`. */
+export interface TeamInviteCreated {
+  invite: Pick<TeamInvite, 'id' | 'email' | 'role' | 'teamIds' | 'expiresAt'>;
+  emailSent: boolean;
+}
+
+/** Response of `team.invites.resend()`. */
+export interface TeamInviteResent {
+  id: string;
+  expiresAt: string;
+  emailSent: boolean;
+}
+
+export interface UpdateTeamMemberParams {
+  role?: TeamRole;
+  teamIds?: string[];
+  status?: 'active' | 'paused';
+}
+
+/** Response of `team.members.update()`. */
+export type TeamMemberUpdate = Pick<
+  TeamMember,
+  'id' | 'role' | 'teamIds' | 'status' | 'pausedReason'
+>;
+
+export interface CreateTeamParams {
+  /** At most 60 characters. */
+  name: string;
+  areas?: TeamArea[];
+}
+
+export type UpdateTeamParams = Partial<CreateTeamParams>;
+
+/** Response of the team delete / cancel / remove calls. */
+export interface TeamOk {
+  ok: true;
+}
+
+// ----------------------------------------------------------------------------
+// Post-purchase offers and social proof (Growth checkout)
+// ----------------------------------------------------------------------------
+
+/** The one-click offer shown after a product's checkout. */
+export interface PostPurchaseOffer {
+  enabled: boolean;
+  /** The offered product (`''` when none). */
+  productId: string;
+  /** 0 – 90. */
+  discountPercent: number;
+}
+
+/**
+ * Only the fields you send change. Turning it on needs the Growth plan
+ * (`FeatureLockedError`). A 400 carries `code`: `same_product`, `other_mode`,
+ * `pay_what_you_want`, `credits`, `not_available`, `checkout_disabled` or
+ * `too_cheap`.
+ */
+export type UpdatePostPurchaseOfferParams = Partial<PostPurchaseOffer>;
+
+export type SocialProofWindow = '24h' | '7d';
+
+/** A product's social proof settings. */
+export interface SocialProofSettings {
+  enabled: boolean;
+  /** Show "N people bought this" over `countWindow`. */
+  purchaseCount: boolean;
+  countWindow: SocialProofWindow;
+  /**
+   * Below this many purchases in the window, the count and the
+   * recent-purchase notice are hidden (1 – 1000, default 3).
+   */
+  threshold: number;
+  /** Show "Someone in Lyon bought this 2h ago" (city or country, never a name). */
+  recentPurchases: boolean;
+  /** Show the average review rating. */
+  rating: boolean;
+}
+
+/** Only the fields you send change. Turning it on needs the Growth plan. */
+export type UpdateSocialProofSettingsParams = Partial<SocialProofSettings>;
+
+/** What the checkout shows (`socialProof.get()`, public). */
+export interface SocialProof {
+  enabled: boolean;
+  purchases: { count: number; window: SocialProofWindow } | null;
+  recent: {
+    /** A city, or a two-letter country code. */
+    place: string;
+    placeKind: 'city' | 'country';
+    minutesAgo: number;
+  } | null;
+  rating: { average: number; count: number } | null;
+}
+
+// ----------------------------------------------------------------------------
+// Sales funnels (Growth `salesFunnels`)
+// ----------------------------------------------------------------------------
+
+export type FunnelTemplateId = 'welcome' | 'minicourse' | 'launch';
+export type FunnelStatus = 'draft' | 'active' | 'paused';
+
+/** An email sequence template. */
+export interface FunnelTemplate {
+  id: FunnelTemplateId;
+  emails: Array<{
+    subject: string;
+    /** Hours after the lead signs up. */
+    sendAfterHours: number;
+    /** `full`: pitches the offer; `ps`: a one-line P.S. link; `none`: value only. */
+    offer: 'full' | 'ps' | 'none';
+  }>;
+}
+
+export interface ListFunnelTemplatesParams {
+  /** Product names to fill the sample subjects with. */
+  leadMagnetName?: string;
+  offerName?: string;
+}
+
+export interface CreateFunnelParams {
+  templateId: FunnelTemplateId;
+  /** A free product ($0, or pay-what-you-want from $0). */
+  leadMagnetProductId: string;
+  /** A paid product. */
+  offerProductId: string;
+  /** http(s) link to the offer; the discount code is appended as `?discount=`. */
+  offerUrl: string;
+  /** At most 120 characters. */
+  name?: string;
+  discount?: {
+    /** 3 – 32 letters, numbers, `_` or `-`; stored uppercase. */
+    code: string;
+    /** Defaults to `percentage`. */
+    valueType?: 'percentage' | 'fixed';
+    /** Percentage 1 – 100, or an amount in the account currency. */
+    value: number;
+    /** ISO date-time in the future, or null for no end. */
+    expiresAt?: string | null;
+  } | null;
+}
+
+export interface FunnelStats {
+  leads: number;
+  emailsSent: number;
+  opens: number;
+  clicks: number;
+  purchases: number;
+  revenue: number;
+  /** Percent, one decimal. */
+  conversionRate: number;
+  currency: string;
+  updatedAt: string | null;
+}
+
+export interface Funnel {
+  _id: string;
+  name: string;
+  templateId: FunnelTemplateId;
+  status: FunnelStatus;
+  leadMagnetProductId: string;
+  offerProductId: string;
+  offerUrl: string;
+  offerDiscount: {
+    discountId: string;
+    code: string;
+    valueType: 'percentage' | 'fixed';
+    value: number;
+    expiresAt: string | null;
+  } | null;
+  automationId: string;
+  emailPostIds: string[];
+  /** Tag added to every lead's email-list contact. */
+  leadTag: string;
+  activatedAt: string | null;
+  stats: FunnelStats;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FunnelProductSummary {
+  _id: string;
+  name: string;
+  price: number;
+  payWant: boolean;
+  minPrice: number;
+  published: boolean;
+  thumbnail: string | null;
+  free: boolean;
+}
+
+/** A listed funnel, with its two products. */
+export interface FunnelListItem extends Funnel {
+  leadMagnet: FunnelProductSummary | null;
+  offer: FunnelProductSummary | null;
+}
+
+/** Response of `funnels.get()`. */
+export interface FunnelDetail extends FunnelListItem {
+  automation: { _id: string; name: string; status: 'active' | 'inactive' | 'draft' } | null;
+  emails: Array<{
+    nodeId: string;
+    postId: string | null;
+    sendAfterHours: number;
+    subject: string | null;
+    preview: string | null;
+    missing: boolean;
+  }>;
+  /** What `funnels.activate()` checks. */
+  checklist: {
+    senderVerified: boolean;
+    leadMagnetPublished: boolean;
+    leadMagnetFree: boolean;
+    offerPublished: boolean;
+    emailsReady: boolean;
+  };
+}
+
+/** Response of `funnels.stats()`. */
+export interface FunnelAnalytics {
+  funnelId: string;
+  /** 30. */
+  attributionWindowDays: number;
+  totals: {
+    leads: number;
+    emailsSent: number;
+    opens: number;
+    clicks: number;
+    purchases: number;
+    buyers: number;
+    revenue: number;
+    conversionRate: number;
+    currency: string;
+  };
+  stages: { leads: number; opened: number; clicked: number; purchased: number };
+  emails: Array<{
+    nodeId: string;
+    postId: string | null;
+    subject: string | null;
+    sendAfterHours: number;
+    sent: number;
+    opened: number;
+    clicked: number;
+  }>;
+}
+
+// ----------------------------------------------------------------------------
+// License keys
+// ----------------------------------------------------------------------------
+
+/** A license key as its creator sees it. */
+export interface LicenseKey {
+  id: string;
+  key: string;
+  productId: string;
+  /** The order (sale) it was issued for. */
+  orderId: string;
+  buyerEmail: string;
+  status: 'active' | 'disabled';
+  disabledReason: 'creator' | 'refunded' | 'disputed' | null;
+  /** Null = unlimited. */
+  activationLimit: number | null;
+  activationsCount: number;
+  activations: Array<{ instanceId: string; instanceName?: string; createdAt: string }>;
+  testMode: boolean;
+  lastValidatedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ListLicenseKeysParams {
+  productId?: string;
+  /** The order (sale) id. */
+  orderId?: string;
+  status?: 'active' | 'disabled';
+  /** Buyer email (exact match). */
+  email?: string;
+  /** 1-based (defaults to 1). */
+  page?: number;
+  /** Defaults to 20, maximum 100. */
+  pageSize?: number;
+}
+
+/** Response of `licenses.list()`. */
+export interface LicenseKeysResponse {
+  data: LicenseKey[];
+  pagination: { page: number; pageSize: number; total: number; totalPages: number };
+}
+
+/** Body of `licenses.validate()` / `.activate()` / `.deactivate()`. */
+export interface LicenseKeyCheckParams {
+  /** The product the key was sold with. */
+  productId: string;
+  /** The key the buyer entered (case, spaces and dashes are ignored). */
+  licenseKey: string;
+  /**
+   * Your id for this install (1 – 128 letters, digits, `.`, `_`, `:`, `-`).
+   * Required on deactivate; omit on activate to get a generated `ins_…` id.
+   */
+  instanceId?: string;
+  /** Activate only: a label the creator sees, e.g. the device name. */
+  instanceName?: string;
+}
+
+export interface DeactivateLicenseKeyParams extends LicenseKeyCheckParams {
+  instanceId: string;
+}
+
+/**
+ * The answer of the public license endpoints. They resolve (never throw)
+ * when the key is not valid: read `valid` and `code`.
+ */
+export interface LicenseValidation {
+  valid: boolean;
+  status?: 'active' | 'disabled' | 'not_found';
+  /** Why `valid` is false; null when it is true. */
+  code?:
+    | 'invalid_request'
+    | 'license_not_found'
+    | 'license_disabled'
+    | 'activation_limit_reached'
+    | 'instance_not_found'
+    | (string & {})
+    | null;
+  message?: string;
+  productId?: string | null;
+  /** Instances the key is activated on. */
+  activations?: number;
+  /** Null = unlimited. */
+  activationLimit?: number | null;
+  activationsRemaining?: number | null;
+  /** Masked, e.g. `a***@example.com`. */
+  buyerEmail?: string | null;
+  createdAt?: string | null;
+  testMode?: boolean;
+  /** The instance of this request, when it is activated. */
+  instance?: { id: string; name?: string; createdAt?: string } | null;
+}
+
+// ----------------------------------------------------------------------------
 // API Error
 // ----------------------------------------------------------------------------
 
@@ -1662,11 +2669,119 @@ export interface ApiError {
 export class PocketsflowError extends Error {
   code?: string;
   status?: number;
+  /** The `details` object of the error body, when the API sent one. */
+  details?: Record<string, unknown>;
+  /** The parsed JSON error body, when the API sent one (e.g. `field`, `suggestion`). */
+  body?: Record<string, unknown>;
 
-  constructor(message: string, code?: string, status?: number) {
+  constructor(message: string, code?: string, status?: number, body?: Record<string, unknown>) {
     super(message);
     this.name = 'PocketsflowError';
     this.code = code;
     this.status = status;
+    this.body = body;
+    const details = body?.details;
+    if (details && typeof details === 'object' && !Array.isArray(details)) {
+      this.details = details as Record<string, unknown>;
+    }
+  }
+}
+
+/** `details` of a 403 `FEATURE_LOCKED` error body. */
+export type FeatureLockedDetails = {
+  feature: FeatureKey;
+  currentPlan: PlanId;
+  requiredPlan: PlanId;
+  requiredPlanName: string;
+  /** USD per month, or null when unknown. */
+  requiredPlanPrice: number | null;
+  upgradeRequired: true;
+};
+
+/** Where the account owner upgrades their plan. */
+export const UPGRADE_URL = 'https://app.pocketsflow.com/profile/billing';
+
+/**
+ * Thrown for a 403 whose body has `code: "FEATURE_LOCKED"`: the account's
+ * plan does not include the feature. Extends `PocketsflowError`, so existing
+ * `instanceof PocketsflowError` checks keep working.
+ */
+export class FeatureLockedError extends PocketsflowError {
+  declare code: 'FEATURE_LOCKED';
+  declare status: 403;
+  declare details: FeatureLockedDetails;
+  /** The locked feature, e.g. `upsells`. */
+  readonly feature: FeatureKey;
+  /** The plan the account is on now. */
+  readonly currentPlan: PlanId;
+  /** The cheapest plan that includes the feature, e.g. `tier2`. */
+  readonly requiredPlan: PlanId;
+  /** Its display name, e.g. `Growth`. */
+  readonly requiredPlanName: string;
+  /** Its monthly price in USD, or null when unknown. */
+  readonly requiredPlanPrice: number | null;
+  /** Where the account owner upgrades: https://app.pocketsflow.com/profile/billing */
+  readonly upgradeUrl: string;
+
+  constructor(message: string, body: Record<string, unknown> = {}) {
+    super(message, 'FEATURE_LOCKED', 403, body);
+    this.name = 'FeatureLockedError';
+    const raw = (body.details && typeof body.details === 'object' ? body.details : {}) as Partial<
+      FeatureLockedDetails
+    >;
+    const details: FeatureLockedDetails = {
+      feature: raw.feature ?? '',
+      currentPlan: raw.currentPlan ?? 'free',
+      requiredPlan: raw.requiredPlan ?? 'tier1',
+      requiredPlanName: raw.requiredPlanName ?? '',
+      requiredPlanPrice: raw.requiredPlanPrice ?? null,
+      upgradeRequired: true,
+    };
+    this.details = details;
+    this.feature = details.feature;
+    this.currentPlan = details.currentPlan;
+    this.requiredPlan = details.requiredPlan;
+    this.requiredPlanName = details.requiredPlanName;
+    this.requiredPlanPrice = details.requiredPlanPrice;
+    this.upgradeUrl = UPGRADE_URL;
+  }
+}
+
+/** `details` of a 403 `SEAT_LIMIT` error body. */
+export type SeatLimitDetails = {
+  /** Seats on the plan. */
+  limit: number;
+  /** Seats in use (the owner counts). */
+  used: number;
+  /** Pending invites. */
+  pending: number;
+};
+
+/**
+ * Thrown for a 403 whose body has `code: "SEAT_LIMIT"`: inviting or
+ * resuming a team member would exceed the plan's seats.
+ */
+export class SeatLimitError extends PocketsflowError {
+  declare code: 'SEAT_LIMIT';
+  declare status: 403;
+  declare details: SeatLimitDetails;
+  readonly limit: number;
+  readonly used: number;
+  readonly pending: number;
+
+  constructor(message: string, body: Record<string, unknown> = {}) {
+    super(message, 'SEAT_LIMIT', 403, body);
+    this.name = 'SeatLimitError';
+    const raw = (body.details && typeof body.details === 'object' ? body.details : {}) as Partial<
+      SeatLimitDetails
+    >;
+    this.details = {
+      limit: Number(raw.limit ?? 0),
+      used: Number(raw.used ?? 0),
+      pending: Number(raw.pending ?? 0),
+    };
+    this.limit = this.details.limit;
+    this.used = this.details.used;
+    this.pending = this.details.pending;
   }
 }

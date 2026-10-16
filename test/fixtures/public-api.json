@@ -33,6 +33,11 @@
       "operationId": "copyProduct"
     },
     {
+      "method": "PATCH",
+      "path": "/products/{id}/abandoned-checkout",
+      "operationId": "setProductAbandonedCheckout"
+    },
+    {
       "method": "GET",
       "path": "/customers",
       "operationId": "listCustomers"
@@ -234,6 +239,36 @@
     },
     {
       "method": "GET",
+      "path": "/users/entitlements",
+      "operationId": "getEntitlements"
+    },
+    {
+      "method": "GET",
+      "path": "/users/billing-tiers",
+      "operationId": "listPlans"
+    },
+    {
+      "method": "POST",
+      "path": "/users/update",
+      "operationId": "updateTrackingPixels"
+    },
+    {
+      "method": "GET",
+      "path": "/users/weekly-report/preview",
+      "operationId": "getWeeklyReport"
+    },
+    {
+      "method": "GET",
+      "path": "/users/weekly-report/settings",
+      "operationId": "getWeeklyReportSettings"
+    },
+    {
+      "method": "PUT",
+      "path": "/users/weekly-report/settings",
+      "operationId": "updateWeeklyReportSettings"
+    },
+    {
+      "method": "GET",
       "path": "/creator-pages",
       "operationId": "getCreatorPage"
     },
@@ -358,6 +393,11 @@
       "operationId": "createCheckoutSession"
     },
     {
+      "method": "GET",
+      "path": "/checkout/abandoned/summary",
+      "operationId": "getAbandonedCheckoutSummary"
+    },
+    {
       "method": "POST",
       "path": "/partners",
       "operationId": "createPartner"
@@ -386,6 +426,201 @@
       "method": "GET",
       "path": "/partners/stats",
       "operationId": "getPartnerStats"
+    },
+    {
+      "method": "GET",
+      "path": "/powered-by/me",
+      "operationId": "getStoreBadge"
+    },
+    {
+      "method": "PUT",
+      "path": "/powered-by",
+      "operationId": "updateStoreBadge"
+    },
+    {
+      "method": "POST",
+      "path": "/licenses/validate",
+      "operationId": "validateLicenseKey"
+    },
+    {
+      "method": "POST",
+      "path": "/licenses/activate",
+      "operationId": "activateLicenseKey"
+    },
+    {
+      "method": "POST",
+      "path": "/licenses/deactivate",
+      "operationId": "deactivateLicenseKey"
+    },
+    {
+      "method": "GET",
+      "path": "/licenses",
+      "operationId": "listLicenseKeys"
+    },
+    {
+      "method": "GET",
+      "path": "/licenses/{id}",
+      "operationId": "getLicenseKey"
+    },
+    {
+      "method": "POST",
+      "path": "/licenses/{id}/disable",
+      "operationId": "disableLicenseKey"
+    },
+    {
+      "method": "POST",
+      "path": "/licenses/{id}/enable",
+      "operationId": "enableLicenseKey"
+    },
+    {
+      "method": "POST",
+      "path": "/licenses/{id}/reset-activations",
+      "operationId": "resetLicenseKeyActivations"
+    },
+    {
+      "method": "GET",
+      "path": "/tracked-links",
+      "operationId": "listTrackedLinks"
+    },
+    {
+      "method": "POST",
+      "path": "/tracked-links",
+      "operationId": "createTrackedLink"
+    },
+    {
+      "method": "GET",
+      "path": "/tracked-links/{id}",
+      "operationId": "getTrackedLinkStats"
+    },
+    {
+      "method": "PATCH",
+      "path": "/tracked-links/{id}",
+      "operationId": "updateTrackedLink"
+    },
+    {
+      "method": "GET",
+      "path": "/tracked-links/slug-available",
+      "operationId": "checkTrackedLinkSlug"
+    },
+    {
+      "method": "GET",
+      "path": "/team",
+      "operationId": "getTeam"
+    },
+    {
+      "method": "GET",
+      "path": "/team/activity",
+      "operationId": "listTeamActivity"
+    },
+    {
+      "method": "POST",
+      "path": "/team/invites",
+      "operationId": "inviteTeamMember"
+    },
+    {
+      "method": "POST",
+      "path": "/team/invites/{id}/resend",
+      "operationId": "resendTeamInvite"
+    },
+    {
+      "method": "DELETE",
+      "path": "/team/invites/{id}",
+      "operationId": "cancelTeamInvite"
+    },
+    {
+      "method": "PATCH",
+      "path": "/team/members/{id}",
+      "operationId": "updateTeamMember"
+    },
+    {
+      "method": "DELETE",
+      "path": "/team/members/{id}",
+      "operationId": "removeTeamMember"
+    },
+    {
+      "method": "POST",
+      "path": "/team/teams",
+      "operationId": "createTeam"
+    },
+    {
+      "method": "PATCH",
+      "path": "/team/teams/{id}",
+      "operationId": "updateTeam"
+    },
+    {
+      "method": "DELETE",
+      "path": "/team/teams/{id}",
+      "operationId": "deleteTeam"
+    },
+    {
+      "method": "GET",
+      "path": "/post-purchase/products/{id}",
+      "operationId": "getPostPurchaseOffer"
+    },
+    {
+      "method": "PUT",
+      "path": "/post-purchase/products/{id}",
+      "operationId": "updatePostPurchaseOffer"
+    },
+    {
+      "method": "GET",
+      "path": "/social-proof/products/{id}/settings",
+      "operationId": "getSocialProofSettings"
+    },
+    {
+      "method": "PUT",
+      "path": "/social-proof/products/{id}/settings",
+      "operationId": "updateSocialProofSettings"
+    },
+    {
+      "method": "GET",
+      "path": "/social-proof/products/{id}",
+      "operationId": "getSocialProof"
+    },
+    {
+      "method": "GET",
+      "path": "/funnels/templates",
+      "operationId": "listFunnelTemplates"
+    },
+    {
+      "method": "GET",
+      "path": "/funnels",
+      "operationId": "listFunnels"
+    },
+    {
+      "method": "POST",
+      "path": "/funnels",
+      "operationId": "createFunnel"
+    },
+    {
+      "method": "GET",
+      "path": "/funnels/{id}",
+      "operationId": "getFunnel"
+    },
+    {
+      "method": "PUT",
+      "path": "/funnels/{id}",
+      "operationId": "renameFunnel"
+    },
+    {
+      "method": "DELETE",
+      "path": "/funnels/{id}",
+      "operationId": "deleteFunnel"
+    },
+    {
+      "method": "POST",
+      "path": "/funnels/{id}/activate",
+      "operationId": "activateFunnel"
+    },
+    {
+      "method": "POST",
+      "path": "/funnels/{id}/pause",
+      "operationId": "pauseFunnel"
+    },
+    {
+      "method": "GET",
+      "path": "/funnels/{id}/stats",
+      "operationId": "getFunnelStats"
     }
   ],
   "webhookEvents": [
@@ -413,6 +648,8 @@
     "credit.auto_refill.succeeded",
     "credit.auto_refill.failed",
     "credit.consent.enabled",
-    "credit.consent.disabled"
+    "credit.consent.disabled",
+    "order.post_purchase_accepted",
+    "funnel.lead"
   ]
 }

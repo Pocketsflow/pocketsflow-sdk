@@ -1,6 +1,8 @@
 import {
   PocketsflowConfig,
   PocketsflowError,
+  FeatureLockedError,
+  SeatLimitError,
   Product,
   CreateProductParams,
   UpdateProductParams,
@@ -79,6 +81,57 @@ import {
   ReferredUser,
   ReferralSale,
   ReferralRegistration,
+  Entitlements,
+  EntitlementsResult,
+  FeatureKey,
+  Plan,
+  AbandonedCheckoutSummary,
+  ProductAbandonedCheckout,
+  UpdateTrackingPixelsParams,
+  WeeklyReportPreview,
+  WeeklyReportSettings,
+  UpdateWeeklyReportSettingsParams,
+  TrackedLink,
+  ListTrackedLinksParams,
+  TrackedLinkListResponse,
+  TrackedLinkStatsParams,
+  TrackedLinkStatsResponse,
+  CreateTrackedLinkParams,
+  UpdateTrackedLinkParams,
+  TrackedLinkSlugCheck,
+  StoreBadge,
+  StoreBadgeReferralStats,
+  UpdateStoreBadgeParams,
+  TeamOverview,
+  ListTeamActivityParams,
+  TeamActivityResponse,
+  InviteTeamMemberParams,
+  TeamInviteCreated,
+  TeamInviteResent,
+  UpdateTeamMemberParams,
+  TeamMemberUpdate,
+  CreateTeamParams,
+  UpdateTeamParams,
+  TeamRecord,
+  TeamOk,
+  PostPurchaseOffer,
+  UpdatePostPurchaseOfferParams,
+  SocialProof,
+  SocialProofSettings,
+  UpdateSocialProofSettingsParams,
+  FunnelTemplate,
+  ListFunnelTemplatesParams,
+  FunnelListItem,
+  Funnel,
+  FunnelDetail,
+  FunnelAnalytics,
+  CreateFunnelParams,
+  LicenseKey,
+  ListLicenseKeysParams,
+  LicenseKeysResponse,
+  LicenseKeyCheckParams,
+  DeactivateLicenseKeyParams,
+  LicenseValidation,
 } from './types';
 
 const DEFAULT_BASE_URL = 'https://api.pocketsflow.com';
@@ -86,6 +139,17 @@ const DEFAULT_TIMEOUT = 30000;
 
 /** Encode a caller-supplied id for use as one path segment. */
 const seg = (id: string): string => encodeURIComponent(id);
+
+/** Add the non-enumerable `can()` helper to an entitlements payload. */
+function withCan(entitlements: Entitlements): EntitlementsResult {
+  Object.defineProperty(entitlements, 'can', {
+    value: (key: FeatureKey): boolean => entitlements.features?.[key]?.allowed === true,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+  return entitlements as EntitlementsResult;
+}
 
 /** Read `{ [key]: value }` envelopes, tolerating an already-unwrapped body. */
 function unwrap<T>(res: unknown, key: string): T {
@@ -127,6 +191,26 @@ export class Pocketsflow {
   public images: ImagesResource;
   /** The partner (referral) program. */
   public partners: PartnersResource;
+  /** Plans and what the account's plan unlocks. */
+  public plans: PlansResource;
+  /** The Monday growth report email: preview and settings. */
+  public weeklyReport: WeeklyReportResource;
+  /** Short links that count clicks, visitors and sales (Starter plan). */
+  public trackedLinks: TrackedLinksResource;
+  /** The "Powered by Pocketsflow" badge and its referral rewards. */
+  public storeBadge: StoreBadgeResource;
+  /** Alias of `storeBadge`. */
+  public badge: StoreBadgeResource;
+  /** Team members, invites, teams and the activity log (Growth plan). An API key acts as the store owner. */
+  public team: TeamResource;
+  /** The one-click offer after a product's checkout (Growth plan). */
+  public postPurchaseOffers: PostPurchaseOffersResource;
+  /** Real-purchase notices on a product's checkout (Growth plan). */
+  public socialProof: SocialProofResource;
+  /** Sales funnels: lead magnet + email sequence + offer (Growth plan). */
+  public funnels: FunnelsResource;
+  /** License keys issued with your products, and the public check endpoints. */
+  public licenses: LicensesResource;
 
   constructor(config: PocketsflowConfig) {
     if (!config.apiKey) {
@@ -157,12 +241,30 @@ export class Pocketsflow {
     this.creatorPage = new CreatorPageResource(this);
     this.images = new ImagesResource(this);
     this.partners = new PartnersResource(this);
+    this.plans = new PlansResource(this);
+    this.weeklyReport = new WeeklyReportResource(this);
+    this.trackedLinks = new TrackedLinksResource(this);
+    this.storeBadge = new StoreBadgeResource(this);
+    this.badge = this.storeBadge;
+    this.team = new TeamResource(this);
+    this.postPurchaseOffers = new PostPurchaseOffersResource(this);
+    this.socialProof = new SocialProofResource(this);
+    this.funnels = new FunnelsResource(this);
+    this.licenses = new LicensesResource(this);
   }
 
   async request<T>(
     method: string,
     path: string,
-    options: { body?: any; params?: Record<string, any> } = {}
+    options: {
+      body?: any;
+      params?: Record<string, any>;
+      /**
+       * Resolve (instead of throwing) a 4xx answer whose JSON body has a
+       * boolean `valid` — the public license endpoints answer that way.
+       */
+      resolveValidationBody?: boolean;
+    } = {}
   ): Promise<T> {
     const url = new URL(path, this.baseUrl);
 
@@ -195,16 +297,42 @@ export class Pocketsflow {
       if (!response.ok) {
         let errorMessage = 'Request failed';
         let errorCode: string | undefined;
+        let errorBody: Record<string, unknown> | undefined;
 
         try {
-          const errorBody = await response.json() as { message?: string; error?: string; code?: string };
-          errorMessage = errorBody.message || errorBody.error || errorMessage;
-          errorCode = errorBody.code;
+          const parsed: unknown = await response.json();
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            errorBody = parsed as Record<string, unknown>;
+            const { message, error, code } = errorBody;
+            errorMessage =
+              (typeof message === 'string' && message) ||
+              (typeof error === 'string' && error) ||
+              errorMessage;
+            errorCode = typeof code === 'string' ? code : undefined;
+          }
         } catch {
           // Ignore JSON parse errors
         }
 
-        throw new PocketsflowError(errorMessage, errorCode, response.status);
+        if (
+          options.resolveValidationBody &&
+          response.status >= 400 &&
+          response.status < 500 &&
+          errorBody &&
+          typeof errorBody.valid === 'boolean'
+        ) {
+          return errorBody as T;
+        }
+
+        const lockCode = errorCode ?? (typeof errorBody?.error === 'string' ? errorBody.error : undefined);
+        if (response.status === 403 && lockCode === 'FEATURE_LOCKED') {
+          throw new FeatureLockedError(errorMessage, errorBody);
+        }
+        if (response.status === 403 && lockCode === 'SEAT_LIMIT') {
+          throw new SeatLimitError(errorMessage, errorBody);
+        }
+
+        throw new PocketsflowError(errorMessage, errorCode, response.status, errorBody);
       }
 
       // Handle empty responses
@@ -283,6 +411,19 @@ class ProductsResource {
       'POST',
       `/products/copy/${id}`,
       { body: params }
+    );
+  }
+
+  /**
+   * Turn abandoned checkout recovery on or off for a product: a buyer who
+   * leaves its checkout gets one recovery email. Turning it on needs the
+   * Growth plan (`FeatureLockedError` otherwise); turning it off never does.
+   */
+  async setAbandonedCheckout(id: string, enabled: boolean): Promise<ProductAbandonedCheckout> {
+    return this.client.request<ProductAbandonedCheckout>(
+      'PATCH',
+      `/products/${seg(id)}/abandoned-checkout`,
+      { body: { enabled } }
     );
   }
 }
@@ -688,6 +829,23 @@ class UsersResource {
   async update(params: UpdateUserParams): Promise<User> {
     return this.client.request<User>('POST', '/users/update', { body: params });
   }
+
+  /**
+   * What the account's active plan unlocks: plan, fee rate, seats and one
+   * entry per feature. Same call as `plans.entitlements()`.
+   */
+  async entitlements(): Promise<EntitlementsResult> {
+    return withCan(await this.client.request<Entitlements>('GET', '/users/entitlements'));
+  }
+
+  /**
+   * Set or remove ad-platform pixel ids (`''` or `null` removes one).
+   * Adding or changing a pixel needs the Starter plan (`FeatureLockedError`
+   * otherwise); a malformed id is a 400 whose `body.field` names the field.
+   */
+  async updateTrackingPixels(params: UpdateTrackingPixelsParams): Promise<User> {
+    return this.client.request<User>('POST', '/users/update', { body: params });
+  }
 }
 
 class CheckoutResource {
@@ -696,6 +854,14 @@ class CheckoutResource {
   /** Create a checkout session */
   async create(params: CreateCheckoutParams): Promise<CheckoutSession> {
     return this.client.request<CheckoutSession>('POST', '/checkout/sessions', { body: params });
+  }
+
+  /**
+   * Live checkouts buyers left without paying in the last 30 days, whatever
+   * the key's mode. Available on every plan.
+   */
+  async abandonedSummary(): Promise<AbandonedCheckoutSummary> {
+    return this.client.request<AbandonedCheckoutSummary>('GET', '/checkout/abandoned/summary');
   }
 }
 
@@ -949,5 +1115,389 @@ class PartnersResource {
   /** Your partner totals: signups, sales, revenue and commission */
   async stats(): Promise<PartnerStats> {
     return this.client.request<PartnerStats>('GET', '/partners/stats');
+  }
+}
+
+/** Plans and what the account's plan unlocks. */
+class PlansResource {
+  constructor(private client: Pocketsflow) {}
+
+  /**
+   * What the account's active plan unlocks: plan, fee rate, seats and one
+   * entry per feature. The result has a `can(featureKey)` helper.
+   */
+  async entitlements(): Promise<EntitlementsResult> {
+    return withCan(await this.client.request<Entitlements>('GET', '/users/entitlements'));
+  }
+
+  /** Every self-serve plan with its prices, limits and features. Public endpoint. */
+  async list(): Promise<Plan[]> {
+    const res = await this.client.request<unknown>('GET', '/users/billing-tiers');
+    return unwrap<Plan[]>(res, 'tiers');
+  }
+}
+
+/** The Monday growth report email (free on every plan). */
+class WeeklyReportResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Build last week's report now: the email (`subject`, `html`, `text`) and its numbers. */
+  async get(): Promise<WeeklyReportPreview> {
+    return this.client.request<WeeklyReportPreview>('GET', '/users/weekly-report/preview');
+  }
+
+  /** Whether the Monday email is on, its time zone and the next send. */
+  async getSettings(): Promise<WeeklyReportSettings> {
+    return this.client.request<WeeklyReportSettings>('GET', '/users/weekly-report/settings');
+  }
+
+  /** Turn the Monday email on or off. */
+  async updateSettings(params: UpdateWeeklyReportSettingsParams): Promise<WeeklyReportSettings> {
+    return this.client.request<WeeklyReportSettings>('PUT', '/users/weekly-report/settings', {
+      body: params,
+    });
+  }
+}
+
+/**
+ * Tracked links: short links on your store that count clicks, visitors and
+ * sales. Creating and editing need the Starter plan; reads work on every
+ * plan but carry no stats (`statsLocked: true`) below it.
+ */
+class TrackedLinksResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Your links (newest first) with their stats, totals, channels and daily rows. */
+  async list(params: ListTrackedLinksParams = {}): Promise<TrackedLinkListResponse> {
+    const { archived, ...range } = params;
+    return this.client.request<TrackedLinkListResponse>('GET', '/tracked-links', {
+      params: { ...range, archived: archived ? '1' : undefined },
+    });
+  }
+
+  /**
+   * Create a link. A taken slug is a 409 whose `body.suggestion` is a free
+   * one; below Starter it throws `FeatureLockedError`.
+   */
+  async create(params: CreateTrackedLinkParams): Promise<TrackedLink> {
+    const res = await this.client.request<unknown>('POST', '/tracked-links', { body: params });
+    return unwrap<TrackedLink>(res, 'link');
+  }
+
+  /** One link with its stats, daily rows and top countries. */
+  async get(id: string, params: TrackedLinkStatsParams = {}): Promise<TrackedLinkStatsResponse> {
+    return this.client.request<TrackedLinkStatsResponse>('GET', `/tracked-links/${seg(id)}`, {
+      params,
+    });
+  }
+
+  /**
+   * Edit or archive a link (only the fields you send change). The slug
+   * never changes. Archiving is free; other edits need the Starter plan.
+   */
+  async update(id: string, params: UpdateTrackedLinkParams): Promise<TrackedLink> {
+    const res = await this.client.request<unknown>('PATCH', `/tracked-links/${seg(id)}`, {
+      body: params,
+    });
+    return unwrap<TrackedLink>(res, 'link');
+  }
+
+  /** Whether a slug is valid and free. `excludeId` ignores one of your links. */
+  async checkSlug(slug: string, excludeId?: string): Promise<TrackedLinkSlugCheck> {
+    return this.client.request<TrackedLinkSlugCheck>('GET', '/tracked-links/slug-available', {
+      params: { slug, excludeId },
+    });
+  }
+}
+
+/** The "Powered by Pocketsflow" badge on your store, and its referral rewards. */
+class StoreBadgeResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Whether the badge shows, whether your plan may hide it, and its referral stats. */
+  async get(): Promise<StoreBadge> {
+    return this.client.request<StoreBadge>('GET', '/powered-by/me');
+  }
+
+  /**
+   * Show or hide the badge. Hiding it (`showPoweredBy: false`) needs the
+   * Starter plan (`FeatureLockedError` otherwise); showing it is always allowed.
+   */
+  async update(params: UpdateStoreBadgeParams): Promise<StoreBadge> {
+    return this.client.request<StoreBadge>('PUT', '/powered-by', { body: params });
+  }
+
+  /**
+   * The badge's referral numbers: code, link, clicks, signups and free
+   * months earned (same call as `get()`, referral fields only).
+   */
+  async referralStats(): Promise<StoreBadgeReferralStats> {
+    const { code, link, clicks, signups, clearing, freeMonths } = await this.get();
+    return { code, link, clicks, signups, clearing, freeMonths };
+  }
+}
+
+/** Pending invitations to your store. */
+class TeamInvitesResource {
+  constructor(private client: Pocketsflow) {}
+
+  /**
+   * Invite someone by email (Growth plan). Throws `SeatLimitError` when
+   * every seat is taken, `FeatureLockedError` below Growth.
+   */
+  async create(params: InviteTeamMemberParams): Promise<TeamInviteCreated> {
+    return this.client.request<TeamInviteCreated>('POST', '/team/invites', { body: params });
+  }
+
+  /** Send the invitation email again; the invite is valid 7 more days. */
+  async resend(id: string): Promise<TeamInviteResent> {
+    return this.client.request<TeamInviteResent>('POST', `/team/invites/${seg(id)}/resend`);
+  }
+
+  /** Cancel a pending invitation. */
+  async cancel(id: string): Promise<TeamOk> {
+    return this.client.request<TeamOk>('DELETE', `/team/invites/${seg(id)}`);
+  }
+}
+
+/** People with access to your store. */
+class TeamMembersResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Change a member's role, teams or status (`paused` keeps them out). */
+  async update(id: string, params: UpdateTeamMemberParams): Promise<TeamMemberUpdate> {
+    return this.client.request<TeamMemberUpdate>('PATCH', `/team/members/${seg(id)}`, {
+      body: params,
+    });
+  }
+
+  /** Remove a member from your store. */
+  async remove(id: string): Promise<TeamOk> {
+    return this.client.request<TeamOk>('DELETE', `/team/members/${seg(id)}`);
+  }
+}
+
+/** Teams: named groups of members with access to some dashboard areas. */
+class TeamTeamsResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Create a team (Growth plan). */
+  async create(params: CreateTeamParams): Promise<TeamRecord> {
+    return this.client.request<TeamRecord>('POST', '/team/teams', { body: params });
+  }
+
+  /** Rename a team or change its areas (Growth plan). */
+  async update(id: string, params: UpdateTeamParams): Promise<TeamRecord> {
+    return this.client.request<TeamRecord>('PATCH', `/team/teams/${seg(id)}`, { body: params });
+  }
+
+  /** Delete a team (its members stay on the store). */
+  async delete(id: string): Promise<TeamOk> {
+    return this.client.request<TeamOk>('DELETE', `/team/teams/${seg(id)}`);
+  }
+}
+
+/** Your store's team (Growth plan). An API key acts as the store owner. */
+class TeamResource {
+  public invites: TeamInvitesResource;
+  public members: TeamMembersResource;
+  public teams: TeamTeamsResource;
+
+  constructor(private client: Pocketsflow) {
+    this.invites = new TeamInvitesResource(client);
+    this.members = new TeamMembersResource(client);
+    this.teams = new TeamTeamsResource(client);
+  }
+
+  /** Seats, members, pending invites and teams. */
+  async get(): Promise<TeamOverview> {
+    return this.client.request<TeamOverview>('GET', '/team');
+  }
+
+  /** The activity log, newest first. Page with `before: nextBefore`. */
+  async activity(params: ListTeamActivityParams = {}): Promise<TeamActivityResponse> {
+    return this.client.request<TeamActivityResponse>('GET', '/team/activity', { params });
+  }
+}
+
+/** The one-click offer shown after a product's checkout (Growth plan). */
+class PostPurchaseOffersResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** A product's post-purchase offer. */
+  async get(productId: string): Promise<PostPurchaseOffer> {
+    const res = await this.client.request<unknown>(
+      'GET',
+      `/post-purchase/products/${seg(productId)}`
+    );
+    return unwrap<PostPurchaseOffer>(res, 'postPurchaseOffer');
+  }
+
+  /**
+   * Set a product's post-purchase offer (only the fields you send change).
+   * Turning it on needs the Growth plan (`FeatureLockedError` otherwise).
+   */
+  async update(productId: string, params: UpdatePostPurchaseOfferParams): Promise<PostPurchaseOffer> {
+    const res = await this.client.request<unknown>(
+      'PUT',
+      `/post-purchase/products/${seg(productId)}`,
+      { body: params }
+    );
+    return unwrap<PostPurchaseOffer>(res, 'postPurchaseOffer');
+  }
+}
+
+/** Real-purchase notices on a product's checkout (Growth plan). */
+class SocialProofResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** What the checkout shows for a product now. Public endpoint. */
+  async get(productId: string): Promise<SocialProof> {
+    return this.client.request<SocialProof>('GET', `/social-proof/products/${seg(productId)}`);
+  }
+
+  /** A product's social proof settings. */
+  async getSettings(productId: string): Promise<SocialProofSettings> {
+    const res = await this.client.request<unknown>(
+      'GET',
+      `/social-proof/products/${seg(productId)}/settings`
+    );
+    return unwrap<SocialProofSettings>(res, 'socialProof');
+  }
+
+  /**
+   * Change a product's social proof settings (only the fields you send
+   * change). Turning it on needs the Growth plan (`FeatureLockedError` otherwise).
+   */
+  async updateSettings(
+    productId: string,
+    params: UpdateSocialProofSettingsParams
+  ): Promise<SocialProofSettings> {
+    const res = await this.client.request<unknown>(
+      'PUT',
+      `/social-proof/products/${seg(productId)}/settings`,
+      { body: params }
+    );
+    return unwrap<SocialProofSettings>(res, 'socialProof');
+  }
+}
+
+/**
+ * Sales funnels: a free lead magnet, an email sequence and a paid offer.
+ * Creating and activating need the Growth plan (`FeatureLockedError`).
+ */
+class FunnelsResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** The email sequence templates (schedule and subjects). */
+  async templates(params: ListFunnelTemplatesParams = {}): Promise<FunnelTemplate[]> {
+    const res = await this.client.request<unknown>('GET', '/funnels/templates', { params });
+    return unwrap<FunnelTemplate[]>(res, 'templates');
+  }
+
+  /** Your funnels, with their lead magnet and offer products. */
+  async list(): Promise<FunnelListItem[]> {
+    const res = await this.client.request<unknown>('GET', '/funnels');
+    return unwrap<FunnelListItem[]>(res, 'funnels');
+  }
+
+  /** Create a funnel (as a `draft`): its emails, automation and optional discount. */
+  async create(params: CreateFunnelParams): Promise<Funnel> {
+    return this.client.request<Funnel>('POST', '/funnels', { body: params });
+  }
+
+  /** One funnel with its products, emails and activation checklist. */
+  async get(id: string): Promise<FunnelDetail> {
+    return this.client.request<FunnelDetail>('GET', `/funnels/${seg(id)}`);
+  }
+
+  /** Rename a funnel. */
+  async rename(id: string, name: string): Promise<Funnel> {
+    return this.client.request<Funnel>('PUT', `/funnels/${seg(id)}`, { body: { name } });
+  }
+
+  /**
+   * Delete a funnel, its leads and its sequence automation. The email posts
+   * and the discount stay.
+   */
+  async delete(id: string): Promise<{ message: string }> {
+    return this.client.request<{ message: string }>('DELETE', `/funnels/${seg(id)}`);
+  }
+
+  /** Start sending the sequence to new leads (Growth plan). */
+  async activate(id: string): Promise<Funnel> {
+    return this.client.request<Funnel>('POST', `/funnels/${seg(id)}/activate`);
+  }
+
+  /** Pause the funnel: its sequence automation stops sending. */
+  async pause(id: string): Promise<Funnel> {
+    return this.client.request<Funnel>('POST', `/funnels/${seg(id)}/pause`);
+  }
+
+  /** Leads, sends, opens, clicks and attributed sales, per stage and email. */
+  async stats(id: string): Promise<FunnelAnalytics> {
+    return this.client.request<FunnelAnalytics>('GET', `/funnels/${seg(id)}/stats`);
+  }
+}
+
+/** License keys issued with your products. */
+class LicensesResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Your license keys in the key's mode, newest first. `pageSize` is at most 100. */
+  async list(params: ListLicenseKeysParams = {}): Promise<LicenseKeysResponse> {
+    return this.client.request<LicenseKeysResponse>('GET', '/licenses', { params });
+  }
+
+  /** One license key with its activations. */
+  async get(id: string): Promise<LicenseKey> {
+    return this.client.request<LicenseKey>('GET', `/licenses/${seg(id)}`);
+  }
+
+  /** Disable a key: validation answers `license_disabled` until it is enabled. */
+  async disable(id: string): Promise<LicenseKey> {
+    return this.client.request<LicenseKey>('POST', `/licenses/${seg(id)}/disable`);
+  }
+
+  /** Enable a disabled key. */
+  async enable(id: string): Promise<LicenseKey> {
+    return this.client.request<LicenseKey>('POST', `/licenses/${seg(id)}/enable`);
+  }
+
+  /** Free every activation of a key. */
+  async resetActivations(id: string): Promise<LicenseKey> {
+    return this.client.request<LicenseKey>('POST', `/licenses/${seg(id)}/reset-activations`);
+  }
+
+  /**
+   * Check a key a buyer entered (public: no API key needed). Resolves with
+   * `valid: false` and a `code` when the key is not valid — it only throws
+   * on rate limits, server or network errors.
+   */
+  async validate(params: LicenseKeyCheckParams): Promise<LicenseValidation> {
+    return this.client.request<LicenseValidation>('POST', '/licenses/validate', {
+      body: params,
+      resolveValidationBody: true,
+    });
+  }
+
+  /**
+   * Activate a key on an instance (public). Omit `instanceId` to get a
+   * generated `ins_…` id in `instance.id`. Resolves with `valid: false` and
+   * `code: "activation_limit_reached"` when every activation is used.
+   */
+  async activate(params: LicenseKeyCheckParams): Promise<LicenseValidation> {
+    return this.client.request<LicenseValidation>('POST', '/licenses/activate', {
+      body: params,
+      resolveValidationBody: true,
+    });
+  }
+
+  /** Free one instance's activation (public). */
+  async deactivate(params: DeactivateLicenseKeyParams): Promise<LicenseValidation> {
+    return this.client.request<LicenseValidation>('POST', '/licenses/deactivate', {
+      body: params,
+      resolveValidationBody: true,
+    });
   }
 }

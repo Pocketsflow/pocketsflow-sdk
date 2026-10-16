@@ -42,6 +42,9 @@ export type {
   CreateProductParams,
   UpdateProductParams,
   CopyCatalogItemParams,
+  ProductAvailability,
+  ProductLicenseKeySettings,
+  ProductAbandonedCheckout,
 
   // Variants
   ProductVariant,
@@ -129,16 +132,30 @@ export type {
   ListWebhookDeliveriesParams,
   WebhookDeliveriesResponse,
   WebhookRedeliveryResult,
+  OrderPostPurchaseAcceptedEvent,
+  FunnelLeadEvent,
 
   // User
   User,
   UpdateUserParams,
   TrackingPixels,
   TrackingPixelsUpdate,
+  UpdateTrackingPixelsParams,
+
+  // Plans and entitlements
+  PlanId,
+  FeatureKey,
+  FeatureEntitlement,
+  Entitlements,
+  EntitlementsResult,
+  Plan,
+  FeatureLockedDetails,
+  SeatLimitDetails,
 
   // Checkout
   CreateCheckoutParams,
   CheckoutSession,
+  AbandonedCheckoutSummary,
 
   // Refund policies
   RefundPolicy,
@@ -171,8 +188,94 @@ export type {
   ReferralSale,
   ReferralRegistration,
 
+  // Weekly report
+  WeeklyReportSettings,
+  UpdateWeeklyReportSettingsParams,
+  WeeklyReportPeriod,
+  WeeklyReportNextStepId,
+  WeeklyReportNextStep,
+  WeeklyReport,
+  WeeklyReportPreview,
+
+  // Tracked links
+  TrackedLinkChannel,
+  TrackedLinkUtm,
+  TrackedLink,
+  TrackedLinkStats,
+  TrackedLinkDay,
+  TrackedLinkStatsParams,
+  ListTrackedLinksParams,
+  TrackedLinkWithStats,
+  TrackedLinkListResponse,
+  TrackedLinkStatsResponse,
+  CreateTrackedLinkParams,
+  UpdateTrackedLinkParams,
+  TrackedLinkSlugCheck,
+
+  // Store badge
+  StoreBadge,
+  StoreBadgeFreeMonths,
+  StoreBadgeReferralStats,
+  UpdateStoreBadgeParams,
+
+  // Team
+  TeamRole,
+  TeamArea,
+  TeamMember,
+  TeamInvite,
+  Team,
+  TeamRecord,
+  TeamOverview,
+  TeamActivityAction,
+  TeamActivity,
+  ListTeamActivityParams,
+  TeamActivityResponse,
+  InviteTeamMemberParams,
+  TeamInviteCreated,
+  TeamInviteResent,
+  UpdateTeamMemberParams,
+  TeamMemberUpdate,
+  CreateTeamParams,
+  UpdateTeamParams,
+  TeamOk,
+
+  // Post-purchase offers and social proof
+  PostPurchaseOffer,
+  UpdatePostPurchaseOfferParams,
+  SocialProofWindow,
+  SocialProofSettings,
+  UpdateSocialProofSettingsParams,
+  SocialProof,
+
+  // Sales funnels
+  FunnelTemplateId,
+  FunnelStatus,
+  FunnelTemplate,
+  ListFunnelTemplatesParams,
+  CreateFunnelParams,
+  FunnelStats,
+  Funnel,
+  FunnelProductSummary,
+  FunnelListItem,
+  FunnelDetail,
+  FunnelAnalytics,
+
+  // License keys
+  LicenseKey,
+  ListLicenseKeysParams,
+  LicenseKeysResponse,
+  LicenseKeyCheckParams,
+  DeactivateLicenseKeyParams,
+  LicenseValidation,
+
   // Errors
   ApiError,
 } from './types';
 
-export { PocketsflowError, WEBHOOK_EVENTS } from './types';
+export {
+  PocketsflowError,
+  FeatureLockedError,
+  SeatLimitError,
+  UPGRADE_URL,
+  WEBHOOK_EVENTS,
+} from './types';

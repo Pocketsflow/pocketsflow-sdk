@@ -77,8 +77,11 @@ resolve to `{ <items>, pagination: { totalCount, totalPages, currentPage,
 pageSize, hasMore } }`; keep requesting `page + 1` while `hasMore` is `true`.
 `partners.listReferrals()` / `.listReferralSales()` take `page` and `limit`
 (maximum `100`) and resolve to `{ data, pagination: { currentPage, totalPages,
-totalItems, hasNextPage, hasPrevPage, limit } }`. Other list methods return
-the full array.
+totalItems, hasNextPage, hasPrevPage, limit } }`. `licenses.list()` takes
+`page` / `pageSize` (maximum `100`) and resolves to `{ data, pagination: {
+page, pageSize, total, totalPages } }`. `team.activity()` pages with a cursor:
+pass the returned `nextBefore` as `before`. Other list methods return the
+full array.
 
 ## Resources
 
@@ -115,7 +118,15 @@ await pocketsflow.products.delete('product_id');
 // whichever owns the id). `{ testMode: false }` copies a test-mode offer
 // into live mode; the copy starts unpublished in live mode.
 const copy = await pocketsflow.products.copy('product_id', { testMode: false });
+
+// Abandoned checkout recovery: one email to a buyer who leaves the checkout.
+// Turning it on needs the Growth plan (FeatureLockedError otherwise).
+await pocketsflow.products.setAbandonedCheckout('product_id', true);
 ```
+
+Products also carry `abandonedCheckoutEnabled` (read-only), `allowGifts`,
+`availability` (`available` | `preorder` | `waitlist`) with `releaseAt`, and
+`licenseKeys` (`{ enabled, activationLimit }`).
 
 ### Product Variants
 
@@ -412,6 +423,19 @@ result.deliveryId;
 await pocketsflow.webhooks.delete('webhook_id');
 ```
 
+`order.post_purchase_accepted` (a buyer took the one-click offer after
+checkout) and `funnel.lead` (a new sales funnel lead) have typed payloads:
+`OrderPostPurchaseAcceptedEvent` and `FunnelLeadEvent`.
+
+```typescript
+import { constructWebhookEvent, FunnelLeadEvent } from 'pocketsflow';
+
+const event = constructWebhookEvent(rawBody, headers, secret);
+if (event.type === 'funnel.lead') {
+  const { lead, funnel } = event as FunnelLeadEvent;
+}
+```
+
 #### Delivery log
 
 Every delivery attempt (including tests and redeliveries) is logged for 30 days:
@@ -511,8 +535,10 @@ const updated = await pocketsflow.users.update({
 });
 
 // Tracking pixels: they fire on your product page, checkout and order
-// confirmation. A malformed ID is rejected with 400; '' or null clears one.
-await pocketsflow.users.update({
+// confirmation. A malformed ID is rejected with 400 (error.body.field names
+// it); '' or null clears one. Adding or changing a pixel needs the Starter
+// plan (FeatureLockedError otherwise).
+await pocketsflow.users.updateTrackingPixels({
   facebookPixel: '123456789012345',
   googlePixel: 'G-ABC123XYZ9',
   googleTagManager: 'GTM-ABC1234',
@@ -542,6 +568,9 @@ const session = await pocketsflow.checkout.create({
 
 // Redirect customer to checkout
 console.log(session.url); // https://...pocketsflow.com/checkout/...
+
+// Live checkouts buyers left without paying, last 30 days (every plan)
+const { count, amountUsd, windowDays } = await pocketsflow.checkout.abandonedSummary();
 ```
 
 `productId` (a product or subscription offer) is the only required field.
@@ -621,6 +650,204 @@ const { data: sales } = await pocketsflow.partners.listReferralSales();
 await pocketsflow.partners.registerReferral('REFCODE');
 ```
 
+### Plans and entitlements
+
+```typescript
+// What your active plan unlocks (a lapsed paid plan reads 'free')
+const ent = await pocketsflow.plans.entitlements(); // same as users.entitlements()
+ent.plan; // 'free' | 'tier1' (Starter) | 'tier2' (Growth) | 'tier3' (Pro) | 'tier4' (Scale) | 'volume' | 'volume_max' | 'enterprise'
+ent.feeRate; // 0.02, 0.01 on Volume, 0.005 on Volume Max
+ent.seats; // team seats, null = unlimited
+ent.can('upsells'); // true when features.upsells.allowed
+ent.features.upsells; // { allowed, requiredPlan, requiredPlanName, reason, grandfatheredUntil }
+
+// Every self-serve plan: prices (USD), fee rate, seats, limits and features
+const plans = await pocketsflow.plans.list();
+```
+
+Orders carry `platformFeeRate` next to `platformFee`: the rate the fee was
+charged at (`0.02`, `0.01` or `0.005`; null when no fee applied).
+
+### Weekly report
+
+The Monday growth email, free on every plan:
+
+```typescript
+const { subject, html, text, report } = await pocketsflow.weeklyReport.get();
+report.current.revenue; // last week, account currency
+report.revenueChangePct; // vs the week before (null when it had no revenue)
+report.nextStep; // { id, title, body, cta, path, feature?, locked? }
+
+const settings = await pocketsflow.weeklyReport.getSettings(); // { enabled, timeZone, nextSendAt }
+await pocketsflow.weeklyReport.updateSettings({ enabled: false });
+```
+
+### Tracked links
+
+Short links on your store (`https://<you>.pocketsflow.com/go/<slug>`) that
+count clicks, visitors and sales. Creating and editing need the Starter plan;
+reads work on every plan but carry no stats (`statsLocked: true`) below it.
+
+```typescript
+const { available, suggestion } = await pocketsflow.trackedLinks.checkSlug('ig-bio');
+
+const link = await pocketsflow.trackedLinks.create({
+  destination: 'https://you.pocketsflow.com/p/course',
+  slug: 'ig-bio', // optional, generated when omitted
+  label: 'Instagram bio',
+  channel: 'instagram', // instagram | tiktok | youtube | x | facebook | email | ads | other
+  utm: { campaign: 'fall' }, // blanks are derived from the channel and slug
+});
+link.shortUrl;
+
+// Stats over a range (defaults: from the link's creation to now)
+const { links, totals, channels, daily } = await pocketsflow.trackedLinks.list({
+  startDate: '2026-10-01T00:00:00Z',
+  timezoneOffsetMinutes: new Date().getTimezoneOffset(),
+  archived: true, // include archived links
+});
+const { stats, countries } = await pocketsflow.trackedLinks.get(link._id);
+
+// Edit (the slug never changes) or archive (always allowed)
+await pocketsflow.trackedLinks.update(link._id, { label: 'IG bio', archived: true });
+```
+
+### Store badge
+
+The "Powered by Pocketsflow" badge on your store, and the free months you
+earn when stores sign up through it:
+
+```typescript
+const badge = await pocketsflow.storeBadge.get(); // alias: pocketsflow.badge
+badge.visible; // whether buyers see it now
+badge.canHide; // Starter plan or higher
+
+// Hiding it needs the Starter plan (FeatureLockedError otherwise)
+await pocketsflow.storeBadge.update({ showPoweredBy: false });
+
+const { code, link, clicks, signups, freeMonths } = await pocketsflow.storeBadge.referralStats();
+```
+
+### Team
+
+Invite people to your store and group them into teams (Growth plan). An API
+key acts as the store owner.
+
+```typescript
+const team = await pocketsflow.team.get(); // seats, members, invites, teams
+
+const { invite, emailSent } = await pocketsflow.team.invites.create({
+  email: 'sam@example.com',
+  role: 'member', // 'owner' | 'admin' | 'member'
+  teamIds: ['team_id'],
+});
+await pocketsflow.team.invites.resend(invite.id); // valid 7 more days
+await pocketsflow.team.invites.cancel(invite.id);
+
+await pocketsflow.team.members.update('member_id', { role: 'admin' });
+await pocketsflow.team.members.update('member_id', { status: 'paused' });
+await pocketsflow.team.members.remove('member_id');
+
+const support = await pocketsflow.team.teams.create({ name: 'Support', areas: ['orders', 'emails'] });
+await pocketsflow.team.teams.update(support.id, { areas: ['orders'] });
+await pocketsflow.team.teams.delete(support.id);
+
+// The activity log, newest first
+let page = await pocketsflow.team.activity({ limit: 50 });
+while (page.nextBefore) {
+  page = await pocketsflow.team.activity({ before: page.nextBefore });
+}
+```
+
+Inviting past your plan's seats throws a `SeatLimitError` (`limit`, `used`,
+`pending`). Other team errors are `PocketsflowError`s with a `code` such as
+`ROLE_FORBIDDEN`, `ALREADY_INVITED`, `ALREADY_MEMBER`, `LAST_OWNER` or
+`RESEND_COOLDOWN`.
+
+### Post-purchase offers and social proof
+
+Growth checkout features, set per product. Turning either on needs the Growth
+plan (`FeatureLockedError` otherwise); turning it off never does.
+
+```typescript
+// After purchase, offer another product at a discount (one click)
+const offer = await pocketsflow.postPurchaseOffers.update('product_id', {
+  enabled: true,
+  productId: 'offered_product_id',
+  discountPercent: 20, // 0 – 90
+});
+await pocketsflow.postPurchaseOffers.get('product_id');
+
+// "9 people bought this this week", "Someone in Lyon bought this 2h ago", ratings
+await pocketsflow.socialProof.updateSettings('product_id', {
+  enabled: true,
+  purchaseCount: true,
+  countWindow: '7d', // or '24h'
+  threshold: 3,
+  recentPurchases: true,
+  rating: true,
+});
+const settings = await pocketsflow.socialProof.getSettings('product_id');
+const shown = await pocketsflow.socialProof.get('product_id'); // what the checkout shows (public)
+```
+
+A bad offer is a 400 whose `code` says why (`same_product`, `other_mode`,
+`pay_what_you_want`, `credits`, `not_available`, `checkout_disabled`,
+`too_cheap`). An accepted offer fires `order.post_purchase_accepted` (and
+`order.completed` for the new order).
+
+### Sales funnels
+
+A free lead magnet, an email sequence and a paid offer (Growth plan for
+`create` and `activate`):
+
+```typescript
+const templates = await pocketsflow.funnels.templates(); // welcome | minicourse | launch
+
+const funnel = await pocketsflow.funnels.create({
+  templateId: 'launch',
+  leadMagnetProductId: 'free_product_id',
+  offerProductId: 'paid_product_id',
+  offerUrl: 'https://you.pocketsflow.com/p/course',
+  discount: { code: 'LAUNCH20', value: 20 }, // optional, percentage by default
+}); // status 'draft'
+
+const detail = await pocketsflow.funnels.get(funnel._id); // emails + activation checklist
+await pocketsflow.funnels.activate(funnel._id);
+await pocketsflow.funnels.pause(funnel._id);
+await pocketsflow.funnels.rename(funnel._id, 'Fall launch');
+
+const funnels = await pocketsflow.funnels.list();
+const { totals, stages, emails } = await pocketsflow.funnels.stats(funnel._id);
+await pocketsflow.funnels.delete(funnel._id);
+```
+
+Each new lead fires the `funnel.lead` webhook event.
+
+### License keys
+
+Products with `licenseKeys.enabled` issue one key per sale.
+
+```typescript
+// Your keys (paginated: page / pageSize, maximum 100)
+const { data: keys, pagination } = await pocketsflow.licenses.list({ productId: 'product_id' });
+const key = await pocketsflow.licenses.get(keys[0].id);
+await pocketsflow.licenses.disable(key.id);
+await pocketsflow.licenses.enable(key.id);
+await pocketsflow.licenses.resetActivations(key.id);
+
+// In your app (public endpoints: no API key is needed). They resolve with
+// `valid: false` and a `code` for a bad key instead of throwing.
+const check = await pocketsflow.licenses.activate({
+  productId: 'product_id',
+  licenseKey: '7KQ2M-X9D4R-T3VWB-8HNPC',
+  instanceName: 'MacBook Pro', // omit instanceId to get a generated ins_… id
+});
+if (!check.valid) console.log(check.code); // e.g. 'activation_limit_reached'
+await pocketsflow.licenses.validate({ productId: 'product_id', licenseKey: '…', instanceId: check.instance?.id });
+await pocketsflow.licenses.deactivate({ productId: 'product_id', licenseKey: '…', instanceId: check.instance!.id });
+```
+
 ## Error Handling
 
 ```typescript
@@ -633,9 +860,42 @@ try {
     console.error('API Error:', error.message);
     console.error('Status:', error.status); // HTTP status code
     console.error('Code:', error.code); // Error code if available
+    console.error('Body:', error.body); // the parsed error body, if any
   }
 }
 ```
+
+### Plan-gated features
+
+A call that needs a higher plan throws a `FeatureLockedError` (a 403 with
+`code: "FEATURE_LOCKED"`). It extends `PocketsflowError`, so existing checks
+keep working:
+
+```typescript
+import { FeatureLockedError } from 'pocketsflow';
+
+try {
+  await pocketsflow.upsells.create({ mainProductIds: ['product_id'], upsellProductId: 'other_id', upsellPrice: 9 });
+} catch (error) {
+  if (error instanceof FeatureLockedError) {
+    error.feature; // 'upsells'
+    error.currentPlan; // 'free'
+    error.requiredPlan; // 'tier2'
+    error.requiredPlanName; // 'Growth'
+    error.requiredPlanPrice; // 49 (USD / month)
+    error.upgradeUrl; // https://app.pocketsflow.com/profile/billing
+  }
+}
+```
+
+Methods that can throw it: `upsells.create` / `.update`,
+`creatorPage.create` / `.update` (premium templates),
+`products.setAbandonedCheckout(id, true)`, `users.updateTrackingPixels`,
+`storeBadge.update({ showPoweredBy: false })`, `trackedLinks.create` /
+`.update`, `team.invites.create`, `team.teams.create` / `.update`,
+`postPurchaseOffers.update`, `socialProof.updateSettings`,
+`funnels.create` / `.activate`. Check ahead with
+`(await pocketsflow.plans.entitlements()).can('upsells')`.
 
 ## TypeScript
 
