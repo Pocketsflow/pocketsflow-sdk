@@ -349,6 +349,7 @@ const SDK = {
   getRecommendations: () => pf.recommendations.get(),
   updateRecommendations: () => pf.recommendations.update({ recommendable: true }),
   searchRecommendableCreators: () => pf.recommendations.search('ana'),
+  searchStore: () => pf.search.query('ana'),
   getAgency: () => pf.agency.get(),
   createAgency: () => pf.agency.create({ name: 'Studio' }),
   updateAgency: () => pf.agency.update({ website: null }),
@@ -404,7 +405,7 @@ const pathPattern = (path) =>
   new RegExp(`^${path.replace(/\{[^}]+\}/g, '[^/]+')}$`);
 
 test('the fixture lists the public API operations', () => {
-  assert.ok(spec.operations.length >= 337);
+  assert.ok(spec.operations.length >= 338);
 });
 
 test('every public API operation has an SDK method', () => {

@@ -664,6 +664,15 @@ export type {
   MigrationRowsPage,
   MigrationReport,
   MigrationPlatform,
+
+  // Global search (⌘K)
+  SearchType,
+  SearchParams,
+  SearchHit,
+  SearchGroup,
+  SearchResponse,
+  SearchResults,
+
   MessageResult,
   DeletedResult,
 

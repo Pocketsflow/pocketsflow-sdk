@@ -247,6 +247,8 @@ import {
   MigrationKind,
   MigrationListResponse,
   MigrationPlatform,
+  SearchParams,
+  SearchResponse,
   MigrationReport,
   MigrationRowsPage,
   ModerateCommunityThreadParams,
@@ -497,6 +499,8 @@ export class Pocketsflow {
   public affiliateTiers: AffiliateTiersResource;
   /** Imports from another platform (Volume plan). */
   public migrations: MigrationsResource;
+  /** Global search (⌘K) across orders, customers, products, subscribers and discounts. */
+  public search: SearchResource;
 
   constructor(config: PocketsflowConfig) {
     if (!config.apiKey) {
@@ -567,6 +571,7 @@ export class Pocketsflow {
     this.loyalty = new LoyaltyResource(this);
     this.affiliateTiers = new AffiliateTiersResource(this);
     this.migrations = new MigrationsResource(this);
+    this.search = new SearchResource(this);
   }
 
   async request<T>(
@@ -3356,6 +3361,23 @@ class MigrationsResource {
   async errorsCsv(id: string): Promise<string> {
     return this.client.request<string>('GET', `/migrations/${seg(id)}/errors.csv`, {
       responseType: 'text',
+    });
+  }
+}
+
+/** Global search (⌘K): one query across the store, grouped by record type. */
+class SearchResource {
+  constructor(private client: Pocketsflow) {}
+
+  /**
+   * Search orders, customers, products (and subscription offers), subscribers
+   * and discounts at once. `types` narrows it, `limit` is hits per type
+   * (1-20, default 5). A pk_test_ key searches test data, pk_live_ live data.
+   */
+  async query(q: string, params: SearchParams = {}): Promise<SearchResponse> {
+    const { types, limit } = params;
+    return this.client.request<SearchResponse>('GET', '/search', {
+      params: { q, types: types?.length ? types.join(',') : undefined, limit },
     });
   }
 }

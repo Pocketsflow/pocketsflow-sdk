@@ -6213,6 +6213,65 @@ export interface DeletedResult {
 }
 
 // ----------------------------------------------------------------------------
+// Global search (⌘K) — GET /search (every plan)
+// ----------------------------------------------------------------------------
+
+/** The kinds of record `search.query` looks through. */
+export type SearchType = 'orders' | 'customers' | 'products' | 'subscriptions' | 'discounts';
+
+export interface SearchParams {
+  /** Limit the search to these types (default: all of them). */
+  types?: SearchType[];
+  /** Hits per type, 1-20 (default 5). */
+  limit?: number;
+}
+
+export interface SearchHit {
+  /** Pass it to the matching get method (`orders.get`, `customers.get`, ...). */
+  id: string;
+  type: SearchType;
+  /** Buyer name or email, product name, or discount code. */
+  title: string;
+  subtitle: string;
+  meta: {
+    /** Major units of `currency` (49.99 = $49.99). */
+    amount?: number;
+    currency?: string;
+    status?: string;
+    date?: string;
+    interval?: 'weekly' | 'monthly' | 'yearly';
+    kind?: 'product' | 'subscription';
+    value?: number;
+    valueType?: 'percentage' | 'fixed';
+    /** Two-letter country code (customers). */
+    country?: string;
+  };
+  /** Dashboard path: `https://app.pocketsflow.com` + path. */
+  path: string;
+  /** Cover image URL (products). */
+  image: string | null;
+  match: 'id' | 'email' | 'name' | 'amount' | 'code' | 'slug' | 'product';
+}
+
+export interface SearchGroup {
+  type: SearchType;
+  hits: SearchHit[];
+  /** More records match than `limit`: page through the list methods. */
+  hasMore: boolean;
+}
+
+export interface SearchResponse {
+  query: string;
+  /** `true` when a `pk_test_` key searched test data. */
+  testMode: boolean;
+  limit: number;
+  groups: SearchGroup[];
+}
+
+/** Alias of {@link SearchResponse} (the name the API reference uses). */
+export type SearchResults = SearchResponse;
+
+// ----------------------------------------------------------------------------
 // API Error
 // ----------------------------------------------------------------------------
 

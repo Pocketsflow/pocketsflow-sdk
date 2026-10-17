@@ -1151,6 +1151,33 @@ const report = await pocketsflow.migrations.report(job._id);
 const problems = await pocketsflow.migrations.errorsCsv(job._id); // CSV text
 ```
 
+### Search
+
+One query across orders, customers, products (and subscription offers),
+subscribers and discounts, the same search as ⌘K in the dashboard. Available
+on every plan; 120 searches per minute per account.
+
+```typescript
+const results = await pocketsflow.search.query('ana');
+const orders = await pocketsflow.search.query('ana', { types: ['orders', 'customers'], limit: 10 });
+
+for (const group of results.groups) {
+  for (const hit of group.hits) {
+    hit.title; // 'Ana Lopez'
+    hit.meta.amount; // 49.99 (major units of hit.meta.currency)
+    hit.match; // 'id' | 'email' | 'name' | 'amount' | 'code' | 'slug' | 'product'
+    `https://app.pocketsflow.com${hit.path}`; // opens the record in the dashboard
+  }
+  group.hasMore; // more records match: page with the list methods
+}
+```
+
+`types` is any of `orders`, `customers`, `products`, `subscriptions`,
+`discounts` (default: all). `limit` is hits per type, 1 to 20 (default 5). A
+`pk_test_` key searches test data (`results.testMode` says which). A missing
+`q` or an unknown type throws a `PocketsflowError` with `status` 400, and
+going over the rate limit one with `status` 429 and `code: 'RATE_LIMITED'`.
+
 ## Error Handling
 
 ```typescript

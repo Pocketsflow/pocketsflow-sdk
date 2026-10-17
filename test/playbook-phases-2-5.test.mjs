@@ -1087,3 +1087,102 @@ test('constructWebhookEvent parses a member.joined delivery', () => {
   assert.equal(event.type, 'member.joined');
   assert.equal(event.membership.slug, 'inner-circle');
 });
+
+// ---------------------------------------------------------------------------
+// Global search (⌘K): GET /search
+// ---------------------------------------------------------------------------
+
+const SEARCH_ANSWER = {
+  query: 'ana',
+  testMode: false,
+  limit: 5,
+  groups: [
+    {
+      type: 'orders',
+      hasMore: true,
+      hits: [
+        {
+          id: '6711a3d59e3f1a0012cd7788',
+          type: 'orders',
+          title: 'Ana Lopez',
+          subtitle: 'Notion course · ana@example.com · #12CD7788',
+          meta: { amount: 49.99, currency: 'USD', status: 'paid', date: '2026-10-12T09:30:00.000Z' },
+          path: '/orders-one-time/6711a3d59e3f1a0012cd7788',
+          image: null,
+          match: 'email',
+        },
+      ],
+    },
+    { type: 'customers', hasMore: false, hits: [] },
+    {
+      type: 'discounts',
+      hasMore: false,
+      hits: [
+        {
+          id: '6711a3d59e3f1a0012cd7701',
+          type: 'discounts',
+          title: 'ANA20',
+          subtitle: "Ana's friends",
+          meta: { value: 20, valueType: 'percentage', status: 'active' },
+          path: '/discounts/6711a3d59e3f1a0012cd7701',
+          image: null,
+          match: 'code',
+        },
+      ],
+    },
+  ],
+};
+
+test('search.query sends only q by default', async () => {
+  reply({ body: SEARCH_ANSWER });
+  const res = await pf().search.query('ana');
+  const c = only();
+  assert.equal(route(c), 'GET /search');
+  assert.deepEqual(query(c), { q: 'ana' });
+  assert.equal(c.body, undefined);
+  assert.equal(res.query, 'ana');
+  assert.equal(res.testMode, false);
+  assert.equal(res.limit, 5);
+  assert.deepEqual(res.groups.map((g) => g.type), ['orders', 'customers', 'discounts']);
+  assert.equal(res.groups[0].hasMore, true);
+  assert.equal(res.groups[0].hits[0].meta.amount, 49.99);
+  assert.equal(res.groups[0].hits[0].match, 'email');
+  assert.equal(res.groups[0].hits[0].image, null);
+  assert.equal(res.groups[2].hits[0].meta.valueType, 'percentage');
+});
+
+test('search.query serialises types comma-separated and limit', async () => {
+  await pf().search.query('ana lo', { types: ['orders', 'customers'], limit: 20 });
+  const c = only();
+  assert.equal(c.url.search, '?q=ana+lo&types=orders%2Ccustomers&limit=20');
+  assert.deepEqual(query(c), { q: 'ana lo', types: 'orders,customers', limit: '20' });
+});
+
+test('search.query leaves out empty types and keeps special characters in q literal', async () => {
+  await pf().search.query('a.b+c@example.com', { types: [] });
+  const c = only();
+  assert.deepEqual(query(c), { q: 'a.b+c@example.com' });
+  assert.equal(c.url.searchParams.has('types'), false);
+});
+
+test('search.query: 400 is a PocketsflowError with the message', async () => {
+  reply({ status: 400, body: { message: 'Unknown search type: widgets' } });
+  await assert.rejects(pf().search.query('ana', { types: ['widgets'] }), (err) => {
+    assert.ok(err instanceof PocketsflowError);
+    assert.equal(err.status, 400);
+    assert.equal(err.message, 'Unknown search type: widgets');
+    return true;
+  });
+});
+
+test('search.query: 404 and 429 are PocketsflowErrors', async () => {
+  reply({ status: 404, body: { message: 'Account not found' } });
+  await assert.rejects(pf().search.query('ana'), (err) => err instanceof PocketsflowError && err.status === 404);
+  reply({ status: 429, body: { message: 'Too many searches', code: 'RATE_LIMITED' } });
+  await assert.rejects(pf().search.query('ana'), (err) => {
+    assert.ok(err instanceof PocketsflowError);
+    assert.equal(err.status, 429);
+    assert.equal(err.code, 'RATE_LIMITED');
+    return true;
+  });
+});

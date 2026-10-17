@@ -1686,6 +1686,11 @@
       "method": "GET",
       "path": "/migrations/{id}/errors.csv",
       "operationId": "downloadMigrationErrors"
+    },
+    {
+      "method": "GET",
+      "path": "/search",
+      "operationId": "searchStore"
     }
   ],
   "webhookEvents": [
