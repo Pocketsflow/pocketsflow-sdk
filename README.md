@@ -430,9 +430,7 @@ Feature events have typed payloads: `order.post_purchase_accepted`
 `.paid`, `course.completed`, `certificate.issued`, `testimonial.submitted`,
 `member.joined` / `.left`, `ab_test.completed`, `affiliate.tier_changed` and
 `loyalty.credit_redeemed` (e.g. `MemberJoinedEvent`, `SplitPaidEvent`). In an
-`ab_test.completed` body, `id` and `type` are the test's own fields: read the
-event id and type from the `X-Pocketsflow-Event-Id` / `X-Pocketsflow-Event`
-headers.
+`ab_test.completed` body the test is `testId` / `testType`.
 
 ```typescript
 import { constructWebhookEvent, FunnelLeadEvent } from 'pocketsflow';

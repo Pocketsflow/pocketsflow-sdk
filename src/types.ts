@@ -1678,15 +1678,16 @@ export interface MemberLeftEvent extends MemberEventBase {
 
 /**
  * `ab_test.completed`: an A/B test ended (a winner, a stop, or an edit of the
- * product). The test's fields sit at the top level of the body, so `id` is
- * the test id and `type` the test type: read the event id and event type from
- * the `X-Pocketsflow-Event-Id` / `X-Pocketsflow-Event` headers.
+ * product).
  */
 export interface AbTestCompletedEvent {
-  /** The A/B test id. */
+  /** The event id. */
   id: string;
+  type: 'ab_test.completed';
+  /** The A/B test id. */
+  testId: string;
   /** The A/B test type. */
-  type: AbTestType;
+  testType: AbTestType;
   /** When the event was created, Unix seconds. */
   created: number;
   /** The endpoint this delivery was sent to. */
