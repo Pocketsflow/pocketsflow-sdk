@@ -132,6 +132,232 @@ import {
   LicenseKeyCheckParams,
   DeactivateLicenseKeyParams,
   LicenseValidation,
+  AbAssignment,
+  AbTest,
+  AbTestResults,
+  AbTestTimezoneParams,
+  AbTestWinner,
+  AccountManagerView,
+  AdjustLoyaltyPointsParams,
+  AffiliateBonusesResponse,
+  AffiliateProgram,
+  AffiliateTierProgressDetail,
+  AffiliateTierProgressList,
+  Agency,
+  AgencyOverview,
+  AgencyPreview,
+  AgencyStatement,
+  AgencyStatementRow,
+  AnalyticsPreview,
+  AnalyticsRangeParams,
+  AnalyticsSummary,
+  AppliedDiscount,
+  ApplyDiscountOptions,
+  AssignAbTestVariantParams,
+  AttributionReport,
+  AttributionReportParams,
+  AttributionSurvey,
+  BanMemberParams,
+  Benchmarks,
+  Bundle,
+  Certificate,
+  CheckoutOfferSettings,
+  CheckoutOffers,
+  CommunityReply,
+  CommunityThread,
+  CommunityThreadDetail,
+  CommunityThreadsPage,
+  CourseLessonQuiz,
+  CourseQuiz,
+  CourseSettings,
+  CourseStats,
+  CreateAbTestParams,
+  CreateAgencyParams,
+  CreateCommunityThreadParams,
+  CreateDisputeHelpParams,
+  CreateFlashSaleAnnouncementParams,
+  CreateFlashSaleParams,
+  CreateMemberPostParams,
+  CreateMembershipParams,
+  CreateMigrationParams,
+  CreatePersonalDeadlineParams,
+  CreateRevenueSplitParams,
+  CreateSegmentParams,
+  CreateSignupFormParams,
+  CreateUniqueCodesParams,
+  CreatedUniqueCodes,
+  CreatorCard,
+  CreatorServices,
+  CustomerNote,
+  CustomerProfile,
+  CustomerProfilesPage,
+  DeletedResult,
+  DisputeCover,
+  DisputeHelpRequest,
+  DownloadLimits,
+  ExitOfferUpdate,
+  ExportUniqueCodesParams,
+  FairPricingAnalytics,
+  FairPricingAnalyticsParams,
+  FairPricingResponse,
+  FlashSale,
+  FlashSaleAnnouncement,
+  FlashSaleListResponse,
+  GetUsageParams,
+  IntroPricingReport,
+  LimitedDrop,
+  LimitedDropAvailability,
+  ListAbTestsParams,
+  ListAffiliateBonusesParams,
+  ListAtRiskParams,
+  ListCommunityThreadsParams,
+  ListCustomerProfilesParams,
+  ListDisputeCoversParams,
+  ListDisputeHelpParams,
+  ListFlashSalesParams,
+  ListLoyaltyActivityParams,
+  ListLoyaltyMembersParams,
+  ListMembershipMembersParams,
+  ListMigrationRowsParams,
+  ListPersonalDeadlineEntriesParams,
+  ListReferredStoresParams,
+  ListRevenueSplitSalesParams,
+  ListRevenueSplitsParams,
+  ListSegmentSubscribersParams,
+  ListSignupFormsParams,
+  ListTestimonialsParams,
+  ListUniqueCodesParams,
+  LoyaltyActivityResponse,
+  LoyaltyAdjustment,
+  LoyaltyMembersResponse,
+  LoyaltySettings,
+  LoyaltySummary,
+  MemberBanResult,
+  MemberPost,
+  MemberPostParams,
+  MemberPostsPage,
+  Membership,
+  MembershipMembersPage,
+  MessageResult,
+  MigrationConnectResult,
+  MigrationDryRun,
+  MigrationFileInput,
+  MigrationFileResult,
+  MigrationJob,
+  MigrationKind,
+  MigrationListResponse,
+  MigrationPlatform,
+  MigrationReport,
+  MigrationRowsPage,
+  ModerateCommunityThreadParams,
+  ModerateTestimonialParams,
+  MrrParams,
+  MrrReport,
+  MyAffiliateTierProgress,
+  NetRevenue,
+  NetRevenueParams,
+  OkResult,
+  OrderDownloads,
+  PaginationParams,
+  PaidNewsletter,
+  PaidNewsletterStats,
+  PaidNewsletterSyncResult,
+  PaymentPlanSettings,
+  PaymentRecoveryPage,
+  PdfStamping,
+  PersonalDeadline,
+  PersonalDeadlineEntriesResponse,
+  PersonalDeadlineLink,
+  PersonalOffer,
+  PersonalOfferParams,
+  PostResend,
+  PriceQuote,
+  PriceQuoteParams,
+  PriceStepsOverview,
+  ProductFairPricing,
+  ProductFairPricingUpdate,
+  ProductLaunchPricing,
+  ProductPriceStepsUpdate,
+  ProductRevenueSplit,
+  PublicSignupForm,
+  RecommendationSettings,
+  RecoverySettings,
+  RecoverySummary,
+  RecoverySummaryParams,
+  ReferralStats,
+  ReferredStoresPage,
+  RepeatBuyerCohorts,
+  RepeatBuyerCohortsParams,
+  ReportUsageParams,
+  ReportUsageResponse,
+  RequestSlackChannelParams,
+  ResendToNonOpenersParams,
+  RetentionOffer,
+  RetentionOffersList,
+  RevenueBySource,
+  RevenueBySourceParams,
+  RevenueSplit,
+  RevenueSplitEarnings,
+  RevenueSplitEarningsParams,
+  RevenueSplitSale,
+  RevenueSplitSalesResponse,
+  SalesFunnelReport,
+  SaveOffersReport,
+  SaveOffersReportParams,
+  Segment,
+  SegmentCount,
+  SegmentDefinition,
+  SegmentListResponse,
+  SegmentPreview,
+  SegmentSubscribersResponse,
+  SetPostAudienceParams,
+  SetPriceStepsParams,
+  SetSpreadsheetParams,
+  SheetsConnection,
+  SheetsRetryResult,
+  SheetsSyncNowResult,
+  SheetsSyncState,
+  SignupForm,
+  SignupFormDetail,
+  SignupFormSubscribeParams,
+  SignupFormSubscribeResult,
+  StartSubjectTestParams,
+  StoreAgency,
+  SubjectTest,
+  Testimonial,
+  TestimonialList,
+  TestimonialSettings,
+  TestimonialWall,
+  TieredDiscounts,
+  UniqueCodesResponse,
+  UpdateAffiliateTiersParams,
+  UpdateAgencyParams,
+  UpdateAttributionSurveyParams,
+  UpdateBundleParams,
+  UpdateCourseSettingsParams,
+  UpdateDownloadLimitsParams,
+  UpdateExitOfferParams,
+  UpdateFairPricingParams,
+  UpdateFlashSaleParams,
+  UpdateLimitedDropParams,
+  UpdateLoyaltySettingsParams,
+  UpdateMembershipParams,
+  UpdatePaidNewsletterParams,
+  UpdatePaymentPlanParams,
+  UpdatePersonalDeadlineParams,
+  UpdateRecommendationsParams,
+  UpdateRecoverySettingsParams,
+  UpdateRetentionOfferParams,
+  UpdateSeatsParams,
+  UpdateSeatsResponse,
+  UpdateSegmentParams,
+  UpdateSheetsSyncParams,
+  UpdateSignupFormParams,
+  UpdateTestimonialSettingsParams,
+  UpdateTieredDiscountsParams,
+  UpdateUsagePricingResponse,
+  UsagePricing,
+  UsageSummary,
 } from './types';
 
 const DEFAULT_BASE_URL = 'https://api.pocketsflow.com';
@@ -211,6 +437,66 @@ export class Pocketsflow {
   public funnels: FunnelsResource;
   /** License keys issued with your products, and the public check endpoints. */
   public licenses: LicensesResource;
+  /** The paid newsletter: membership offers that unlock paid posts (Growth plan). */
+  public paidNewsletter: PaidNewsletterResource;
+  /** Audience segments of your email list (Growth plan). */
+  public segments: SegmentsResource;
+  /** Metered usage on subscriptions with usage pricing (Pro plan). */
+  public usage: UsageResource;
+  /** What a product's checkout offers: payment plan, exit offer, downsell (public). */
+  public checkoutOffers: CheckoutOffersResource;
+  /** Flash sales (Growth plan). */
+  public flashSales: FlashSalesResource;
+  /** Prices by the buyer's country (Growth plan). */
+  public fairPricing: FairPricingResource;
+  /** Early-bird price steps and the public price quote. */
+  public pricing: PricingResource;
+  /** Course drip rules, quizzes and certificates (Growth plan). */
+  public courses: CoursesResource;
+  /** Course certificate verification (public). */
+  public certificates: CertificatesResource;
+  /** Analytics: advanced reports (Growth) and MRR (Pro). */
+  public analytics: AnalyticsResource;
+  /** Personal deadlines: per-contact countdown offers (Pro plan). */
+  public personalDeadlines: PersonalDeadlinesResource;
+  /** Failed payment recovery, save offers and intro pricing (Pro plan). */
+  public retention: RetentionResource;
+  /** Product bundles (Growth plan). */
+  public bundles: BundlesResource;
+  /** "Buy more, save more" cart discounts (Growth plan). */
+  public tieredDiscounts: TieredDiscountsResource;
+  /** Revenue splits with co-creators (Growth plan to invite). */
+  public revenueSplits: RevenueSplitsResource;
+  /** Embeddable email signup forms (Growth plan). */
+  public signupForms: SignupFormsResource;
+  /** Buyer testimonials (Growth plan). */
+  public testimonials: TestimonialsResource;
+  /** The "How did you hear about us?" survey (Growth plan). */
+  public attributionSurvey: AttributionSurveyResource;
+  /** How your store compares with similar stores (Pro plan). */
+  public benchmarks: BenchmarksResource;
+  /** Memberships: members-only posts and a community (Pro plan). */
+  public memberships: MembershipsResource;
+  /** Priority support, account manager and dispute cover. */
+  public creatorServices: CreatorServicesResource;
+  /** Google Sheets sync (Pro plan). */
+  public sheetsSync: SheetsSyncResource;
+  /** Your referral link and the stores it brought. */
+  public referrals: ReferralsResource;
+  /** Newsletter recommendations. */
+  public recommendations: RecommendationsResource;
+  /** The agency program (agency side). */
+  public agency: AgencyResource;
+  /** The agency that manages your store (client side). */
+  public agencyAccess: AgencyAccessResource;
+  /** A/B tests (Pro plan). */
+  public abTests: AbTestsResource;
+  /** Loyalty points and store credit (Growth plan). */
+  public loyalty: LoyaltyResource;
+  /** Tiered affiliate commissions and bonuses (Pro plan). */
+  public affiliateTiers: AffiliateTiersResource;
+  /** Imports from another platform (Volume plan). */
+  public migrations: MigrationsResource;
 
   constructor(config: PocketsflowConfig) {
     if (!config.apiKey) {
@@ -251,6 +537,36 @@ export class Pocketsflow {
     this.socialProof = new SocialProofResource(this);
     this.funnels = new FunnelsResource(this);
     this.licenses = new LicensesResource(this);
+    this.paidNewsletter = new PaidNewsletterResource(this);
+    this.segments = new SegmentsResource(this);
+    this.usage = new UsageResource(this);
+    this.checkoutOffers = new CheckoutOffersResource(this);
+    this.flashSales = new FlashSalesResource(this);
+    this.fairPricing = new FairPricingResource(this);
+    this.pricing = new PricingResource(this);
+    this.courses = new CoursesResource(this);
+    this.certificates = new CertificatesResource(this);
+    this.analytics = new AnalyticsResource(this);
+    this.personalDeadlines = new PersonalDeadlinesResource(this);
+    this.retention = new RetentionResource(this);
+    this.bundles = new BundlesResource(this);
+    this.tieredDiscounts = new TieredDiscountsResource(this);
+    this.revenueSplits = new RevenueSplitsResource(this);
+    this.signupForms = new SignupFormsResource(this);
+    this.testimonials = new TestimonialsResource(this);
+    this.attributionSurvey = new AttributionSurveyResource(this);
+    this.benchmarks = new BenchmarksResource(this);
+    this.memberships = new MembershipsResource(this);
+    this.creatorServices = new CreatorServicesResource(this);
+    this.sheetsSync = new SheetsSyncResource(this);
+    this.referrals = new ReferralsResource(this);
+    this.recommendations = new RecommendationsResource(this);
+    this.agency = new AgencyResource(this);
+    this.agencyAccess = new AgencyAccessResource(this);
+    this.abTests = new AbTestsResource(this);
+    this.loyalty = new LoyaltyResource(this);
+    this.affiliateTiers = new AffiliateTiersResource(this);
+    this.migrations = new MigrationsResource(this);
   }
 
   async request<T>(
@@ -264,6 +580,10 @@ export class Pocketsflow {
        * boolean `valid` — the public license endpoints answer that way.
        */
       resolveValidationBody?: boolean;
+      /** Extra request headers (e.g. `Idempotency-Key`). */
+      headers?: Record<string, string>;
+      /** `text` resolves with the raw body (CSV exports) instead of parsed JSON. */
+      responseType?: 'json' | 'text';
     } = {}
   ): Promise<T> {
     const url = new URL(path, this.baseUrl);
@@ -283,6 +603,7 @@ export class Pocketsflow {
     const isForm = typeof FormData !== 'undefined' && options.body instanceof FormData;
     const headers: Record<string, string> = { 'Authorization': `Bearer ${this.apiKey}` };
     if (!isForm) headers['Content-Type'] = 'application/json';
+    if (options.headers) Object.assign(headers, options.headers);
 
     try {
       const response = await fetch(url.toString(), {
@@ -337,6 +658,9 @@ export class Pocketsflow {
 
       // Handle empty responses
       const text = await response.text();
+      if (options.responseType === 'text') {
+        return text as unknown as T;
+      }
       if (!text) {
         return {} as T;
       }
@@ -426,6 +750,98 @@ class ProductsResource {
       { body: { enabled } }
     );
   }
+
+  /** A product's payment plan, exit offer and downsell settings. */
+  async getCheckoutOffers(id: string): Promise<CheckoutOfferSettings> {
+    return this.client.request<CheckoutOfferSettings>('GET', `/products/${seg(id)}/checkout-offers`);
+  }
+
+  /**
+   * Set a product's payment plan (only the fields you send change). Turning
+   * it on needs the Growth plan (`FeatureLockedError` otherwise).
+   */
+  async updatePaymentPlan(id: string, params: UpdatePaymentPlanParams): Promise<PaymentPlanSettings> {
+    const res = await this.client.request<unknown>('PATCH', `/products/${seg(id)}/payment-plan`, {
+      body: params,
+    });
+    return unwrap<PaymentPlanSettings>(res, 'paymentPlan');
+  }
+
+  /**
+   * Set a product's exit offer and downsell. Turning either on needs the
+   * Growth plan (`FeatureLockedError` otherwise).
+   */
+  async updateExitOffer(id: string, params: UpdateExitOfferParams): Promise<ExitOfferUpdate> {
+    return this.client.request<ExitOfferUpdate>('PATCH', `/products/${seg(id)}/exit-offer`, {
+      body: params,
+    });
+  }
+
+  /** A product's early-bird price steps and fair pricing mode. */
+  async getLaunchPricing(id: string): Promise<ProductLaunchPricing> {
+    return this.client.request<ProductLaunchPricing>('GET', `/products/${seg(id)}/launch-pricing`);
+  }
+
+  /** Set a product's early-bird price steps (Growth plan to turn them on). */
+  async setPriceSteps(id: string, params: SetPriceStepsParams): Promise<ProductPriceStepsUpdate> {
+    return this.client.request<ProductPriceStepsUpdate>('PUT', `/products/${seg(id)}/price-steps`, {
+      body: params,
+    });
+  }
+
+  /** Set a product's fair pricing mode (a `custom` table needs the Growth plan). */
+  async setFairPricing(id: string, params: ProductFairPricing): Promise<ProductFairPricingUpdate> {
+    return this.client.request<ProductFairPricingUpdate>('PATCH', `/products/${seg(id)}/fair-pricing`, {
+      body: params,
+    });
+  }
+
+  /** A product's limited drop: copies for sale, sold, reserved and left. */
+  async getLimitedDrop(id: string): Promise<LimitedDrop> {
+    const res = await this.client.request<unknown>('GET', `/products/${seg(id)}/limited-drop`);
+    return unwrap<LimitedDrop>(res, 'limitedDrop');
+  }
+
+  /** Set a product's limited drop (Starter plan to turn it on). */
+  async updateLimitedDrop(id: string, params: UpdateLimitedDropParams): Promise<LimitedDrop> {
+    const res = await this.client.request<unknown>('PATCH', `/products/${seg(id)}/limited-drop`, {
+      body: params,
+    });
+    return unwrap<LimitedDrop>(res, 'limitedDrop');
+  }
+
+  /** How many copies of a drop are left. Public endpoint. */
+  async getDropAvailability(id: string): Promise<LimitedDropAvailability> {
+    return this.client.request<LimitedDropAvailability>('GET', `/products/${seg(id)}/drop`);
+  }
+
+  /** Whether a product's PDFs are stamped with the buyer's email. */
+  async getPdfStamping(id: string): Promise<PdfStamping> {
+    const res = await this.client.request<unknown>('GET', `/products/${seg(id)}/pdf-stamping`);
+    return unwrap<PdfStamping>(res, 'pdfStamping');
+  }
+
+  /** Turn PDF stamping on or off (Starter plan to turn it on). */
+  async updatePdfStamping(id: string, params: PdfStamping): Promise<PdfStamping> {
+    const res = await this.client.request<unknown>('PATCH', `/products/${seg(id)}/pdf-stamping`, {
+      body: params,
+    });
+    return unwrap<PdfStamping>(res, 'pdfStamping');
+  }
+
+  /** A product's download limits. */
+  async getDownloadLimits(id: string): Promise<DownloadLimits> {
+    const res = await this.client.request<unknown>('GET', `/products/${seg(id)}/download-limits`);
+    return unwrap<DownloadLimits>(res, 'downloadLimits');
+  }
+
+  /** Set a product's download limits (Growth plan to turn them on). */
+  async updateDownloadLimits(id: string, params: UpdateDownloadLimitsParams): Promise<DownloadLimits> {
+    const res = await this.client.request<unknown>('PATCH', `/products/${seg(id)}/download-limits`, {
+      body: params,
+    });
+    return unwrap<DownloadLimits>(res, 'downloadLimits');
+  }
 }
 
 class VariantsResource {
@@ -456,6 +872,18 @@ class OrdersResource {
    */
   async get(id: string): Promise<OrderDetail> {
     return this.client.request<OrderDetail>('GET', `/orders/${id}`);
+  }
+
+  /** An order's downloads: used and left per file, expiry and stamping. */
+  async getDownloads(id: string): Promise<OrderDownloads> {
+    const res = await this.client.request<unknown>('GET', `/orders/${seg(id)}/downloads`);
+    return unwrap<OrderDownloads>(res, 'downloads');
+  }
+
+  /** Give the buyer their downloads back (and restart the expiry). */
+  async resetDownloads(id: string): Promise<OrderDownloads> {
+    const res = await this.client.request<unknown>('POST', `/orders/${seg(id)}/downloads/reset`);
+    return unwrap<OrderDownloads>(res, 'downloads');
   }
 }
 
@@ -491,6 +919,53 @@ class CustomersResource {
   /** Get a customer with their stats, orders, subscriptions and reviews */
   async get(id: string): Promise<CustomerDetail> {
     return this.client.request<CustomerDetail>('GET', `/customers/${id}`);
+  }
+
+  /** Your best customers by lifetime value, orders or last purchase (Pro plan). */
+  async listProfiles(params: ListCustomerProfilesParams = {}): Promise<CustomerProfilesPage> {
+    return this.client.request<CustomerProfilesPage>('GET', '/customers/profiles', { params });
+  }
+
+  /** Every CRM tag in use (Pro plan). */
+  async listTags(): Promise<string[]> {
+    const res = await this.client.request<unknown>('GET', '/customers/profiles/tags');
+    return unwrap<string[]>(res, 'tags');
+  }
+
+  /**
+   * A customer's profile: lifetime value, products, subscriptions, email
+   * engagement, segments, tags, notes and timeline (Pro plan). `id` is a
+   * customer id or a profile id.
+   */
+  async getProfile(id: string): Promise<CustomerProfile> {
+    return this.client.request<CustomerProfile>('GET', `/customers/${seg(id)}/profile`);
+  }
+
+  /** A customer's notes, newest first (Pro plan). */
+  async listNotes(id: string): Promise<CustomerNote[]> {
+    const res = await this.client.request<unknown>('GET', `/customers/${seg(id)}/notes`);
+    return unwrap<CustomerNote[]>(res, 'data');
+  }
+
+  /** Add a note to a customer (at most 2,000 characters; Pro plan). */
+  async addNote(id: string, params: { body: string }): Promise<CustomerNote> {
+    return this.client.request<CustomerNote>('POST', `/customers/${seg(id)}/notes`, { body: params });
+  }
+
+  /** Delete a customer note. */
+  async deleteNote(id: string, noteId: string): Promise<DeletedResult> {
+    return this.client.request<DeletedResult>(
+      'DELETE',
+      `/customers/${seg(id)}/notes/${seg(noteId)}`
+    );
+  }
+
+  /** Replace a customer's CRM tags (at most 20, lower-cased; Pro plan). */
+  async setTags(id: string, params: { tags: string[] }): Promise<string[]> {
+    const res = await this.client.request<unknown>('PUT', `/customers/${seg(id)}/tags`, {
+      body: params,
+    });
+    return unwrap<string[]>(res, 'tags');
   }
 }
 
@@ -537,11 +1012,41 @@ class DiscountsResource {
    * subscription offer). Throws a 404 `PocketsflowError` otherwise. Public
    * endpoint: it does not need your API key.
    */
-  async apply(code: string, productId: string): Promise<Discount> {
-    return this.client.request<Discount>(
+  async apply(
+    code: string,
+    productId: string,
+    options: ApplyDiscountOptions = {}
+  ): Promise<AppliedDiscount> {
+    return this.client.request<AppliedDiscount>(
       'GET',
-      `/discounts/apply/${seg(code)}/${seg(productId)}`
+      `/discounts/apply/${seg(code)}/${seg(productId)}`,
+      { params: options }
     );
+  }
+
+  /** A discount's one-time codes with their stats, newest first. */
+  async listUniqueCodes(id: string, params: ListUniqueCodesParams = {}): Promise<UniqueCodesResponse> {
+    return this.client.request<UniqueCodesResponse>('GET', `/discounts/${seg(id)}/unique-codes`, {
+      params,
+    });
+  }
+
+  /**
+   * Issue one-time codes for a list of `emails` or `count` bearer codes (at
+   * most 5,000). The discount needs `uniquePerRecipient` (Growth plan).
+   */
+  async createUniqueCodes(id: string, params: CreateUniqueCodesParams): Promise<CreatedUniqueCodes> {
+    return this.client.request<CreatedUniqueCodes>('POST', `/discounts/${seg(id)}/unique-codes`, {
+      body: params,
+    });
+  }
+
+  /** A discount's one-time codes as CSV text. */
+  async exportUniqueCodes(id: string, params: ExportUniqueCodesParams = {}): Promise<string> {
+    return this.client.request<string>('GET', `/discounts/${seg(id)}/unique-codes/export`, {
+      params,
+      responseType: 'text',
+    });
   }
 
   /**
@@ -626,6 +1131,27 @@ class SubscriptionsResource {
     return this.client.request<{ message: string }>(
       'POST',
       `/orders/subscriptions/refund/${stripeSubscriptionId}`
+    );
+  }
+
+  /**
+   * Change a subscriber's seat count (per-seat offers, Pro plan).
+   * `subscriberId` is the subscriber `_id` or its `mem_…` id.
+   */
+  async updateSeats(subscriberId: string, params: UpdateSeatsParams): Promise<UpdateSeatsResponse> {
+    return this.client.request<UpdateSeatsResponse>(
+      'POST',
+      `/subscriptions/${seg(subscriberId)}/seats`,
+      { body: params }
+    );
+  }
+
+  /** Set the seats and meters of a subscription offer (Pro plan). */
+  async updateUsagePricing(offerId: string, params: UsagePricing): Promise<UpdateUsagePricingResponse> {
+    return this.client.request<UpdateUsagePricingResponse>(
+      'PUT',
+      `/subscriptions/${seg(offerId)}/usage-pricing`,
+      { body: params }
     );
   }
 }
@@ -979,6 +1505,48 @@ class PostsResource {
   /** Queue a post for sending now to its recipients */
   async send(id: string): Promise<SendPostResult> {
     return this.client.request<SendPostResult>('POST', `/newsletters/posts/${seg(id)}/send`);
+  }
+
+  /**
+   * Choose who gets a post: `everyone`, `free` or `paid` subscribers.
+   * `free` / `paid` need the paid newsletter (Growth plan).
+   */
+  async setAudience(id: string, params: SetPostAudienceParams): Promise<Post> {
+    return this.client.request<Post>('POST', `/newsletters/posts/${seg(id)}/audience`, {
+      body: params,
+    });
+  }
+
+  /** A sent post's non-openers and its resend, if any. */
+  async getResend(id: string): Promise<PostResend> {
+    return this.client.request<PostResend>('GET', `/newsletters/posts/${seg(id)}/resend`);
+  }
+
+  /** Resend a sent post to its non-openers with a new subject (Growth plan). */
+  async resendToNonOpeners(id: string, params: ResendToNonOpenersParams): Promise<PostResend> {
+    return this.client.request<PostResend>('POST', `/newsletters/posts/${seg(id)}/resend`, {
+      body: params,
+    });
+  }
+
+  /** Cancel a scheduled resend. */
+  async cancelResend(id: string): Promise<PostResend> {
+    return this.client.request<PostResend>('DELETE', `/newsletters/posts/${seg(id)}/resend`);
+  }
+
+  /** A post's subject line test: both arms and the rest of the audience. */
+  async getSubjectTest(id: string): Promise<SubjectTest> {
+    return this.client.request<SubjectTest>('GET', `/newsletters/posts/${seg(id)}/subject-test`);
+  }
+
+  /**
+   * Send a draft with a subject test: two subjects go to a slice of the
+   * audience, the winner (most opens) to the rest (Growth plan).
+   */
+  async startSubjectTest(id: string, params: StartSubjectTestParams): Promise<SubjectTest> {
+    return this.client.request<SubjectTest>('POST', `/newsletters/posts/${seg(id)}/subject-test`, {
+      body: params,
+    });
   }
 }
 
@@ -1498,6 +2066,1296 @@ class LicensesResource {
     return this.client.request<LicenseValidation>('POST', '/licenses/deactivate', {
       body: params,
       resolveValidationBody: true,
+    });
+  }
+}
+
+/** The paid newsletter: membership offers that unlock paid posts (Growth plan). */
+class PaidNewsletterResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Settings, offers and stats. */
+  async get(): Promise<PaidNewsletter> {
+    return this.client.request<PaidNewsletter>('GET', '/newsletters/paid');
+  }
+
+  /**
+   * Change the settings (only the fields you send change). `enabled: true`
+   * needs the Growth plan (`FeatureLockedError` otherwise).
+   */
+  async update(params: UpdatePaidNewsletterParams): Promise<PaidNewsletter> {
+    return this.client.request<PaidNewsletter>('PUT', '/newsletters/paid', { body: params });
+  }
+
+  /** Paid and free subscribers, MRR and conversion. */
+  async stats(): Promise<PaidNewsletterStats> {
+    return this.client.request<PaidNewsletterStats>('GET', '/newsletters/paid/stats');
+  }
+
+  /** Re-tag the email list from live memberships (`paid` tag). */
+  async sync(): Promise<PaidNewsletterSyncResult> {
+    return this.client.request<PaidNewsletterSyncResult>('POST', '/newsletters/paid/sync');
+  }
+}
+
+/** Audience segments: saved rules over your email list (Growth plan). */
+class SegmentsResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Your segments, newest first. */
+  async list(params: PaginationParams = {}): Promise<SegmentListResponse> {
+    return this.client.request<SegmentListResponse>('GET', '/newsletters/segments', { params });
+  }
+
+  /** Create a segment. A smart tag another segment uses is a 409. */
+  async create(params: CreateSegmentParams): Promise<Segment> {
+    return this.client.request<Segment>('POST', '/newsletters/segments', { body: params });
+  }
+
+  /** Count an unsaved definition, with a sample of matching contacts. */
+  async preview(definition: SegmentDefinition): Promise<SegmentPreview> {
+    return this.client.request<SegmentPreview>('POST', '/newsletters/segments/preview', {
+      body: { definition },
+    });
+  }
+
+  /** One segment. */
+  async get(id: string): Promise<Segment> {
+    return this.client.request<Segment>('GET', `/newsletters/segments/${seg(id)}`);
+  }
+
+  /** Change a segment (only the fields you send change). */
+  async update(id: string, params: UpdateSegmentParams): Promise<Segment> {
+    return this.client.request<Segment>('POST', `/newsletters/segments/${seg(id)}`, { body: params });
+  }
+
+  /** Delete a segment. */
+  async delete(id: string): Promise<DeletedResult> {
+    return this.client.request<DeletedResult>('DELETE', `/newsletters/segments/${seg(id)}`);
+  }
+
+  /** How many contacts match now. */
+  async count(id: string): Promise<SegmentCount> {
+    return this.client.request<SegmentCount>('GET', `/newsletters/segments/${seg(id)}/count`);
+  }
+
+  /** The matching contacts. Page with `after: nextCursor`. */
+  async listSubscribers(
+    id: string,
+    params: ListSegmentSubscribersParams = {}
+  ): Promise<SegmentSubscribersResponse> {
+    return this.client.request<SegmentSubscribersResponse>(
+      'GET',
+      `/newsletters/segments/${seg(id)}/subscribers`,
+      { params }
+    );
+  }
+}
+
+/** Metered usage on subscriptions with usage pricing (Pro plan). */
+class UsageResource {
+  constructor(private client: Pocketsflow) {}
+
+  /**
+   * Report usage for a subscriber (`_id` or `mem_…` id). `idempotencyKey`
+   * is also sent as the `Idempotency-Key` header: a repeat resolves with
+   * `replayed: true` and records nothing. A 409 is not retried.
+   */
+  async report(subscriberId: string, params: ReportUsageParams): Promise<ReportUsageResponse> {
+    return this.client.request<ReportUsageResponse>(
+      'POST',
+      `/subscriptions/${seg(subscriberId)}/usage`,
+      {
+        body: params,
+        headers: params.idempotencyKey ? { 'Idempotency-Key': params.idempotencyKey } : undefined,
+      }
+    );
+  }
+
+  /** A subscriber's usage: the current period, daily units, records and past periods. */
+  async get(subscriberId: string, params: GetUsageParams = {}): Promise<UsageSummary> {
+    return this.client.request<UsageSummary>('GET', `/subscriptions/${seg(subscriberId)}/usage`, {
+      params,
+    });
+  }
+}
+
+/** What a product's checkout offers buyers (public). */
+class CheckoutOffersResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** The payment plan, exit offer and downsell a checkout shows now. Public endpoint. */
+  async get(productId: string): Promise<CheckoutOffers> {
+    return this.client.request<CheckoutOffers>('GET', `/checkout-offers/${seg(productId)}`);
+  }
+}
+
+/** Flash sales: store-wide or per-product discounts for a time window (Growth plan). */
+class FlashSalesResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Your flash sales with their stats. */
+  async list(params: ListFlashSalesParams = {}): Promise<FlashSaleListResponse> {
+    return this.client.request<FlashSaleListResponse>('GET', '/flash-sales', { params });
+  }
+
+  /** Schedule a flash sale. */
+  async create(params: CreateFlashSaleParams): Promise<FlashSale> {
+    return this.client.request<FlashSale>('POST', '/flash-sales', { body: params });
+  }
+
+  /** One flash sale. */
+  async get(id: string): Promise<FlashSale> {
+    return this.client.request<FlashSale>('GET', `/flash-sales/${seg(id)}`);
+  }
+
+  /** Change a flash sale (only the fields you send change). */
+  async update(id: string, params: UpdateFlashSaleParams): Promise<FlashSale> {
+    return this.client.request<FlashSale>('PATCH', `/flash-sales/${seg(id)}`, { body: params });
+  }
+
+  /** Delete a flash sale. */
+  async delete(id: string): Promise<{ id: string; deleted: boolean }> {
+    return this.client.request<{ id: string; deleted: boolean }>('DELETE', `/flash-sales/${seg(id)}`);
+  }
+
+  /** Draft the announcement email as a newsletter post. */
+  async createAnnouncement(
+    id: string,
+    params: CreateFlashSaleAnnouncementParams = {}
+  ): Promise<FlashSaleAnnouncement> {
+    return this.client.request<FlashSaleAnnouncement>(
+      'POST',
+      `/flash-sales/${seg(id)}/announcement`,
+      { body: params }
+    );
+  }
+}
+
+/** Fair pricing: lower prices by the buyer's country (Growth plan). */
+class FairPricingResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Your settings and the country tiers. */
+  async get(): Promise<FairPricingResponse> {
+    return this.client.request<FairPricingResponse>('GET', '/fair-pricing');
+  }
+
+  /** Change the settings. Turning them on needs the Growth plan. */
+  async update(params: UpdateFairPricingParams): Promise<FairPricingResponse> {
+    return this.client.request<FairPricingResponse>('PUT', '/fair-pricing', { body: params });
+  }
+
+  /** Sales, revenue and discount given per country. */
+  async analytics(params: FairPricingAnalyticsParams = {}): Promise<FairPricingAnalytics> {
+    return this.client.request<FairPricingAnalytics>('GET', '/fair-pricing/analytics', { params });
+  }
+}
+
+/** Early-bird price steps across products, and the public price quote. */
+class PricingResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Products with early-bird price steps. */
+  async listPriceSteps(): Promise<PriceStepsOverview> {
+    return this.client.request<PriceStepsOverview>('GET', '/pricing/early-bird');
+  }
+
+  /**
+   * The price a buyer pays now (flash sale, fair pricing, early bird, code).
+   * Public endpoint.
+   */
+  async quote(productId: string, params: PriceQuoteParams = {}): Promise<PriceQuote> {
+    const { orderBumpIds, ...rest } = params;
+    return this.client.request<PriceQuote>('GET', `/pricing/quote/${seg(productId)}`, {
+      params: { ...rest, orderBumpIds: orderBumpIds?.length ? orderBumpIds.join(',') : undefined },
+    });
+  }
+}
+
+/** Course drip rules, quizzes and certificates (Growth plan to change them). */
+class CoursesResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** A course product's lessons with their drip rules and quizzes. */
+  async get(productId: string): Promise<CourseSettings> {
+    return this.client.request<CourseSettings>('GET', `/courses/${seg(productId)}`);
+  }
+
+  /** Set drip rules, quizzes, the certificate and unlock emails. */
+  async update(productId: string, params: UpdateCourseSettingsParams): Promise<CourseSettings> {
+    return this.client.request<CourseSettings>('PUT', `/courses/${seg(productId)}`, { body: params });
+  }
+
+  /** Every lesson quiz of a course. */
+  async listQuizzes(productId: string): Promise<CourseLessonQuiz[]> {
+    const res = await this.client.request<unknown>('GET', `/courses/${seg(productId)}/quizzes`);
+    return unwrap<CourseLessonQuiz[]>(res, 'quizzes');
+  }
+
+  /** Create or replace a lesson's quiz. */
+  async upsertQuiz(productId: string, lessonId: string, quiz: CourseQuiz): Promise<Required<CourseQuiz>> {
+    return this.client.request<Required<CourseQuiz>>(
+      'PUT',
+      `/courses/${seg(productId)}/quizzes/${seg(lessonId)}`,
+      { body: quiz }
+    );
+  }
+
+  /** Remove a lesson's quiz. */
+  async deleteQuiz(productId: string, lessonId: string): Promise<{ deleted: boolean; lessonId: string }> {
+    return this.client.request<{ deleted: boolean; lessonId: string }>(
+      'DELETE',
+      `/courses/${seg(productId)}/quizzes/${seg(lessonId)}`
+    );
+  }
+
+  /** Enrolment, completion and quiz stats. */
+  async stats(productId: string): Promise<CourseStats> {
+    return this.client.request<CourseStats>('GET', `/courses/${seg(productId)}/stats`);
+  }
+}
+
+/** Course certificates (public verification). */
+class CertificatesResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Verify a certificate by its id. Public endpoint. */
+  async verify(verifyId: string): Promise<Certificate> {
+    return this.client.request<Certificate>('GET', `/certificates/${seg(verifyId)}`);
+  }
+}
+
+/**
+ * Analytics: headline numbers on every plan, advanced reports on Growth and
+ * MRR on Pro (`FeatureLockedError` below).
+ */
+class AnalyticsResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Headline funnel, top source and MRR (every plan). */
+  async preview(params: AnalyticsRangeParams = {}): Promise<AnalyticsPreview> {
+    return this.client.request<AnalyticsPreview>('GET', '/analytics/preview', { params });
+  }
+
+  /** Key metrics against the previous period (Growth plan). */
+  async summary(params: AnalyticsRangeParams = {}): Promise<AnalyticsSummary> {
+    return this.client.request<AnalyticsSummary>('GET', '/analytics/advanced/summary', { params });
+  }
+
+  /** Visits → product views → checkouts → paid, by source and product (Growth plan). */
+  async funnel(params: AnalyticsRangeParams = {}): Promise<SalesFunnelReport> {
+    return this.client.request<SalesFunnelReport>('GET', '/analytics/advanced/funnel', { params });
+  }
+
+  /** Revenue by referrer or UTM tag (Growth plan). */
+  async revenueBySource(params: RevenueBySourceParams = {}): Promise<RevenueBySource> {
+    return this.client.request<RevenueBySource>('GET', '/analytics/advanced/sources', { params });
+  }
+
+  /** Repeat-buyer cohorts by first-purchase month (Growth plan). */
+  async cohorts(params: RepeatBuyerCohortsParams = {}): Promise<RepeatBuyerCohorts> {
+    return this.client.request<RepeatBuyerCohorts>('GET', '/analytics/advanced/cohorts', { params });
+  }
+
+  /** Net revenue after refunds by product, country or month (Growth plan). */
+  async netRevenue(params: NetRevenueParams = {}): Promise<NetRevenue> {
+    return this.client.request<NetRevenue>('GET', '/analytics/advanced/net-revenue', { params });
+  }
+
+  /** MRR, churn, ARPU and LTV (Pro plan). */
+  async mrr(params: MrrParams = {}): Promise<MrrReport> {
+    return this.client.request<MrrReport>('GET', '/analytics/mrr', { params });
+  }
+}
+
+/** Personal deadlines: an offer with its own countdown per contact (Pro plan). */
+class PersonalDeadlinesResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Your deadlines with their stats. */
+  async list(): Promise<PersonalDeadline[]> {
+    return this.client.request<PersonalDeadline[]>('GET', '/personal-deadlines');
+  }
+
+  /** Create a deadline. */
+  async create(params: CreatePersonalDeadlineParams): Promise<PersonalDeadline> {
+    return this.client.request<PersonalDeadline>('POST', '/personal-deadlines', { body: params });
+  }
+
+  /** One deadline. */
+  async get(id: string): Promise<PersonalDeadline> {
+    return this.client.request<PersonalDeadline>('GET', `/personal-deadlines/${seg(id)}`);
+  }
+
+  /** Change a deadline (only the fields you send change). */
+  async update(id: string, params: UpdatePersonalDeadlineParams): Promise<PersonalDeadline> {
+    return this.client.request<PersonalDeadline>('POST', `/personal-deadlines/${seg(id)}`, {
+      body: params,
+    });
+  }
+
+  /** Delete a deadline. */
+  async delete(id: string): Promise<MessageResult> {
+    return this.client.request<MessageResult>('DELETE', `/personal-deadlines/${seg(id)}`);
+  }
+
+  /** The people on a deadline, newest first. Page with `before: nextCursor`. */
+  async listEntries(
+    id: string,
+    params: ListPersonalDeadlineEntriesParams = {}
+  ): Promise<PersonalDeadlineEntriesResponse> {
+    return this.client.request<PersonalDeadlineEntriesResponse>(
+      'GET',
+      `/personal-deadlines/${seg(id)}/entries`,
+      { params }
+    );
+  }
+
+  /** Start someone's clock now; resolves with their personal link. */
+  async start(id: string, params: { email: string }): Promise<PersonalDeadlineLink> {
+    return this.client.request<PersonalDeadlineLink>('POST', `/personal-deadlines/${seg(id)}/start`, {
+      body: params,
+    });
+  }
+
+  /** Someone's personal link (it does not start the clock). */
+  async getLink(id: string, params: { email: string }): Promise<PersonalDeadlineLink> {
+    return this.client.request<PersonalDeadlineLink>('GET', `/personal-deadlines/${seg(id)}/link`, {
+      params,
+    });
+  }
+
+  /** A visitor's personal offer on a product. Public endpoint. */
+  async getPublicOffer(params: PersonalOfferParams): Promise<PersonalOffer> {
+    return this.client.request<PersonalOffer>('GET', '/personal-deadlines/public/offer', { params });
+  }
+}
+
+/**
+ * Subscription retention: failed payment recovery, cancellation save offers
+ * and intro pricing (Pro plan to turn them on).
+ */
+class RetentionResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Recovered and at-risk revenue over the last `days`. */
+  async recoverySummary(params: RecoverySummaryParams = {}): Promise<RecoverySummary> {
+    return this.client.request<RecoverySummary>('GET', '/subscription-retention/recovery/summary', {
+      params,
+    });
+  }
+
+  /** Subscriptions with a failed payment. */
+  async listAtRisk(params: ListAtRiskParams = {}): Promise<PaymentRecoveryPage> {
+    return this.client.request<PaymentRecoveryPage>('GET', '/subscription-retention/recovery/at-risk', {
+      params,
+    });
+  }
+
+  /** Failed payment recovery settings. */
+  async getRecoverySettings(): Promise<RecoverySettings> {
+    return this.client.request<RecoverySettings>('GET', '/subscription-retention/recovery/settings');
+  }
+
+  /** Change the recovery settings (turning them on needs the Pro plan). */
+  async updateRecoverySettings(params: UpdateRecoverySettingsParams): Promise<RecoverySettings> {
+    return this.client.request<RecoverySettings>('PUT', '/subscription-retention/recovery/settings', {
+      body: params,
+    });
+  }
+
+  /** Subscriptions saved by a pause or discount, and the cancel reasons. */
+  async saveOffersReport(params: SaveOffersReportParams = {}): Promise<SaveOffersReport> {
+    return this.client.request<SaveOffersReport>('GET', '/subscription-retention/save-offers/report', {
+      params,
+    });
+  }
+
+  /** Intro pricing and yearly switch numbers. */
+  async introReport(): Promise<IntroPricingReport> {
+    return this.client.request<IntroPricingReport>('GET', '/subscription-retention/intro/report');
+  }
+
+  /** Retention settings of every subscription offer. */
+  async listOffers(): Promise<RetentionOffersList> {
+    return this.client.request<RetentionOffersList>('GET', '/subscription-retention/offers');
+  }
+
+  /** One subscription offer's retention settings. */
+  async getOffer(subscriptionId: string): Promise<RetentionOffer> {
+    return this.client.request<RetentionOffer>(
+      'GET',
+      `/subscription-retention/offers/${seg(subscriptionId)}`
+    );
+  }
+
+  /**
+   * Change an offer's save offers, intro price or yearly switch. A bad value
+   * is a 400 with `code: "INVALID_RETENTION_CONFIG"` and `body.field`.
+   */
+  async updateOffer(subscriptionId: string, params: UpdateRetentionOfferParams): Promise<RetentionOffer> {
+    return this.client.request<RetentionOffer>(
+      'PUT',
+      `/subscription-retention/offers/${seg(subscriptionId)}`,
+      { body: params }
+    );
+  }
+}
+
+/** Product bundles (Growth plan). */
+class BundlesResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Your bundles. */
+  async list(): Promise<Bundle[]> {
+    const res = await this.client.request<unknown>('GET', '/bundles');
+    return unwrap<Bundle[]>(res, 'bundles');
+  }
+
+  /** A product's bundle (`productIds` is `[]` when it is not one). */
+  async get(productId: string): Promise<Bundle> {
+    const res = await this.client.request<unknown>('GET', `/bundles/${seg(productId)}`);
+    return unwrap<Bundle>(res, 'bundle');
+  }
+
+  /** Make a product a bundle of 2–10 products, or change what it includes. */
+  async update(productId: string, params: UpdateBundleParams): Promise<Bundle> {
+    const res = await this.client.request<unknown>('PUT', `/bundles/${seg(productId)}`, {
+      body: params,
+    });
+    return unwrap<Bundle>(res, 'bundle');
+  }
+
+  /** Turn a bundle back into a normal product. */
+  async delete(productId: string): Promise<Bundle> {
+    const res = await this.client.request<unknown>('DELETE', `/bundles/${seg(productId)}`);
+    return unwrap<Bundle>(res, 'bundle');
+  }
+}
+
+/** "Buy more, save more": a percent off carts with more items (Growth plan). */
+class TieredDiscountsResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Your tiers. */
+  async get(): Promise<TieredDiscounts> {
+    const res = await this.client.request<unknown>('GET', '/tiered-discounts');
+    return unwrap<TieredDiscounts>(res, 'tieredDiscounts');
+  }
+
+  /** Save your tiers (only the fields you send change). */
+  async update(params: UpdateTieredDiscountsParams): Promise<TieredDiscounts> {
+    const res = await this.client.request<unknown>('PUT', '/tiered-discounts', { body: params });
+    return unwrap<TieredDiscounts>(res, 'tieredDiscounts');
+  }
+
+  /** Remove your tiers. */
+  async delete(): Promise<TieredDiscounts> {
+    const res = await this.client.request<unknown>('DELETE', '/tiered-discounts');
+    return unwrap<TieredDiscounts>(res, 'tieredDiscounts');
+  }
+}
+
+/**
+ * Revenue splits: share a product's sales with co-creators. Inviting needs
+ * the Growth plan; money fields ending in `Cents` are integer cents.
+ */
+class RevenueSplitsResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** The splits on your products. */
+  async list(params: ListRevenueSplitsParams = {}): Promise<RevenueSplit[]> {
+    const res = await this.client.request<unknown>('GET', '/revenue-splits', { params });
+    return unwrap<RevenueSplit[]>(res, 'splits');
+  }
+
+  /** Invite a co-creator to a share of a product (status `invited`). */
+  async create(params: CreateRevenueSplitParams): Promise<RevenueSplit> {
+    return this.client.request<RevenueSplit>('POST', '/revenue-splits', { body: params });
+  }
+
+  /** One split. */
+  async get(id: string): Promise<RevenueSplit> {
+    return this.client.request<RevenueSplit>('GET', `/revenue-splits/${seg(id)}`);
+  }
+
+  /** Remove a split: sales from now on are no longer shared. */
+  async remove(id: string): Promise<RevenueSplit> {
+    return this.client.request<RevenueSplit>('DELETE', `/revenue-splits/${seg(id)}`);
+  }
+
+  /** Send the invitation email again. */
+  async resend(id: string): Promise<RevenueSplit> {
+    return this.client.request<RevenueSplit>('POST', `/revenue-splits/${seg(id)}/resend`);
+  }
+
+  /** A product's splits, shares and free slots. */
+  async product(productId: string): Promise<ProductRevenueSplit> {
+    return this.client.request<ProductRevenueSplit>(
+      'GET',
+      `/revenue-splits/products/${seg(productId)}`
+    );
+  }
+
+  /** Split sales, newest first. Page with `cursor: nextCursor`. */
+  async sales(params: ListRevenueSplitSalesParams = {}): Promise<RevenueSplitSalesResponse> {
+    return this.client.request<RevenueSplitSalesResponse>('GET', '/revenue-splits/sales', { params });
+  }
+
+  /** How one order was split. */
+  async sale(orderId: string): Promise<RevenueSplitSale> {
+    return this.client.request<RevenueSplitSale>('GET', `/revenue-splits/sales/${seg(orderId)}`);
+  }
+
+  /** Split invitations sent to you. */
+  async invites(): Promise<RevenueSplit[]> {
+    const res = await this.client.request<unknown>('GET', '/revenue-splits/invites');
+    return unwrap<RevenueSplit[]>(res, 'invites');
+  }
+
+  /** Accept an invitation (needs payouts set up). */
+  async accept(inviteId: string): Promise<RevenueSplit> {
+    return this.client.request<RevenueSplit>('POST', `/revenue-splits/invites/${seg(inviteId)}/accept`);
+  }
+
+  /** Decline an invitation. */
+  async decline(inviteId: string): Promise<RevenueSplit> {
+    return this.client.request<RevenueSplit>('POST', `/revenue-splits/invites/${seg(inviteId)}/decline`);
+  }
+
+  /** Your earnings from products shared with you. */
+  async earnings(params: RevenueSplitEarningsParams = {}): Promise<RevenueSplitEarnings> {
+    return this.client.request<RevenueSplitEarnings>('GET', '/revenue-splits/earnings', { params });
+  }
+}
+
+/** Embeddable email signup forms (Growth plan to create or edit). */
+class SignupFormsResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Your forms with their stats. */
+  async list(params: ListSignupFormsParams = {}): Promise<SignupForm[]> {
+    const res = await this.client.request<unknown>('GET', '/forms', {
+      params: { archived: params.archived === undefined ? undefined : String(params.archived) },
+    });
+    return unwrap<SignupForm[]>(res, 'forms');
+  }
+
+  /** Create a form; the result carries its embed `script` and `iframe`. */
+  async create(params: CreateSignupFormParams): Promise<SignupForm> {
+    return this.client.request<SignupForm>('POST', '/forms', { body: params });
+  }
+
+  /** One form with 30 days of daily stats. */
+  async get(id: string): Promise<SignupFormDetail> {
+    return this.client.request<SignupFormDetail>('GET', `/forms/${seg(id)}`);
+  }
+
+  /** Change, pause or archive a form (pausing and archiving are always allowed). */
+  async update(id: string, params: UpdateSignupFormParams): Promise<SignupForm> {
+    return this.client.request<SignupForm>('PATCH', `/forms/${seg(id)}`, { body: params });
+  }
+
+  /** Delete a form. */
+  async delete(id: string): Promise<DeletedResult> {
+    return this.client.request<DeletedResult>('DELETE', `/forms/${seg(id)}`);
+  }
+
+  /** A form's public config, as the embed reads it. Public endpoint. */
+  async getPublic(id: string): Promise<PublicSignupForm> {
+    return this.client.request<PublicSignupForm>('GET', `/forms/public/${seg(id)}`);
+  }
+
+  /** Sign someone up through a form. Public endpoint (10 per 15 minutes per IP). */
+  async subscribe(id: string, params: SignupFormSubscribeParams): Promise<SignupFormSubscribeResult> {
+    return this.client.request<SignupFormSubscribeResult>('POST', `/forms/public/${seg(id)}/subscribe`, {
+      body: params,
+    });
+  }
+}
+
+/** Buyer testimonials: requests, moderation and the public wall (Growth plan). */
+class TestimonialsResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Testimonials to moderate (default: `pending`). */
+  async list(params: ListTestimonialsParams = {}): Promise<TestimonialList> {
+    return this.client.request<TestimonialList>('GET', '/testimonials', { params });
+  }
+
+  /** One testimonial. */
+  async get(id: string): Promise<Testimonial> {
+    return this.client.request<Testimonial>('GET', `/testimonials/${seg(id)}`);
+  }
+
+  /** Approve, feature or hide a testimonial (approving needs the Growth plan). */
+  async moderate(id: string, params: ModerateTestimonialParams): Promise<Testimonial> {
+    return this.client.request<Testimonial>('PATCH', `/testimonials/${seg(id)}`, { body: params });
+  }
+
+  /** Request emails, the wall and the checkout strip. */
+  async getSettings(): Promise<TestimonialSettings> {
+    const res = await this.client.request<unknown>('GET', '/testimonials/settings');
+    return unwrap<TestimonialSettings>(res, 'settings');
+  }
+
+  /** Change the settings (a switch turned on needs the Growth plan). */
+  async updateSettings(params: UpdateTestimonialSettingsParams): Promise<TestimonialSettings> {
+    const res = await this.client.request<unknown>('PUT', '/testimonials/settings', { body: params });
+    return unwrap<TestimonialSettings>(res, 'settings');
+  }
+
+  /** A product's approved testimonials. Public endpoint. */
+  async wall(productId: string): Promise<TestimonialWall> {
+    return this.client.request<TestimonialWall>(
+      'GET',
+      `/testimonials/public/products/${seg(productId)}`
+    );
+  }
+}
+
+/** The "How did you hear about us?" question on the thank-you page (Growth plan). */
+class AttributionSurveyResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** The survey. */
+  async get(): Promise<AttributionSurvey> {
+    const res = await this.client.request<unknown>('GET', '/attribution-survey/settings');
+    return unwrap<AttributionSurvey>(res, 'survey');
+  }
+
+  /** Change the survey (`enabled: true` needs the Growth plan). */
+  async update(params: UpdateAttributionSurveyParams): Promise<AttributionSurvey> {
+    const res = await this.client.request<unknown>('PUT', '/attribution-survey/settings', {
+      body: params,
+    });
+    return unwrap<AttributionSurvey>(res, 'survey');
+  }
+
+  /** Answers and revenue per channel, next to your tracked links. */
+  async report(params: AttributionReportParams = {}): Promise<AttributionReport> {
+    return this.client.request<AttributionReport>('GET', '/attribution-survey/report', { params });
+  }
+}
+
+/** How your store compares with similar stores (Pro plan). */
+class BenchmarksResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Conversion, average order, refund and email open rates against your cohort. */
+  async get(): Promise<Benchmarks> {
+    return this.client.request<Benchmarks>('GET', '/benchmarks');
+  }
+}
+
+/** Members-only posts of a membership. */
+class MemberPostsResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** A membership's posts, pinned first (HTML left out). */
+  async list(membershipId: string, params: { page?: number } = {}): Promise<MemberPostsPage> {
+    return this.client.request<MemberPostsPage>('GET', `/memberships/${seg(membershipId)}/posts`, {
+      params,
+    });
+  }
+
+  /** Write a post (Pro plan). `notify: true` emails members when it is published. */
+  async create(membershipId: string, params: CreateMemberPostParams): Promise<MemberPost> {
+    return this.client.request<MemberPost>('POST', `/memberships/${seg(membershipId)}/posts`, {
+      body: params,
+    });
+  }
+
+  /** One post with its HTML. */
+  async get(membershipId: string, postId: string): Promise<MemberPost> {
+    return this.client.request<MemberPost>(
+      'GET',
+      `/memberships/${seg(membershipId)}/posts/${seg(postId)}`
+    );
+  }
+
+  /** Edit, publish or pin a post. */
+  async update(membershipId: string, postId: string, params: MemberPostParams): Promise<MemberPost> {
+    return this.client.request<MemberPost>(
+      'PUT',
+      `/memberships/${seg(membershipId)}/posts/${seg(postId)}`,
+      { body: params }
+    );
+  }
+
+  /** Delete a post. */
+  async delete(membershipId: string, postId: string): Promise<MessageResult> {
+    return this.client.request<MessageResult>(
+      'DELETE',
+      `/memberships/${seg(membershipId)}/posts/${seg(postId)}`
+    );
+  }
+}
+
+/** Community threads of a membership. */
+class CommunityThreadsResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Threads, pinned first then by last activity. */
+  async list(membershipId: string, params: ListCommunityThreadsParams = {}): Promise<CommunityThreadsPage> {
+    return this.client.request<CommunityThreadsPage>(
+      'GET',
+      `/memberships/${seg(membershipId)}/threads`,
+      { params }
+    );
+  }
+
+  /** Start a thread as the creator (Pro plan). */
+  async create(membershipId: string, params: CreateCommunityThreadParams): Promise<CommunityThread> {
+    return this.client.request<CommunityThread>('POST', `/memberships/${seg(membershipId)}/threads`, {
+      body: params,
+    });
+  }
+
+  /** A thread with a page of its replies. */
+  async get(
+    membershipId: string,
+    threadId: string,
+    params: { page?: number } = {}
+  ): Promise<CommunityThreadDetail> {
+    return this.client.request<CommunityThreadDetail>(
+      'GET',
+      `/memberships/${seg(membershipId)}/threads/${seg(threadId)}`,
+      { params }
+    );
+  }
+
+  /** Pin, lock or hide a thread. */
+  async moderate(
+    membershipId: string,
+    threadId: string,
+    params: ModerateCommunityThreadParams
+  ): Promise<CommunityThread> {
+    return this.client.request<CommunityThread>(
+      'PATCH',
+      `/memberships/${seg(membershipId)}/threads/${seg(threadId)}`,
+      { body: params }
+    );
+  }
+
+  /** Delete a thread and its replies. */
+  async delete(membershipId: string, threadId: string): Promise<MessageResult> {
+    return this.client.request<MessageResult>(
+      'DELETE',
+      `/memberships/${seg(membershipId)}/threads/${seg(threadId)}`
+    );
+  }
+
+  /** Reply as the creator (Pro plan). */
+  async reply(membershipId: string, threadId: string, params: { body: string }): Promise<CommunityReply> {
+    return this.client.request<CommunityReply>(
+      'POST',
+      `/memberships/${seg(membershipId)}/threads/${seg(threadId)}/replies`,
+      { body: params }
+    );
+  }
+}
+
+/** Community replies of a membership. */
+class CommunityRepliesResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Hide or unhide a reply. */
+  async moderate(membershipId: string, replyId: string, params: { hidden: boolean }): Promise<CommunityReply> {
+    return this.client.request<CommunityReply>(
+      'PATCH',
+      `/memberships/${seg(membershipId)}/replies/${seg(replyId)}`,
+      { body: params }
+    );
+  }
+
+  /** Delete a reply. */
+  async delete(membershipId: string, replyId: string): Promise<MessageResult> {
+    return this.client.request<MessageResult>(
+      'DELETE',
+      `/memberships/${seg(membershipId)}/replies/${seg(replyId)}`
+    );
+  }
+}
+
+/**
+ * Memberships: subscription offers that unlock products, members-only posts
+ * and a community (Pro plan to create or edit).
+ */
+class MembershipsResource {
+  public posts: MemberPostsResource;
+  public threads: CommunityThreadsResource;
+  public replies: CommunityRepliesResource;
+
+  constructor(private client: Pocketsflow) {
+    this.posts = new MemberPostsResource(client);
+    this.threads = new CommunityThreadsResource(client);
+    this.replies = new CommunityRepliesResource(client);
+  }
+
+  /** Your memberships with their stats. */
+  async list(): Promise<Membership[]> {
+    const res = await this.client.request<unknown>('GET', '/memberships');
+    return unwrap<Membership[]>(res, 'memberships');
+  }
+
+  /** Create a membership over 1–10 of your subscription offers. */
+  async create(params: CreateMembershipParams): Promise<Membership> {
+    return this.client.request<Membership>('POST', '/memberships', { body: params });
+  }
+
+  /** One membership. */
+  async get(id: string): Promise<Membership> {
+    return this.client.request<Membership>('GET', `/memberships/${seg(id)}`);
+  }
+
+  /** Change or archive a membership (only the fields you send change). */
+  async update(id: string, params: UpdateMembershipParams): Promise<Membership> {
+    return this.client.request<Membership>('PUT', `/memberships/${seg(id)}`, { body: params });
+  }
+
+  /** Delete a membership with its posts and community. */
+  async delete(id: string): Promise<MessageResult> {
+    return this.client.request<MessageResult>('DELETE', `/memberships/${seg(id)}`);
+  }
+
+  /** A membership's members (20 per page). */
+  async listMembers(id: string, params: ListMembershipMembersParams = {}): Promise<MembershipMembersPage> {
+    return this.client.request<MembershipMembersPage>('GET', `/memberships/${seg(id)}/members`, {
+      params,
+    });
+  }
+
+  /** Ban someone from all your communities (they keep their products). */
+  async banMember(params: BanMemberParams): Promise<MemberBanResult> {
+    return this.client.request<MemberBanResult>('POST', '/memberships/members/ban', { body: params });
+  }
+
+  /** Lift a community ban. */
+  async unbanMember(params: { email: string }): Promise<MemberBanResult> {
+    return this.client.request<MemberBanResult>('POST', '/memberships/members/unban', { body: params });
+  }
+}
+
+/**
+ * Creator services: priority support (Pro), an account manager and dispute
+ * cover (Volume). Reads are never locked.
+ */
+class CreatorServicesResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Which services your plan includes, with their state. */
+  async get(): Promise<CreatorServices> {
+    return this.client.request<CreatorServices>('GET', '/creator-services');
+  }
+
+  /** Your account manager and shared Slack channel (Volume plan). */
+  async getAccountManager(): Promise<AccountManagerView> {
+    return this.client.request<AccountManagerView>('GET', '/creator-services/account-manager');
+  }
+
+  /** Ask for a shared Slack channel with your account manager (Volume plan). */
+  async requestSlackChannel(params: RequestSlackChannelParams = {}): Promise<AccountManagerView> {
+    return this.client.request<AccountManagerView>(
+      'POST',
+      '/creator-services/account-manager/slack-channel',
+      { body: params }
+    );
+  }
+
+  /** Your dispute help requests. */
+  async listDisputeHelp(params: ListDisputeHelpParams = {}): Promise<DisputeHelpRequest[]> {
+    const res = await this.client.request<unknown>('GET', '/creator-services/dispute-help', { params });
+    return unwrap<DisputeHelpRequest[]>(res, 'requests');
+  }
+
+  /**
+   * Ask the team to answer a dispute for you (Pro plan). One open request
+   * per order: a second one is a 409 with `code: "ALREADY_REQUESTED"`.
+   */
+  async createDisputeHelp(params: CreateDisputeHelpParams): Promise<DisputeHelpRequest> {
+    const res = await this.client.request<unknown>('POST', '/creator-services/dispute-help', {
+      body: params,
+    });
+    return unwrap<DisputeHelpRequest>(res, 'request');
+  }
+
+  /** Disputes covered (or excluded) by dispute cover, newest first. */
+  async listDisputeCovers(params: ListDisputeCoversParams = {}): Promise<DisputeCover[]> {
+    const res = await this.client.request<unknown>('GET', '/creator-services/dispute-covers', { params });
+    return unwrap<DisputeCover[]>(res, 'covers');
+  }
+
+  /** The dispute cover of one order (404 when there is none). */
+  async getDisputeCover(saleId: string): Promise<DisputeCover> {
+    const res = await this.client.request<unknown>(
+      'GET',
+      `/creator-services/dispute-covers/${seg(saleId)}`
+    );
+    return unwrap<DisputeCover>(res, 'cover');
+  }
+}
+
+/** Sync sales and customers to a Google Sheet (Pro plan). */
+class SheetsSyncResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Whether sync is available, allowed and connected. */
+  async get(): Promise<SheetsSyncState> {
+    return this.client.request<SheetsSyncState>('GET', '/sheets-sync');
+  }
+
+  /** Start connecting a Google account: open the returned `url` (the consent page). */
+  async connect(): Promise<{ url: string }> {
+    return this.client.request<{ url: string }>('POST', '/sheets-sync/connect');
+  }
+
+  /** Create a spreadsheet or choose an existing one. */
+  async setSpreadsheet(params: SetSpreadsheetParams): Promise<SheetsConnection> {
+    const res = await this.client.request<unknown>('PUT', '/sheets-sync/spreadsheet', { body: params });
+    return unwrap<SheetsConnection>(res, 'connection');
+  }
+
+  /** Choose what to sync. */
+  async update(params: UpdateSheetsSyncParams): Promise<SheetsConnection> {
+    const res = await this.client.request<unknown>('PATCH', '/sheets-sync', { body: params });
+    return unwrap<SheetsConnection>(res, 'connection');
+  }
+
+  /** Add the sales of the last `days` (1–365). */
+  async backfill(params: { days: number }): Promise<SheetsConnection> {
+    const res = await this.client.request<unknown>('POST', '/sheets-sync/backfill', { body: params });
+    return unwrap<SheetsConnection>(res, 'connection');
+  }
+
+  /** Sync now (at most once a minute). */
+  async syncNow(): Promise<SheetsSyncNowResult> {
+    return this.client.request<SheetsSyncNowResult>('POST', '/sheets-sync/sync');
+  }
+
+  /** Queue the failed rows again. */
+  async retryFailed(): Promise<SheetsRetryResult> {
+    return this.client.request<SheetsRetryResult>('POST', '/sheets-sync/retry');
+  }
+
+  /** Disconnect Google Sheets. */
+  async disconnect(): Promise<{ disconnected: boolean }> {
+    return this.client.request<{ disconnected: boolean }>('DELETE', '/sheets-sync');
+  }
+}
+
+/** Your referral link: free months for stores that sign up through it. */
+class ReferralsResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Your referral link, code and what it earned. */
+  async stats(): Promise<ReferralStats> {
+    return this.client.request<ReferralStats>('GET', '/referrals/me');
+  }
+
+  /** The stores you referred, newest first. Page with `before: nextCursor`. */
+  async list(params: ListReferredStoresParams = {}): Promise<ReferredStoresPage> {
+    return this.client.request<ReferredStoresPage>('GET', '/referrals/referred', { params });
+  }
+}
+
+/** Newsletter recommendations: creators you suggest to new subscribers. */
+class RecommendationsResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Your picks and who recommends you. */
+  async get(): Promise<RecommendationSettings> {
+    return this.client.request<RecommendationSettings>('GET', '/recommendations');
+  }
+
+  /** Change your settings or picks (at most 3). */
+  async update(params: UpdateRecommendationsParams): Promise<RecommendationSettings> {
+    return this.client.request<RecommendationSettings>('PUT', '/recommendations', { body: params });
+  }
+
+  /** Find creators you can recommend. */
+  async search(q: string): Promise<CreatorCard[]> {
+    const res = await this.client.request<unknown>('GET', '/recommendations/search', { params: { q } });
+    return unwrap<CreatorCard[]>(res, 'results');
+  }
+}
+
+/** The agency program: manage client stores and earn a revenue share. */
+class AgencyResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Your agency (404 `NOT_AGENCY` when you have not joined). */
+  async get(): Promise<Agency> {
+    return this.client.request<Agency>('GET', '/agency');
+  }
+
+  /** Join the agency program. */
+  async create(params: CreateAgencyParams): Promise<Agency> {
+    return this.client.request<Agency>('POST', '/agency', { body: params });
+  }
+
+  /** Change your agency's name or website. */
+  async update(params: UpdateAgencyParams): Promise<Agency> {
+    return this.client.request<Agency>('PATCH', '/agency', { body: params });
+  }
+
+  /** Your client stores and totals. */
+  async clients(): Promise<AgencyOverview> {
+    return this.client.request<AgencyOverview>('GET', '/agency/clients');
+  }
+
+  /** Stop managing a client store. */
+  async removeClient(storeUserId: string): Promise<OkResult> {
+    return this.client.request<OkResult>('DELETE', `/agency/clients/${seg(storeUserId)}`);
+  }
+
+  /** Your monthly statements, newest first. */
+  async statements(): Promise<AgencyStatementRow[]> {
+    const res = await this.client.request<unknown>('GET', '/agency/statements');
+    return unwrap<AgencyStatementRow[]>(res, 'statements');
+  }
+
+  /** One monthly statement (`YYYY-MM`) with its lines. */
+  async statement(month: string): Promise<AgencyStatement> {
+    return this.client.request<AgencyStatement>('GET', `/agency/statements/${seg(month)}`);
+  }
+}
+
+/** The agency that manages your store. */
+class AgencyAccessResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Your store's agency, or null. */
+  async get(): Promise<StoreAgency | null> {
+    const res = await this.client.request<unknown>('GET', '/agency-access');
+    return unwrap<StoreAgency | null>(res, 'agency');
+  }
+
+  /** Look up an agency code before inviting it. */
+  async preview(code: string): Promise<AgencyPreview> {
+    return this.client.request<AgencyPreview>('GET', `/agency-access/preview/${seg(code)}`);
+  }
+
+  /** Give an agency admin access to your store. */
+  async invite(code: string): Promise<StoreAgency | null> {
+    const res = await this.client.request<unknown>('POST', '/agency-access', { body: { code } });
+    return unwrap<StoreAgency | null>(res, 'agency');
+  }
+
+  /** Remove your store's agency. */
+  async remove(): Promise<OkResult> {
+    return this.client.request<OkResult>('DELETE', '/agency-access');
+  }
+}
+
+/** A/B tests on a product's price, headline, cover or checkout layout (Pro plan). */
+class AbTestsResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Your tests, newest first, with visitors and conversions. */
+  async list(params: ListAbTestsParams = {}): Promise<AbTest[]> {
+    return this.client.request<AbTest[]>('GET', '/ab-tests', { params });
+  }
+
+  /** Start a test (one running test per product). */
+  async create(params: CreateAbTestParams): Promise<AbTest> {
+    return this.client.request<AbTest>('POST', '/ab-tests', { body: params });
+  }
+
+  /** A test with its results. */
+  async get(id: string, params: AbTestTimezoneParams = {}): Promise<AbTest> {
+    return this.client.request<AbTest>('GET', `/ab-tests/${seg(id)}`, { params });
+  }
+
+  /** A test's results per variant. */
+  async results(id: string, params: AbTestTimezoneParams = {}): Promise<AbTestResults> {
+    return this.client.request<AbTestResults>('GET', `/ab-tests/${seg(id)}/results`, { params });
+  }
+
+  /** Stop a running test without changing the product. */
+  async stop(id: string): Promise<AbTest> {
+    return this.client.request<AbTest>('POST', `/ab-tests/${seg(id)}/stop`);
+  }
+
+  /** End a test and apply the winning variant to the product. */
+  async declareWinner(id: string, params: { variantId: string }): Promise<AbTestWinner> {
+    return this.client.request<AbTestWinner>('POST', `/ab-tests/${seg(id)}/winner`, { body: params });
+  }
+
+  /** Delete an ended test. */
+  async delete(id: string): Promise<MessageResult> {
+    return this.client.request<MessageResult>('DELETE', `/ab-tests/${seg(id)}`);
+  }
+
+  /** A visitor's variant of a product (`test: null` when none runs). Public endpoint. */
+  async assign(params: AssignAbTestVariantParams): Promise<AbAssignment> {
+    return this.client.request<AbAssignment>('POST', '/ab-tests/public/assign', { body: params });
+  }
+}
+
+/** Loyalty points and store credit (Growth plan to turn them on). */
+class LoyaltyResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Earn and redeem rates, expiry and currency. */
+  async getSettings(): Promise<LoyaltySettings> {
+    return this.client.request<LoyaltySettings>('GET', '/loyalty');
+  }
+
+  /** Change the settings (only the fields you send change). */
+  async updateSettings(params: UpdateLoyaltySettingsParams): Promise<LoyaltySettings> {
+    return this.client.request<LoyaltySettings>('PUT', '/loyalty', { body: params });
+  }
+
+  /** Outstanding points and credit (your liability), earned and redeemed. */
+  async getSummary(): Promise<LoyaltySummary> {
+    return this.client.request<LoyaltySummary>('GET', '/loyalty/summary');
+  }
+
+  /** Buyers with a points balance. */
+  async listMembers(params: ListLoyaltyMembersParams = {}): Promise<LoyaltyMembersResponse> {
+    return this.client.request<LoyaltyMembersResponse>('GET', '/loyalty/members', { params });
+  }
+
+  /** The points ledger, newest first. */
+  async listActivity(params: ListLoyaltyActivityParams = {}): Promise<LoyaltyActivityResponse> {
+    return this.client.request<LoyaltyActivityResponse>('GET', '/loyalty/ledger', { params });
+  }
+
+  /** Add or remove a buyer's points. */
+  async adjustPoints(params: AdjustLoyaltyPointsParams): Promise<LoyaltyAdjustment> {
+    return this.client.request<LoyaltyAdjustment>('POST', '/loyalty/members/adjust', { body: params });
+  }
+}
+
+/** Tiered affiliate commissions and milestone bonuses (Pro plan to turn them on). */
+class AffiliateTiersResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Your tiers, bonuses and period. */
+  async get(): Promise<AffiliateProgram> {
+    return this.client.request<AffiliateProgram>('GET', '/affiliate-program');
+  }
+
+  /** Change the tiers and bonuses (each list is replaced). */
+  async update(params: UpdateAffiliateTiersParams): Promise<AffiliateProgram> {
+    return this.client.request<AffiliateProgram>('PUT', '/affiliate-program', { body: params });
+  }
+
+  /** Every affiliate's tier progress. */
+  async listProgress(): Promise<AffiliateTierProgressList> {
+    return this.client.request<AffiliateTierProgressList>('GET', '/affiliate-program/affiliates');
+  }
+
+  /** One affiliate's tier progress and bonuses. */
+  async getProgress(id: string): Promise<AffiliateTierProgressDetail> {
+    return this.client.request<AffiliateTierProgressDetail>(
+      'GET',
+      `/affiliate-program/affiliates/${seg(id)}`
+    );
+  }
+
+  /** Milestone bonuses, newest first. */
+  async listBonuses(params: ListAffiliateBonusesParams = {}): Promise<AffiliateBonusesResponse> {
+    return this.client.request<AffiliateBonusesResponse>('GET', '/affiliate-program/bonuses', { params });
+  }
+
+  /** Your own progress as an affiliate of other stores. */
+  async mine(): Promise<MyAffiliateTierProgress> {
+    return this.client.request<MyAffiliateTierProgress>('GET', '/affiliate-program/mine');
+  }
+}
+
+/**
+ * Import products, customers, orders and subscribers from another platform
+ * (Volume plan to write; reads and `cancel` are never locked).
+ */
+class MigrationsResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Platforms you can import from, with their CSV columns. */
+  async platforms(): Promise<MigrationPlatform[]> {
+    const res = await this.client.request<unknown>('GET', '/migrations/platforms');
+    return unwrap<MigrationPlatform[]>(res, 'platforms');
+  }
+
+  /** Your imports, newest first. */
+  async list(params: PaginationParams = {}): Promise<MigrationListResponse> {
+    return this.client.request<MigrationListResponse>('GET', '/migrations', { params });
+  }
+
+  /** Create an import (a `draft`), optionally with its CSV files. */
+  async create(params: CreateMigrationParams): Promise<MigrationJob> {
+    return this.client.request<MigrationJob>('POST', '/migrations', { body: params });
+  }
+
+  /** An import's status and progress. */
+  async get(id: string): Promise<MigrationJob> {
+    return this.client.request<MigrationJob>('GET', `/migrations/${seg(id)}`);
+  }
+
+  /** Add (or replace) a CSV export of one kind. */
+  async addFile(id: string, params: MigrationFileInput): Promise<MigrationFileResult> {
+    return this.client.request<MigrationFileResult>('POST', `/migrations/${seg(id)}/files`, {
+      body: params,
+    });
+  }
+
+  /** Fix the column mapping of a file (field → CSV header, null = not mapped). */
+  async updateMapping(
+    id: string,
+    kind: MigrationKind,
+    mapping: Record<string, string | null>
+  ): Promise<MigrationFileResult> {
+    return this.client.request<MigrationFileResult>(
+      'PUT',
+      `/migrations/${seg(id)}/files/${seg(kind)}/mapping`,
+      { body: { mapping } }
+    );
+  }
+
+  /** Remove a file. */
+  async removeFile(id: string, kind: MigrationKind): Promise<MigrationJob> {
+    return this.client.request<MigrationJob>('DELETE', `/migrations/${seg(id)}/files/${seg(kind)}`);
+  }
+
+  /** Preview a file's rows and their errors. */
+  async rows(id: string, params: ListMigrationRowsParams): Promise<MigrationRowsPage> {
+    return this.client.request<MigrationRowsPage>('GET', `/migrations/${seg(id)}/rows`, { params });
+  }
+
+  /** Pull from the other platform with your API token instead of CSV files. */
+  async connect(id: string, token: string): Promise<MigrationConnectResult> {
+    return this.client.request<MigrationConnectResult>('POST', `/migrations/${seg(id)}/connect`, {
+      body: { token },
+    });
+  }
+
+  /** Count what the import would create, skip and refuse. */
+  async dryRun(id: string): Promise<MigrationDryRun> {
+    return this.client.request<MigrationDryRun>('POST', `/migrations/${seg(id)}/dry-run`);
+  }
+
+  /** Start the import (it runs in the background; poll `get()`). */
+  async start(id: string): Promise<MigrationJob> {
+    return this.client.request<MigrationJob>('POST', `/migrations/${seg(id)}/start`);
+  }
+
+  /** Cancel an import (rows already imported stay). */
+  async cancel(id: string): Promise<MigrationJob> {
+    return this.client.request<MigrationJob>('POST', `/migrations/${seg(id)}/cancel`);
+  }
+
+  /** What an import created, skipped and could not import. */
+  async report(id: string): Promise<MigrationReport> {
+    return this.client.request<MigrationReport>('GET', `/migrations/${seg(id)}/report`);
+  }
+
+  /** Every row problem as CSV text. */
+  async errorsCsv(id: string): Promise<string> {
+    return this.client.request<string>('GET', `/migrations/${seg(id)}/errors.csv`, {
+      responseType: 'text',
     });
   }
 }

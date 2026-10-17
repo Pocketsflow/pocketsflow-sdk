@@ -423,9 +423,16 @@ result.deliveryId;
 await pocketsflow.webhooks.delete('webhook_id');
 ```
 
-`order.post_purchase_accepted` (a buyer took the one-click offer after
-checkout) and `funnel.lead` (a new sales funnel lead) have typed payloads:
-`OrderPostPurchaseAcceptedEvent` and `FunnelLeadEvent`.
+Feature events have typed payloads: `order.post_purchase_accepted`
+(`OrderPostPurchaseAcceptedEvent`), `funnel.lead` (`FunnelLeadEvent`),
+`subscription.payment_failed` / `.recovered` / `.saved`, `usage.recorded`,
+`usage.period_closed`, `installment.paid` / `.failed`, `split.created` /
+`.paid`, `course.completed`, `certificate.issued`, `testimonial.submitted`,
+`member.joined` / `.left`, `ab_test.completed`, `affiliate.tier_changed` and
+`loyalty.credit_redeemed` (e.g. `MemberJoinedEvent`, `SplitPaidEvent`). In an
+`ab_test.completed` body, `id` and `type` are the test's own fields: read the
+event id and type from the `X-Pocketsflow-Event-Id` / `X-Pocketsflow-Event`
+headers.
 
 ```typescript
 import { constructWebhookEvent, FunnelLeadEvent } from 'pocketsflow';
@@ -848,6 +855,304 @@ await pocketsflow.licenses.validate({ productId: 'product_id', licenseKey: '…'
 await pocketsflow.licenses.deactivate({ productId: 'product_id', licenseKey: '…', instanceId: check.instance!.id });
 ```
 
+### Paid newsletter, segments, resends and subject tests
+
+Membership offers that unlock paid posts (Growth plan):
+
+```typescript
+const nl = await pocketsflow.paidNewsletter.get(); // settings, offers and stats
+await pocketsflow.paidNewsletter.update({ enabled: true, monthlyOfferId: 'offer_id' });
+await pocketsflow.paidNewsletter.stats(); // paid / free subscribers, mrrCents
+await pocketsflow.paidNewsletter.sync(); // re-tag the list from live memberships
+
+// Who gets a post: 'everyone' | 'free' | 'paid'
+await pocketsflow.newsletters.posts.setAudience('post_id', { audience: 'paid' });
+
+// Resend to non-openers, and subject line tests (Growth plan)
+await pocketsflow.newsletters.posts.resendToNonOpeners('post_id', { subject: 'In case you missed it' });
+await pocketsflow.newsletters.posts.startSubjectTest('draft_id', { subjectB: 'Another subject' });
+```
+
+Audience segments (Growth plan) are saved rules over your list. Send a post
+to one with `segmentId`:
+
+```typescript
+const segment = await pocketsflow.segments.create({
+  name: 'Big spenders',
+  definition: { groups: [{ rules: [{ type: 'spent', op: 'gt', amountCents: 10000 }] }] },
+});
+await pocketsflow.segments.count(segment._id);
+const { data, nextCursor } = await pocketsflow.segments.listSubscribers(segment._id);
+```
+
+### Usage-based and per-seat pricing
+
+Subscription offers with seats and meters (Pro plan):
+
+```typescript
+await pocketsflow.subscriptions.updateUsagePricing('offer_id', {
+  meters: [{ key: 'api_calls', name: 'API calls', pricing: 'per_unit', unitAmountCents: 1, includedUnits: 1000 }],
+});
+
+// `idempotencyKey` is also sent as the Idempotency-Key header
+const { replayed } = await pocketsflow.usage.report('mem_…', { meter: 'api_calls', quantity: 42, idempotencyKey: 'job-123' });
+const usage = await pocketsflow.usage.get('mem_…'); // current period, records, past periods
+await pocketsflow.subscriptions.updateSeats('mem_…', { quantity: 5 });
+```
+
+### Checkout offers and launch pricing
+
+```typescript
+// Payment plans, exit offers and downsells (Growth plan)
+await pocketsflow.products.updatePaymentPlan('product_id', { enabled: true, installments: 3 });
+await pocketsflow.products.updateExitOffer('product_id', { exitOffer: { enabled: true, value: 10 } });
+await pocketsflow.checkoutOffers.get('product_id'); // public: what the checkout shows
+
+// Flash sales, fair pricing and early-bird price steps (Growth plan)
+await pocketsflow.flashSales.create({
+  name: 'Black Friday',
+  startsAt: '2026-11-27T00:00:00Z',
+  endsAt: '2026-11-30T23:59:59Z',
+  value: 30, // percent off (valueType 'fixed' for an amount)
+});
+await pocketsflow.fairPricing.update({ enabled: true });
+await pocketsflow.products.setPriceSteps('product_id', { enabled: true, steps: [{ price: 19, maxSales: 50 }, { price: 29 }] });
+
+// Public: the price a buyer pays now
+const quote = await pocketsflow.pricing.quote('product_id', { tz: 'Asia/Kolkata', orderBumpIds: ['bump_id'] });
+```
+
+Bundles and "Buy more, save more" (Growth plan):
+
+```typescript
+await pocketsflow.bundles.update('product_id', { productIds: ['a', 'b', 'c'] });
+await pocketsflow.tieredDiscounts.update({ enabled: true, tiers: [{ minItems: 2, percentOff: 10 }] });
+```
+
+Orders priced this way carry `pricing`, `installment`, `bundleItems` and
+`tieredDiscount`.
+
+### Delivery: limited drops, PDF stamping, download limits
+
+```typescript
+await pocketsflow.products.updateLimitedDrop('product_id', { enabled: true, quantity: 100 }); // Starter
+await pocketsflow.products.getDropAvailability('product_id'); // public: copies left
+await pocketsflow.products.updatePdfStamping('product_id', { enabled: true }); // Starter
+await pocketsflow.products.updateDownloadLimits('product_id', { enabled: true, maxDownloads: 5 }); // Growth
+
+const downloads = await pocketsflow.orders.getDownloads('order_id');
+await pocketsflow.orders.resetDownloads('order_id');
+```
+
+### Courses and certificates
+
+Drip rules, quizzes and certificates (Growth plan to change them):
+
+```typescript
+await pocketsflow.courses.update('product_id', {
+  lessons: [{ lessonId: 'les_…', drip: { type: 'afterDays', days: 7 } }],
+  certificate: { enabled: true },
+});
+await pocketsflow.courses.upsertQuiz('product_id', 'les_…', { passMark: 80, questions: [/* … */] });
+await pocketsflow.courses.stats('product_id');
+await pocketsflow.certificates.verify('7K2QX9MD4HTR'); // public
+```
+
+### Analytics
+
+```typescript
+const range = { from: '2026-09-01', to: '2026-09-30', timezoneOffsetMinutes: new Date().getTimezoneOffset() };
+await pocketsflow.analytics.preview(range); // every plan
+await pocketsflow.analytics.summary(range); // Growth: KPIs vs the previous period
+await pocketsflow.analytics.funnel(range);
+await pocketsflow.analytics.revenueBySource({ ...range, dimension: 'utm_campaign' });
+await pocketsflow.analytics.cohorts({ months: 6 });
+await pocketsflow.analytics.netRevenue({ ...range, groupBy: 'country' });
+await pocketsflow.analytics.mrr({ subscriptionId: 'offer_id' }); // Pro
+```
+
+### Unique coupons and personal deadlines
+
+```typescript
+// One-time codes on a discount with `uniquePerRecipient: true` (Growth plan)
+await pocketsflow.discounts.createUniqueCodes('discount_id', { emails: ['a@b.com'] });
+const { codes, stats, nextCursor } = await pocketsflow.discounts.listUniqueCodes('discount_id');
+const csv = await pocketsflow.discounts.exportUniqueCodes('discount_id'); // CSV text
+await pocketsflow.discounts.apply('VIP-7KQ2MX9D', 'product_id', { email: 'a@b.com' });
+
+// A countdown offer per contact (Pro plan)
+const deadline = await pocketsflow.personalDeadlines.create({
+  name: '72-hour offer',
+  productId: 'product_id',
+  offer: { type: 'percentage', value: 30 },
+});
+const { url } = await pocketsflow.personalDeadlines.start(deadline._id, { email: 'a@b.com' });
+```
+
+### Subscription retention
+
+Failed payment recovery, cancellation save offers and intro pricing (Pro
+plan to turn them on):
+
+```typescript
+await pocketsflow.retention.recoverySummary({ days: 30 });
+await pocketsflow.retention.listAtRisk({ status: 'open' });
+await pocketsflow.retention.updateRecoverySettings({ enabled: true, finalAction: 'pause' });
+await pocketsflow.retention.updateOffer('offer_id', {
+  saveOffers: { enabled: true, discountPercent: 30, discountMonths: 3 },
+  intro: { enabled: true, price: 1, periods: 1 },
+});
+```
+
+A bad value is a 400 with `code: "INVALID_RETENTION_CONFIG"` and the field in
+`error.body.field`.
+
+### Revenue splits
+
+Share a product's sales with co-creators (Growth plan to invite; money in
+`…Cents` fields is integer cents):
+
+```typescript
+await pocketsflow.revenueSplits.create({ productId: 'product_id', email: 'co@creator.com', sharePercent: 30 });
+await pocketsflow.revenueSplits.product('product_id'); // shares and free slots
+const { sales, nextCursor } = await pocketsflow.revenueSplits.sales({ limit: 20 });
+
+// As the co-creator
+const invites = await pocketsflow.revenueSplits.invites();
+await pocketsflow.revenueSplits.accept(invites[0].id);
+await pocketsflow.revenueSplits.earnings();
+```
+
+### Signup forms, testimonials and the attribution survey
+
+```typescript
+// Embeddable signup forms (Growth plan): the result carries `embed.script`
+const form = await pocketsflow.signupForms.create({ name: 'Footer', type: 'popup' });
+await pocketsflow.signupForms.update(form._id, { status: 'paused' });
+await pocketsflow.signupForms.subscribe(form._id, { email: 'a@b.com' }); // public
+
+// Testimonials (Growth plan)
+const { testimonials } = await pocketsflow.testimonials.list({ status: 'pending' });
+await pocketsflow.testimonials.moderate(testimonials[0].id, { featured: true });
+await pocketsflow.testimonials.wall('product_id'); // public
+
+// "How did you hear about us?" (Growth plan)
+await pocketsflow.attributionSurvey.update({ enabled: true });
+await pocketsflow.attributionSurvey.report({ startDate: '2026-09-01', endDate: '2026-09-30' });
+```
+
+### Customer CRM and benchmarks
+
+Pro plan:
+
+```typescript
+const { data, nextCursor } = await pocketsflow.customers.listProfiles({ sort: 'ltv', tag: 'vip' });
+const profile = await pocketsflow.customers.getProfile('customer_id'); // LTV, timeline, notes
+await pocketsflow.customers.addNote('customer_id', { body: 'Asked about a team plan' });
+await pocketsflow.customers.setTags('customer_id', { tags: ['vip'] });
+
+const { metrics, cohort } = await pocketsflow.benchmarks.get();
+```
+
+### Memberships
+
+Subscription offers that unlock products, members-only posts and a
+community (Pro plan to create or edit):
+
+```typescript
+const membership = await pocketsflow.memberships.create({ name: 'Inner circle', offerIds: ['offer_id'] });
+await pocketsflow.memberships.listMembers(membership._id, { status: 'active' });
+await pocketsflow.memberships.posts.create(membership._id, { title: 'Welcome', html: '<p>Hi</p>', status: 'published', notify: true });
+const { threads } = await pocketsflow.memberships.threads.list(membership._id);
+await pocketsflow.memberships.threads.moderate(membership._id, threads[0]._id, { pinned: true });
+await pocketsflow.memberships.replies.moderate(membership._id, 'reply_id', { hidden: true });
+await pocketsflow.memberships.banMember({ email: 'troll@example.com', hideContent: true });
+```
+
+### Creator services and Google Sheets sync
+
+```typescript
+const services = await pocketsflow.creatorServices.get();
+await pocketsflow.creatorServices.createDisputeHelp({ saleId: 'order_id', message: 'The buyer says…' }); // Pro
+await pocketsflow.creatorServices.getAccountManager(); // Volume
+await pocketsflow.creatorServices.listDisputeCovers(); // Volume
+
+// Google Sheets (Pro plan)
+const { url } = await pocketsflow.sheetsSync.connect(); // open the consent page
+await pocketsflow.sheetsSync.setSpreadsheet({ mode: 'create', backfillDays: 30 });
+await pocketsflow.sheetsSync.syncNow();
+```
+
+### Referrals, recommendations and agencies
+
+Free on every plan:
+
+```typescript
+const { link, freeMonths } = await pocketsflow.referrals.stats();
+await pocketsflow.referrals.list();
+
+await pocketsflow.recommendations.search('ana');
+await pocketsflow.recommendations.update({ showRecommendations: true, picks: [{ username: 'ana' }] });
+
+// Agency side
+await pocketsflow.agency.create({ name: 'Studio' });
+await pocketsflow.agency.clients();
+await pocketsflow.agency.statement('2026-09');
+
+// Client side: let an agency manage your store
+await pocketsflow.agencyAccess.preview('AGENCY_CODE');
+await pocketsflow.agencyAccess.invite('AGENCY_CODE');
+```
+
+### A/B tests
+
+Price, headline, cover or checkout layout tests (Pro plan):
+
+```typescript
+const abTest = await pocketsflow.abTests.create({
+  productId: 'product_id',
+  type: 'price',
+  variants: [{ label: 'Higher', price: 49 }],
+});
+const results = await pocketsflow.abTests.results(abTest._id);
+await pocketsflow.abTests.declareWinner(abTest._id, { variantId: results.recommendation.variantId! });
+
+// Public: a visitor's variant (no API key needed)
+await pocketsflow.abTests.assign({ productId: 'product_id', visitorId: 'visitor_id' });
+```
+
+### Loyalty and affiliate tiers
+
+```typescript
+// Points and store credit (Growth plan)
+await pocketsflow.loyalty.updateSettings({ enabled: true, earnPointsPerUnit: 10, pointsPerCreditUnit: 100 });
+await pocketsflow.loyalty.getSummary(); // outstanding liability
+await pocketsflow.loyalty.adjustPoints({ email: 'a@b.com', points: 500, idempotencyKey: 'gift-1' });
+
+// Tiered commissions and milestone bonuses (Pro plan)
+await pocketsflow.affiliateTiers.update({
+  enabled: true,
+  period: 'month',
+  tiers: [{ minSales: 0, rate: 20 }, { minSales: 10, rate: 30 }],
+});
+await pocketsflow.affiliateTiers.listProgress();
+```
+
+### Migrations
+
+Import products, customers, orders and subscribers from another platform
+(Volume plan):
+
+```typescript
+const job = await pocketsflow.migrations.create({ source: 'gumroad' });
+await pocketsflow.migrations.addFile(job._id, { kind: 'products', csv: productsCsv });
+const dryRun = await pocketsflow.migrations.dryRun(job._id);
+if (dryRun.canStart) await pocketsflow.migrations.start(job._id);
+await pocketsflow.migrations.get(job._id); // poll progress
+const report = await pocketsflow.migrations.report(job._id);
+const problems = await pocketsflow.migrations.errorsCsv(job._id); // CSV text
+```
+
 ## Error Handling
 
 ```typescript
@@ -894,7 +1199,16 @@ Methods that can throw it: `upsells.create` / `.update`,
 `storeBadge.update({ showPoweredBy: false })`, `trackedLinks.create` /
 `.update`, `team.invites.create`, `team.teams.create` / `.update`,
 `postPurchaseOffers.update`, `socialProof.updateSettings`,
-`funnels.create` / `.activate`. Check ahead with
+`funnels.create` / `.activate`, and the writes that turn on a plan feature
+in `paidNewsletter`, `segments`, `usage`, `subscriptions.updateSeats` /
+`.updateUsagePricing`, `products` (payment plan, exit offer, price steps,
+fair pricing, limited drop, PDF stamping, download limits), `flashSales`,
+`fairPricing`, `courses`, `analytics` (every report but `preview`),
+`discounts.createUniqueCodes`, `personalDeadlines`, `retention`, `bundles`,
+`tieredDiscounts`, `revenueSplits.create` / `.resend`, `signupForms`,
+`testimonials`, `attributionSurvey`, `customers` (CRM methods), `benchmarks`,
+`memberships`, `creatorServices`, `sheetsSync`, `abTests.create`, `loyalty`,
+`affiliateTiers` and `migrations`. Check ahead with
 `(await pocketsflow.plans.entitlements()).can('upsells')`.
 
 ## TypeScript
