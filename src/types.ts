@@ -1201,9 +1201,22 @@ export interface CreateSubscriptionOfferParams {
   pageStyle?: Record<string, unknown>;
   checkoutStyle?: Record<string, unknown>;
   checkoutColors?: Record<string, unknown>;
+  /**
+   * Product page theme when the page uses no template. `system` follows the
+   * buyer's device. Default `light`.
+   */
+  pageTheme?: BuyerThemeMode;
+  /**
+   * Checkout theme when the checkout uses no template. `system` follows the
+   * buyer's device. Default `light`.
+   */
+  checkoutTheme?: BuyerThemeMode;
   /** Per-seat and metered pricing (Pro plan). */
   usagePricing?: UsagePricing;
 }
+
+/** Light / dark for a buyer page that uses no template. */
+export type BuyerThemeMode = "light" | "dark" | "system";
 
 // ----------------------------------------------------------------------------
 // Webhooks

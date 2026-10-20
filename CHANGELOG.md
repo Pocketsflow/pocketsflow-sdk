@@ -1,6 +1,15 @@
 # Changelog
 
-## 3.2.0 (unreleased)
+## 3.3.0
+
+### Added
+
+- `pageTheme` and `checkoutTheme` (`"light" | "dark" | "system"`) on
+  subscription offer create params: how the product page and checkout look
+  to buyers when they use no template. `system` follows the buyer's device;
+  the default is `light`. New type: `BuyerThemeMode`.
+
+## 3.2.0
 
 ### Added
 
