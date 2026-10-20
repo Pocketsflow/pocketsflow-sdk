@@ -117,6 +117,7 @@ export type {
   SubscriberOrderHistory,
   SubscriptionOffer,
   CreateSubscriptionOfferParams,
+  BuyerThemeMode,
   DeletedSubscriptionOffer,
 
   // Webhooks
