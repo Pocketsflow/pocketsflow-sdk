@@ -142,6 +142,15 @@ test('users.updateTrackingPixels -> POST /users/update with only the pixel field
   assert.equal(user.facebookPixel, '123456789012345');
 });
 
+test('users.updateSellingProfile -> PUT /users/selling-profile', async () => {
+  reply({ body: { sellingPath: 'software', sellingPathOther: null, sellingSetup: 'code' } });
+  const profile = await pf().users.updateSellingProfile({ sellingPath: 'software', sellingSetup: 'code' });
+  const call = only();
+  assert.equal(route(call), 'PUT /users/selling-profile');
+  assert.deepEqual(json(call), { sellingPath: 'software', sellingSetup: 'code' });
+  assert.equal(profile.sellingSetup, 'code');
+});
+
 // ---------------------------------------------------------------------------
 // Weekly report
 // ---------------------------------------------------------------------------

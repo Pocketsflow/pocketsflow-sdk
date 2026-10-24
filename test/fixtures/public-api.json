@@ -238,6 +238,11 @@
       "operationId": "getCurrentUser"
     },
     {
+      "method": "PUT",
+      "path": "/users/selling-profile",
+      "operationId": "updateSellingProfile"
+    },
+    {
       "method": "GET",
       "path": "/users/entitlements",
       "operationId": "getEntitlements"

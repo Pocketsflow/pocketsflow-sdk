@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.4.0
+
+### Added
+
+- `users.updateSellingProfile({ sellingPath?, sellingPathOther?, sellingSetup? })`
+  (`PUT /users/selling-profile`): record what the creator sells
+  (`digital`, `membership`, `software` or `other`) and where buyers pay
+  (`pages`: Pocketsflow creator and product pages; `code`: their own site or
+  app). `null` clears an answer. New types: `SellingPath`, `SellingSetup`,
+  `SellingProfile`, `UpdateSellingProfileParams`.
+- `User.sellingPath`, `User.sellingPathOther` and `User.sellingSetup` on
+  `users.me()`: the creator's onboarding answers (`null` when skipped).
+
 ## 3.3.0
 
 ### Added
