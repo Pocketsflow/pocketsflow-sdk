@@ -88,6 +88,8 @@ import {
   AbandonedCheckoutSummary,
   ProductAbandonedCheckout,
   UpdateTrackingPixelsParams,
+  SellingProfile,
+  UpdateSellingProfileParams,
   WeeklyReportPreview,
   WeeklyReportSettings,
   UpdateWeeklyReportSettingsParams,
@@ -1367,6 +1369,15 @@ class UsersResource {
    */
   async entitlements(): Promise<EntitlementsResult> {
     return withCan(await this.client.request<Entitlements>('GET', '/users/entitlements'));
+  }
+
+  /**
+   * Record what the creator sells and where their buyers pay (`'pages'` or
+   * `'code'`), the answers `me()` returns. Send only what changes; `null`
+   * clears one. An unknown value is a 400.
+   */
+  async updateSellingProfile(params: UpdateSellingProfileParams): Promise<SellingProfile> {
+    return this.client.request<SellingProfile>('PUT', '/users/selling-profile', { body: params });
   }
 
   /**

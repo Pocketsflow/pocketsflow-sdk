@@ -110,6 +110,7 @@ const SDK = {
   getEntitlements: () => pf.plans.entitlements(),
   listPlans: () => pf.plans.list(),
   updateTrackingPixels: () => pf.users.updateTrackingPixels({ facebookPixel: null }),
+  updateSellingProfile: () => pf.users.updateSellingProfile({ sellingSetup: 'code' }),
   getWeeklyReport: () => pf.weeklyReport.get(),
   getWeeklyReportSettings: () => pf.weeklyReport.getSettings(),
   updateWeeklyReportSettings: () => pf.weeklyReport.updateSettings({ enabled: false }),

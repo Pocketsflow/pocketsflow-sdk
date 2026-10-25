@@ -1792,8 +1792,43 @@ export interface User extends TrackingPixels {
   currentPlan?: PlanId;
   /** How the plan is billed. */
   billingInterval?: 'month' | 'year';
+  /** What the creator sells (onboarding, optional). `null` when skipped. */
+  sellingPath?: SellingPath | null;
+  /** Their own words when `sellingPath` is `'other'`. */
+  sellingPathOther?: string | null;
+  /**
+   * Where buyers pay: `'pages'` (Pocketsflow creator and product pages, no
+   * code) or `'code'` (their own site or app: embedded checkout, checkout
+   * sessions, this SDK or the MCP server). `null` when skipped: treat as
+   * `'pages'`.
+   */
+  sellingSetup?: SellingSetup | null;
   createdAt?: string;
   updatedAt?: string;
+}
+
+/** What a creator sells, from onboarding. */
+export type SellingPath = 'digital' | 'membership' | 'software' | 'other';
+
+/** Where a creator's buyers pay, from onboarding. */
+export type SellingSetup = 'pages' | 'code';
+
+/** `users.updateSellingProfile()` result: the saved answers. */
+export interface SellingProfile {
+  sellingPath: SellingPath | null;
+  sellingPathOther: string | null;
+  sellingSetup: SellingSetup | null;
+}
+
+/**
+ * Params of `users.updateSellingProfile()`. Send only what changes; `null`
+ * clears an answer. `sellingPathOther` (max 280 characters) is only kept
+ * with `sellingPath: 'other'`.
+ */
+export interface UpdateSellingProfileParams {
+  sellingPath?: SellingPath | null;
+  sellingPathOther?: string | null;
+  sellingSetup?: SellingSetup | null;
 }
 
 /** The ad-platform pixel IDs a seller has saved (Settings → Tracking pixels). */

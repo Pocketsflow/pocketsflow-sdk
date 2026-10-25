@@ -142,6 +142,10 @@ export type {
   TrackingPixels,
   TrackingPixelsUpdate,
   UpdateTrackingPixelsParams,
+  SellingPath,
+  SellingSetup,
+  SellingProfile,
+  UpdateSellingProfileParams,
 
   // Plans and entitlements
   PlanId,

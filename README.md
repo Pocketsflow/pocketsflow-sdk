@@ -539,6 +539,14 @@ const updated = await pocketsflow.users.update({
   currency: 'USD',
 });
 
+// What the creator sells and where buyers pay ('pages': Pocketsflow pages,
+// 'code': their own site or app). user.sellingSetup is null when they
+// skipped the question: ask them before setting it.
+await pocketsflow.users.updateSellingProfile({
+  sellingPath: 'software',
+  sellingSetup: 'code',
+});
+
 // Tracking pixels: they fire on your product page, checkout and order
 // confirmation. A malformed ID is rejected with 400 (error.body.field names
 // it); '' or null clears one. Adding or changing a pixel needs the Starter
