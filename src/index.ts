@@ -678,6 +678,16 @@ export type {
   SearchResponse,
   SearchResults,
 
+  // Pocketsflow Penny 1 (decision model)
+  PennyDecisionType,
+  PennyChoiceParams,
+  PennyYesNoParams,
+  PennyScoreParams,
+  PennyDecideParams,
+  PennyUsageSummary,
+  PennyDecision,
+  PennyUsage,
+
   MessageResult,
   DeletedResult,
 

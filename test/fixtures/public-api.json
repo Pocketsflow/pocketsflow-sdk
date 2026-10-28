@@ -1696,6 +1696,16 @@
       "method": "GET",
       "path": "/search",
       "operationId": "searchStore"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/penny/decide",
+      "operationId": "pennyDecide"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/penny/usage",
+      "operationId": "getPennyUsage"
     }
   ],
   "webhookEvents": [

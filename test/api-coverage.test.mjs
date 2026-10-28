@@ -351,6 +351,9 @@ const SDK = {
   updateRecommendations: () => pf.recommendations.update({ recommendable: true }),
   searchRecommendableCreators: () => pf.recommendations.search('ana'),
   searchStore: () => pf.search.query('ana'),
+  // Pocketsflow Penny 1
+  pennyDecide: () => pf.penny.decide({ state: 'Order 123', question: 'Refund?', type: 'yes_no' }),
+  getPennyUsage: () => pf.penny.usage(),
   getAgency: () => pf.agency.get(),
   createAgency: () => pf.agency.create({ name: 'Studio' }),
   updateAgency: () => pf.agency.update({ website: null }),
@@ -406,7 +409,7 @@ const pathPattern = (path) =>
   new RegExp(`^${path.replace(/\{[^}]+\}/g, '[^/]+')}$`);
 
 test('the fixture lists the public API operations', () => {
-  assert.ok(spec.operations.length >= 338);
+  assert.ok(spec.operations.length >= 341);
 });
 
 test('every public API operation has an SDK method', () => {

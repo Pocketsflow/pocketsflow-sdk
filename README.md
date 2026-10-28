@@ -1186,6 +1186,37 @@ for (const group of results.groups) {
 `q` or an unknown type throws a `PocketsflowError` with `status` 400, and
 going over the rate limit one with `status` 429 and `code: 'RATE_LIMITED'`.
 
+### Penny
+
+Pocketsflow Penny 1 is a small open decision model: ask one typed question
+about a situation and get the answer with a calibrated confidence. 1,000 free
+decisions per account per calendar month (UTC), then prepaid credits. API keys
+only.
+
+```typescript
+const decision = await pocketsflow.penny.decide({
+  state: { order_id: 'ord_123', amount: 49.99, reason: 'Never received the file' },
+  question: 'What should we do with this refund request?',
+  type: 'choice',
+  options: ['Refund in full', 'Offer store credit', 'Decline politely'],
+});
+
+decision.choice; // 'Refund in full'
+decision.confidence; // 0.8398
+decision.auto; // true: confident enough to act without a person
+
+const usage = await pocketsflow.penny.usage();
+usage.free_remaining; // 958
+usage.buy_url; // checkout link for more credits, or null
+```
+
+`type` is `choice` (pick one of 2-8 `options`), `yes_no` (`decision.yes`) or
+`score` (1-5, `decision.score`; say in the question what 1 and 5 mean). `state`
+is a string or any JSON object. Once the free decisions and credits are used
+up, `decide` throws a `PocketsflowError` with `status` 402 and
+`body.error === 'penny_credits_exhausted'`; `body.buy_url` links to more
+credits.
+
 ## Error Handling
 
 ```typescript

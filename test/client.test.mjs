@@ -287,3 +287,59 @@ test('subscriptionOffers.delete -> DELETE /subscriptions/{id}', async () => {
   assert.equal(only().url.pathname, '/subscriptions/o1');
   assert.equal(res.id, 'o1');
 });
+
+test('penny.decide -> POST /v1/penny/decide with the question as the body', async () => {
+  nextBody = {
+    model: 'pocketsflow-penny-1',
+    type: 'choice',
+    choice: 'Refund in full',
+    index: 0,
+    confidence: 0.8398,
+    probs: [0.8398, 0.1231, 0.0371],
+    auto: true,
+    usage: { free_remaining: 958, credits_remaining: 0 },
+  };
+  const params = {
+    state: { order_id: 'ord_123', reason: 'Never received the file' },
+    question: 'What should we do with this refund request?',
+    type: 'choice',
+    options: ['Refund in full', 'Offer store credit', 'Decline politely'],
+  };
+  const decision = await pf().penny.decide(params);
+  const call = only();
+  assert.equal(call.method, 'POST');
+  assert.equal(call.url.pathname, '/v1/penny/decide');
+  assert.deepEqual(JSON.parse(call.body), params);
+  assert.equal(decision.choice, 'Refund in full');
+  assert.equal(decision.usage.free_remaining, 958);
+});
+
+test('penny.usage -> GET /v1/penny/usage', async () => {
+  nextBody = { free_limit: 1000, free_used: 42, free_remaining: 958, credits_remaining: 0, buy_url: null };
+  const usage = await pf().penny.usage();
+  assert.equal(only().method, 'GET');
+  assert.equal(only().url.pathname, '/v1/penny/usage');
+  assert.equal(usage.free_remaining, 958);
+});
+
+test('penny.decide 402 throws with buy_url on the error body', async () => {
+  globalThis.fetch = async () =>
+    new Response(
+      JSON.stringify({
+        error: 'penny_credits_exhausted',
+        message: 'You have used your 1,000 free Penny decisions this month and have no credits left.',
+        buy_url: 'https://buy.example.test/c',
+      }),
+      { status: 402 }
+    );
+  await assert.rejects(
+    pf().penny.decide({ state: 'x', question: 'Ok?', type: 'yes_no' }),
+    (err) => {
+      assert.equal(err.name, 'PocketsflowError');
+      assert.equal(err.status, 402);
+      assert.equal(err.body.error, 'penny_credits_exhausted');
+      assert.equal(err.body.buy_url, 'https://buy.example.test/c');
+      return true;
+    }
+  );
+});

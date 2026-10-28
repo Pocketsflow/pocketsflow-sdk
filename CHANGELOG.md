@@ -1,5 +1,23 @@
 # Changelog
 
+## 3.5.0
+
+### Added
+
+- `penny.decide(params)` (`POST /v1/penny/decide`): ask Pocketsflow Penny 1,
+  the decision model, one typed question about a situation (`choice`,
+  `yes_no` or `score`) and get the answer with a calibrated `confidence`,
+  per-answer `probs`, `auto` (safe to act without a person) and `usage`.
+  `options` (2-8) is required for `choice` and not allowed otherwise. 1,000
+  free decisions per account per calendar month (UTC), then prepaid credits;
+  a `402` `penny_credits_exhausted` throws a `PocketsflowError` whose
+  `body.buy_url` links to more credits. API keys only.
+- `penny.usage()` (`GET /v1/penny/usage`): free decisions used and left this
+  month, credits left and a checkout link for more.
+- New types: `PennyDecisionType`, `PennyChoiceParams`, `PennyYesNoParams`,
+  `PennyScoreParams`, `PennyDecideParams`, `PennyUsageSummary`,
+  `PennyDecision`, `PennyUsage`.
+
 ## 3.4.0
 
 ### Added

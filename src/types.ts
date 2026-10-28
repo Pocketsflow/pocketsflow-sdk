@@ -6320,6 +6320,97 @@ export interface SearchResponse {
 export type SearchResults = SearchResponse;
 
 // ----------------------------------------------------------------------------
+// Pocketsflow Penny 1 (decision model) — /v1/penny (API keys only)
+// ----------------------------------------------------------------------------
+
+/**
+ * The kind of question Penny answers: `choice` picks one of `options`,
+ * `yes_no` answers yes or no, `score` rates 1 (lowest) to 5 (highest).
+ */
+export type PennyDecisionType = 'choice' | 'yes_no' | 'score';
+
+interface PennyDecideBase {
+  /**
+   * The situation: prose, an email, a table row, or any JSON object (sent to
+   * the model as 2-space JSON). At most 8,000 characters after stringifying.
+   */
+  state: string | Record<string, unknown>;
+  /** One question about the state (at most 500 characters). */
+  question: string;
+}
+
+export interface PennyChoiceParams extends PennyDecideBase {
+  type: 'choice';
+  /** 2 to 8 single-line options of at most 120 characters each. */
+  options: string[];
+}
+
+export interface PennyYesNoParams extends PennyDecideBase {
+  type: 'yes_no';
+  options?: never;
+}
+
+export interface PennyScoreParams extends PennyDecideBase {
+  /** Say in the question what 1 and 5 mean. */
+  type: 'score';
+  options?: never;
+}
+
+/** Body of `penny.decide` (`POST /v1/penny/decide`). */
+export type PennyDecideParams = PennyChoiceParams | PennyYesNoParams | PennyScoreParams;
+
+/** What is left after a decision. */
+export interface PennyUsageSummary {
+  /** Free decisions left this calendar month (UTC). */
+  free_remaining: number;
+  /** Prepaid decision credits left (`null` when the balance could not be read). */
+  credits_remaining: number | null;
+}
+
+/** Penny's answer to one question. */
+export interface PennyDecision {
+  model: 'pocketsflow-penny-1';
+  type: PennyDecisionType;
+  /** `choice` only: the chosen option, exactly as sent. */
+  choice?: string;
+  /** `choice` only: its 0-based position in `options`. */
+  index?: number;
+  /** `yes_no` only: the answer. */
+  yes?: boolean;
+  /** `score` only: the expected score over 1-5, two decimals. */
+  score?: number;
+  /**
+   * Calibrated probability (0-1, four decimals) of the answer. For `score`:
+   * the probability that the true score is within one point of the rounded
+   * `score`.
+   */
+  confidence: number;
+  /**
+   * Probability of each answer, four decimals: one per option (`choice`),
+   * `[yes, no]` (`yes_no`), or scores 1 to 5 (`score`).
+   */
+  probs: number[];
+  /**
+   * `confidence` is at or above the type's threshold: safe to act without a
+   * person. Send the rest to a person.
+   */
+  auto: boolean;
+  usage?: PennyUsageSummary;
+}
+
+/** `penny.usage()` (`GET /v1/penny/usage`). */
+export interface PennyUsage {
+  /** Free decisions per calendar month (UTC). */
+  free_limit: number;
+  free_used: number;
+  free_remaining: number;
+  /** Prepaid decision credits left (`null` when the balance could not be read). */
+  credits_remaining: number | null;
+  /** A checkout link for more credits, or `null` when credits are not on sale. */
+  buy_url: string | null;
+}
+
+// ----------------------------------------------------------------------------
 // API Error
 // ----------------------------------------------------------------------------
 
