@@ -394,10 +394,206 @@ export interface OrderFees {
   loyaltyPointsRedeemed?: number;
   /** Loyalty: points this order earned. */
   loyaltyPointsEarned?: number;
+  /**
+   * Where the order stands. `failed` (a declined payment) is only listed when
+   * `status` or `search` is passed to `orders.list()`.
+   */
+  status?: OrderStatus;
 }
+
+/** An order's status, as on the dashboard's Orders page. */
+export type OrderStatus = 'paid' | 'refunded' | 'disputed' | 'failed';
 
 export interface ListOrdersParams extends PaginationParams, DateRangeParams {
   productId?: string;
+  /**
+   * Only orders in these statuses (sent comma-separated). With `status` or
+   * `search`, declined payments (`failed`) are listed too, like the dashboard.
+   */
+  status?: OrderStatus | OrderStatus[];
+  /** Only orders whose buyer email contains this text (case-insensitive). */
+  search?: string;
+}
+
+/** `GET /orders/{id}/journey`: the checkout session behind an order. */
+export interface OrderJourney {
+  /** Card attempts on this checkout and the share that went through. */
+  authorization: { attempts: number; declined: number; rate: number } | null;
+  checkout: {
+    createdAt: string | null;
+    completedAt: string | null;
+    failedAt: string | null;
+    failedAttempts: number;
+    failureMessage: string | null;
+  } | null;
+}
+
+/** One itemised fee on an order's payment. */
+export interface OrderPaymentFee {
+  key: 'pocketsflow' | 'processing' | 'tax_handling' | 'dispute_prevention' | 'affiliate';
+  name: string;
+  amount: number;
+  currency?: string | null;
+}
+
+/**
+ * `GET /orders/{id}/payment-details`: the payment behind an order, read live
+ * from the payment processor. `available: false` (and nothing else) when the
+ * processor no longer has it. Amounts are decimal major units.
+ */
+export interface OrderPaymentDetails {
+  available: boolean;
+  id?: string;
+  status?: string;
+  substatus?: string | null;
+  refundable?: boolean;
+  createdAt?: string;
+  paidAt?: string | null;
+  currency?: string;
+  total?: number;
+  subtotal?: number;
+  /** What the store keeps after processor fees. */
+  netAmount?: number;
+  taxAmount?: number | null;
+  /** Percent. */
+  taxRate?: number;
+  taxBehavior?: 'exclusive' | 'inclusive' | 'unspecified';
+  refundedAmount?: number | null;
+  refundedAt?: string | null;
+  disputeAlertedAt?: string | null;
+  /** Why a declined payment failed. */
+  failureMessage?: string | null;
+  /** Declined attempts before this payment. */
+  paymentsFailed?: number | null;
+  billingReason?: string | null;
+  fees?: OrderPaymentFee[];
+  totalFees?: number;
+  paymentMethodType?: string | null;
+  card?: { brand?: string; last4?: string; expMonth?: number | null; expYear?: number | null } | null;
+  billingAddress?: {
+    name?: string | null;
+    line1?: string | null;
+    line2?: string | null;
+    city?: string | null;
+    state?: string | null;
+    postalCode?: string | null;
+    country?: string | null;
+  } | null;
+  /** The processor's fraud risk score for the payment. */
+  riskScore?: number | null;
+  riskSignals?: unknown[];
+  threeDsVerified?: boolean | null;
+}
+
+// ----------------------------------------------------------------------------
+// Payouts (read only: withdrawing stays in the dashboard)
+// ----------------------------------------------------------------------------
+
+/** Every status a payout (withdrawal) moves through. */
+export type PayoutStatusValue =
+  | 'requested'
+  | 'awaiting_payment'
+  | 'in_transit'
+  | 'completed'
+  | 'failed'
+  | 'canceled'
+  | 'denied';
+
+/** One payout: a withdrawal of the balance to a bank account or wallet. */
+export interface Payout {
+  id: string;
+  /** The number printed on this payout's receipt in the dashboard. */
+  receiptNumber: string;
+  status: PayoutStatusValue;
+  /** What was withdrawn from the balance (decimal major units of `currency`). */
+  amount: number;
+  /** What lands at the destination after fees. */
+  netAmount: number;
+  feeAmount: number;
+  currency: string;
+  /** `standard` or `instant`. */
+  speed: string | null;
+  createdAt: string;
+  estimatedArrival: string | null;
+  failureCode: string | null;
+  /** Why a `failed` or `denied` payout did not go through. */
+  failureMessage: string | null;
+  /** The payout method's display name (never an account number). */
+  destination: { name: string | null } | null;
+}
+
+export interface ListPayoutsParams {
+  /** Only payouts in this status. */
+  status?: PayoutStatusValue;
+  /** How many payouts to return (1-50, default 20). */
+  limit?: number;
+}
+
+export interface PayoutsResponse {
+  data: Payout[];
+  /** More payouts match than `limit` returned. */
+  hasMore: boolean;
+}
+
+/** Where payouts stand for the account. */
+export type PayoutAccountState =
+  | 'not_connected'
+  | 'setup_required'
+  | 'identity_verification_required'
+  | 'information_requested'
+  | 'in_review'
+  | 'on_hold'
+  | 'active';
+
+/** `GET /payouts/status`: one payouts state, with what (if anything) to do. */
+export interface PayoutStatus {
+  state: PayoutAccountState;
+  /** True when a withdrawal can be made right now. */
+  payoutsEnabled: boolean;
+  /** True when the creator has something to do. */
+  actionRequired: boolean;
+  message: string;
+  /** Dashboard page where the creator acts (null when nothing is needed). */
+  actionUrl: string | null;
+  /** Whether checkout is open for the store. */
+  canSell: boolean;
+  payoutAccountStatus: string | null;
+  identityVerificationStatus: string | null;
+  lastPayout: { id: string; status: PayoutStatusValue } | null;
+  /** Whether the payout account was read live for this answer. */
+  liveChecked: boolean;
+}
+
+/** One currency held at the payments partner. */
+export interface PayoutBalancePot {
+  currency: string;
+  available: number;
+  pending: number;
+  reserve?: number;
+  quotedAvailable?: number;
+  quotedPending?: number;
+  rate?: number;
+  quoteFailed?: boolean;
+}
+
+/** `GET /payouts/balances`: the balance, quoted in the account currency. */
+export interface PayoutBalance {
+  mode: string;
+  targetCurrency: string;
+  /** Ready to withdraw, in `targetCurrency`. */
+  available: number;
+  /** Earned but still clearing, in `targetCurrency`. */
+  pending: number;
+  /** False when another currency could not be quoted. */
+  quoted: boolean;
+  pots: PayoutBalancePot[];
+  leftovers: Array<{
+    currency: string;
+    available: number;
+    quotedAvailable: number | null;
+    rate: number | null;
+    quoteFailed: boolean;
+  }>;
 }
 
 /**
@@ -1311,6 +1507,8 @@ export const WEBHOOK_EVENTS = [
   'ab_test.completed',
   'affiliate.tier_changed',
   'loyalty.credit_redeemed',
+  'payout.created',
+  'payout.updated',
 ] as const;
 
 /** Webhook event types you can subscribe to. */
