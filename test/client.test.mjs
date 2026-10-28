@@ -287,3 +287,35 @@ test('subscriptionOffers.delete -> DELETE /subscriptions/{id}', async () => {
   assert.equal(only().url.pathname, '/subscriptions/o1');
   assert.equal(res.id, 'o1');
 });
+
+test('orders.list sends status (array joined) and search on the query', async () => {
+  nextBody = { orders: [], pagination: {} };
+  await pf().orders.list({ status: ['refunded', 'disputed'], search: 'jane@', page: 2 });
+  const call = only();
+  assert.equal(call.method, 'GET');
+  assert.equal(call.url.pathname, '/orders');
+  assert.equal(call.url.searchParams.get('status'), 'refunded,disputed');
+  assert.equal(call.url.searchParams.get('search'), 'jane@');
+  assert.equal(call.url.searchParams.get('page'), '2');
+});
+
+test('payouts are read only: status, balance, list and get are GETs', async () => {
+  const client = pf();
+  nextBody = { state: 'active', payoutsEnabled: true };
+  const status = await client.payouts.status();
+  assert.equal(status.state, 'active');
+  nextBody = { data: [{ id: 'wd_1', status: 'completed' }], hasMore: false };
+  const list = await client.payouts.list({ status: 'completed', limit: 5 });
+  assert.equal(list.data[0].id, 'wd_1');
+  await client.payouts.balance();
+  await client.payouts.get('wd 1');
+  assert.deepEqual(
+    calls.map((c) => `${c.method} ${c.url.pathname}${c.url.search}`),
+    [
+      'GET /payouts/status',
+      'GET /payouts?status=completed&limit=5',
+      'GET /payouts/balances',
+      'GET /payouts/wd%201',
+    ]
+  );
+});

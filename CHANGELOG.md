@@ -1,5 +1,25 @@
 # Changelog
 
+## 3.5.0
+
+### Added
+
+- `payouts` (read only): `payouts.status()` (`GET /payouts/status`: whether
+  payouts are active, and if not why and what to do, with `actionUrl`),
+  `payouts.balance()` (`GET /payouts/balances`), `payouts.list({ status?,
+  limit? })` (`GET /payouts`) and `payouts.get(id)` (`GET /payouts/{id}`).
+  Withdrawing money stays in the dashboard. New types: `Payout`,
+  `PayoutStatusValue`, `PayoutStatus`, `PayoutAccountState`, `PayoutBalance`,
+  `PayoutBalancePot`, `ListPayoutsParams`, `PayoutsResponse`.
+- `orders.list({ status?, search? })`: filter by `paid`, `refunded`,
+  `disputed` or `failed` (declined payments) and search by buyer email, like
+  the dashboard's Orders page. Every order now carries `status`
+  (`OrderStatus`).
+- `orders.paymentDetails(id)` (`GET /orders/{id}/payment-details`) and
+  `orders.journey(id)` (`GET /orders/{id}/journey`). New types:
+  `OrderPaymentDetails`, `OrderPaymentFee`, `OrderJourney`.
+- Webhook events `payout.created` and `payout.updated` in `WEBHOOK_EVENTS`.
+
 ## 3.4.0
 
 ### Added

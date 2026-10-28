@@ -57,6 +57,20 @@ export type {
   ListOrdersParams,
   OrdersResponse,
   OrderDetail,
+  OrderStatus,
+  OrderJourney,
+  OrderPaymentDetails,
+  OrderPaymentFee,
+
+  // Payouts (read only)
+  Payout,
+  PayoutStatusValue,
+  PayoutStatus,
+  PayoutAccountState,
+  PayoutBalance,
+  PayoutBalancePot,
+  ListPayoutsParams,
+  PayoutsResponse,
 
   // Payments
   Payment,

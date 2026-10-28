@@ -1,6 +1,6 @@
 {
   "name": "pocketsflow",
-  "version": "3.4.0",
+  "version": "3.5.0",
   "description": "Official Pocketsflow SDK for Node.js and TypeScript",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
