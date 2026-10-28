@@ -365,6 +365,13 @@ import {
   UpdateUsagePricingResponse,
   UsagePricing,
   UsageSummary,
+  OrderJourney,
+  OrderPaymentDetails,
+  Payout,
+  PayoutBalance,
+  PayoutStatus,
+  ListPayoutsParams,
+  PayoutsResponse,
 } from './types';
 
 const DEFAULT_BASE_URL = 'https://api.pocketsflow.com';
@@ -403,6 +410,8 @@ export class Pocketsflow {
   public orders: OrdersResource;
   /** The payment ledger: every one-time and subscription payment. */
   public payments: PaymentsResource;
+  /** Payouts, read only: status, balance and every payout with its status. */
+  public payouts: PayoutsResource;
   public customers: CustomersResource;
   public reviews: ReviewsResource;
   public discounts: DiscountsResource;
@@ -523,6 +532,7 @@ export class Pocketsflow {
     this.variants = new VariantsResource(this);
     this.orders = new OrdersResource(this);
     this.payments = new PaymentsResource(this);
+    this.payouts = new PayoutsResource(this);
     this.customers = new CustomersResource(this);
     this.reviews = new ReviewsResource(this);
     this.discounts = new DiscountsResource(this);
@@ -874,9 +884,32 @@ class VariantsResource {
 class OrdersResource {
   constructor(private client: Pocketsflow) {}
 
-  /** List all orders with optional filters */
+  /**
+   * List orders, newest first. Filter by `status` (paid, refunded, disputed,
+   * failed) and `search` (buyer email) like the dashboard's Orders page.
+   */
   async list(params: ListOrdersParams = {}): Promise<OrdersResponse> {
-    return this.client.request<OrdersResponse>('GET', '/orders', { params });
+    const { status, ...rest } = params;
+    const query = status === undefined
+      ? rest
+      : { ...rest, status: Array.isArray(status) ? status.join(',') : status };
+    return this.client.request<OrdersResponse>('GET', '/orders', { params: query });
+  }
+
+  /**
+   * The payment behind an order, live from the payment processor: card, fees,
+   * tax, refunds, dispute alert, risk score, and why a declined payment failed.
+   */
+  async paymentDetails(id: string): Promise<OrderPaymentDetails> {
+    return this.client.request<OrderPaymentDetails>(
+      'GET',
+      `/orders/${seg(id)}/payment-details`
+    );
+  }
+
+  /** The checkout session behind an order: attempts, declines, authorization rate. */
+  async journey(id: string): Promise<OrderJourney> {
+    return this.client.request<OrderJourney>('GET', `/orders/${seg(id)}/journey`);
   }
 
   /**
@@ -897,6 +930,37 @@ class OrdersResource {
   async resetDownloads(id: string): Promise<OrderDownloads> {
     const res = await this.client.request<unknown>('POST', `/orders/${seg(id)}/downloads/reset`);
     return unwrap<OrderDownloads>(res, 'downloads');
+  }
+}
+
+/**
+ * Your payouts, read only: whether payouts are active, the balance, and every
+ * payout with its status. Withdrawing money stays in the dashboard.
+ */
+class PayoutsResource {
+  constructor(private client: Pocketsflow) {}
+
+  /**
+   * Whether payouts are active, and if not why and what (if anything) to do:
+   * identity verification, an information request, a review or a hold.
+   */
+  async status(): Promise<PayoutStatus> {
+    return this.client.request<PayoutStatus>('GET', '/payouts/status');
+  }
+
+  /** The balance: available to withdraw and still pending, in the account currency. */
+  async balance(): Promise<PayoutBalance> {
+    return this.client.request<PayoutBalance>('GET', '/payouts/balances');
+  }
+
+  /** Payouts (withdrawals), newest first, with status, fees and net amount. */
+  async list(params: ListPayoutsParams = {}): Promise<PayoutsResponse> {
+    return this.client.request<PayoutsResponse>('GET', '/payouts', { params });
+  }
+
+  /** One payout with its current status. */
+  async get(id: string): Promise<Payout> {
+    return this.client.request<Payout>('GET', `/payouts/${seg(id)}`);
   }
 }
 

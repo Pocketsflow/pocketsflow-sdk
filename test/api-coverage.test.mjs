@@ -38,6 +38,12 @@ const SDK = {
   getCustomer: () => pf.customers.get(ID),
   listOrders: () => pf.orders.list(),
   getOrder: () => pf.orders.get(ID),
+  getOrderPaymentDetails: () => pf.orders.paymentDetails(ID),
+  getOrderJourney: () => pf.orders.journey(ID),
+  getPayoutStatus: () => pf.payouts.status(),
+  getPayoutBalance: () => pf.payouts.balance(),
+  listPayouts: () => pf.payouts.list({ status: 'completed', limit: 5 }),
+  getPayout: () => pf.payouts.get(ID),
   getSubscriberOrderHistory: () => pf.subscriptions.get(ID),
   listPayments: () => pf.payments.list(),
   getPayment: () => pf.payments.get(ID),
@@ -409,7 +415,7 @@ const pathPattern = (path) =>
   new RegExp(`^${path.replace(/\{[^}]+\}/g, '[^/]+')}$`);
 
 test('the fixture lists the public API operations', () => {
-  assert.ok(spec.operations.length >= 341);
+  assert.ok(spec.operations.length >= 347);
 });
 
 test('every public API operation has an SDK method', () => {

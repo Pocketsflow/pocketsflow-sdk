@@ -1706,6 +1706,36 @@
       "method": "GET",
       "path": "/v1/penny/usage",
       "operationId": "getPennyUsage"
+    },
+    {
+      "method": "GET",
+      "path": "/orders/{id}/payment-details",
+      "operationId": "getOrderPaymentDetails"
+    },
+    {
+      "method": "GET",
+      "path": "/orders/{id}/journey",
+      "operationId": "getOrderJourney"
+    },
+    {
+      "method": "GET",
+      "path": "/payouts/status",
+      "operationId": "getPayoutStatus"
+    },
+    {
+      "method": "GET",
+      "path": "/payouts/balances",
+      "operationId": "getPayoutBalance"
+    },
+    {
+      "method": "GET",
+      "path": "/payouts",
+      "operationId": "listPayouts"
+    },
+    {
+      "method": "GET",
+      "path": "/payouts/{id}",
+      "operationId": "getPayout"
     }
   ],
   "webhookEvents": [
@@ -1752,6 +1782,8 @@
     "member.left",
     "ab_test.completed",
     "affiliate.tier_changed",
-    "loyalty.credit_redeemed"
+    "loyalty.credit_redeemed",
+    "payout.created",
+    "payout.updated"
   ]
 }
