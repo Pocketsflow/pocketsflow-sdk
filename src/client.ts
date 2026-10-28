@@ -251,6 +251,9 @@ import {
   MigrationPlatform,
   SearchParams,
   SearchResponse,
+  PennyDecideParams,
+  PennyDecision,
+  PennyUsage,
   MigrationReport,
   MigrationRowsPage,
   ModerateCommunityThreadParams,
@@ -512,6 +515,8 @@ export class Pocketsflow {
   public migrations: MigrationsResource;
   /** Global search (⌘K) across orders, customers, products, subscribers and discounts. */
   public search: SearchResource;
+  /** Pocketsflow Penny 1, the decision model (API keys only). */
+  public penny: PennyResource;
 
   constructor(config: PocketsflowConfig) {
     if (!config.apiKey) {
@@ -584,6 +589,7 @@ export class Pocketsflow {
     this.affiliateTiers = new AffiliateTiersResource(this);
     this.migrations = new MigrationsResource(this);
     this.search = new SearchResource(this);
+    this.penny = new PennyResource(this);
   }
 
   async request<T>(
@@ -3454,5 +3460,30 @@ class SearchResource {
     return this.client.request<SearchResponse>('GET', '/search', {
       params: { q, types: types?.length ? types.join(',') : undefined, limit },
     });
+  }
+}
+
+/**
+ * Pocketsflow Penny 1, a small open decision model: one typed question about
+ * a situation, answered with a calibrated confidence. 1,000 free decisions
+ * per account per calendar month (UTC), then prepaid credits.
+ */
+class PennyResource {
+  constructor(private client: Pocketsflow) {}
+
+  /**
+   * Ask Penny one question about `state`. `auto: true` means the confidence
+   * is high enough to act without a person. Uses one free decision (or one
+   * credit once they are used up); failed answers are never counted. A 402
+   * `penny_credits_exhausted` throws a `PocketsflowError` whose `body.buy_url`
+   * is a checkout link for more credits (when they are on sale).
+   */
+  async decide(params: PennyDecideParams): Promise<PennyDecision> {
+    return this.client.request<PennyDecision>('POST', '/v1/penny/decide', { body: params });
+  }
+
+  /** Free decisions used and left this month, credits left and a link to buy more. */
+  async usage(): Promise<PennyUsage> {
+    return this.client.request<PennyUsage>('GET', '/v1/penny/usage');
   }
 }
