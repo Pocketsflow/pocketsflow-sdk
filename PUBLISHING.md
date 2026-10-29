@@ -35,6 +35,9 @@ Check the package on NPM: https://www.npmjs.com/package/pocketsflow
 
 ## GitHub releases and GitHub Packages (automatic)
 
+**Rule: npm and GitHub always carry the same versions** (see `CLAUDE.md`). A
+release is not done until its GitHub release and package version exist.
+
 You only publish to npm. The **Sync npm releases** workflow
 (`.github/workflows/sync-releases.yml`) then mirrors every npm version onto
 GitHub, on each push to `main`, every 6 hours, or on demand from the Actions
