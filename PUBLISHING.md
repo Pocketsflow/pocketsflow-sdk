@@ -32,3 +32,22 @@ The `prepublishOnly` script will automatically build the package before publishi
 ## Verify
 
 Check the package on NPM: https://www.npmjs.com/package/pocketsflow
+
+## GitHub releases and GitHub Packages (automatic)
+
+You only publish to npm. The **Sync npm releases** workflow
+(`.github/workflows/sync-releases.yml`) then mirrors every npm version onto
+GitHub, on each push to `main`, every 6 hours, or on demand from the Actions
+tab:
+
+- a `v<version>` tag on the commit npm recorded for that publish (`gitHead`),
+- a GitHub release with that version's `CHANGELOG.md` section (or its commits)
+  and the exact npm tarball attached,
+- the same package on GitHub Packages as `@pocketsflow/pocketsflow`.
+
+It never changes what already exists, so it is safe to re-run. To see what it
+would do without writing anything:
+
+```bash
+DRY_RUN=1 node scripts/sync-releases.mjs
+```
