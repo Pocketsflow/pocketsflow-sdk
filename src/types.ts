@@ -658,6 +658,11 @@ export interface Payment {
    * afterwards, `usage` for a usage-based overage charged at a period's end.
    */
   billingReason?: 'initial' | 'renewal' | 'usage';
+  /**
+   * Present (`true`) only on a paid trial's first charge: the trial price,
+   * paid at checkout. Revenue, but not MRR.
+   */
+  trialPayment?: boolean;
   /** The product purchased. Empty on subscription payments — use `subscriptionId`. */
   productId?: string;
   /** The subscription offer this payment belongs to. Empty on one-time purchases. */
@@ -1320,7 +1325,14 @@ export interface SubscriptionOffer {
   price: number;
   currency?: string;
   frequency: 'weekly' | 'monthly' | 'yearly';
+  /** Trial length in days. `0` = no trial; a free trial unless `trialPrice` is set. */
   trialPeriod?: number;
+  /**
+   * Paid trial: what the buyer pays at checkout for the `trialPeriod` days,
+   * then `price` starts (e.g. $1 for 7 days, then $29/month). `0` = a free
+   * trial. Per seat on per-seat offers.
+   */
+  trialPrice?: number;
   published?: boolean;
   redirectBackUrl?: string;
   slug?: string;
@@ -1353,8 +1365,15 @@ export interface CreateSubscriptionOfferParams {
   subtitle?: string;
   /** Offer description */
   description?: string;
-  /** Trial duration in days */
+  /** Trial duration in days (`0` = no trial). A free trial unless `trialPrice` is set. */
   trialPeriod?: number;
+  /**
+   * Paid trial price, charged at checkout for the `trialPeriod` days; the
+   * regular `price` starts after them. `0` (default) = a free trial. At least
+   * `1.00` and lower than `price`; needs `trialPeriod` 1 to 365. An offer has
+   * one trial, so free and paid can't be combined.
+   */
+  trialPrice?: number;
   /** Whether the offer is published */
   published?: boolean;
   /** Return URL used by the customer billing portal */
