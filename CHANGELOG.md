@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.7.0
+
+### Added
+
+- Paid trials on subscription offers: `trialPrice` on `SubscriptionOffer` and
+  `CreateSubscriptionOfferParams`. With `trialPeriod: 7, trialPrice: 1` the
+  buyer pays $1 at checkout for 7 days, then the regular `price`. `0` (the
+  default) keeps a free trial, so existing code is unchanged. The trial price
+  is at least `1.00` and lower than `price`; a paid trial lasts 1 to 365 days.
+- `Payment.trialPayment`: `true` on a paid trial's first charge.
+- The `invoice.payment_succeeded` webhook body carries `trial` (`true` on a
+  paid trial's first charge).
+
 ## 3.6.0
 
 ### Added
