@@ -270,7 +270,7 @@ const productReviews = reviews.filter((r) => r.productId === 'product_id');
 // List all discounts
 const discounts = await pocketsflow.discounts.list();
 
-// Get a discount
+// Get a discount (`used`: sales that used it)
 const discount = await pocketsflow.discounts.get('discount_id');
 
 // Create a discount
@@ -281,6 +281,7 @@ const discount = await pocketsflow.discounts.create({
   valueType: 'percentage', // or 'fixed'
   mainProductIds: ['product_id_1', 'product_id_2'],
   expiration: '2024-12-31',
+  maxRedemptions: 100, // optional: 1 – 1,000,000 checkouts, null = unlimited
 });
 
 // Update a discount
@@ -293,7 +294,9 @@ const updated = await pocketsflow.discounts.update('discount_id', {
 await pocketsflow.discounts.delete('discount_id');
 
 // Check a code the way the checkout does (public endpoints: no API key needed).
-// Resolves to the discount, or throws a 404 PocketsflowError.
+// Resolves to the discount, or throws a PocketsflowError: 404 (no such code
+// for this product), 410 DISCOUNT_USED_UP (its maxRedemptions are used up) or
+// 409 DISCOUNT_IN_USE (its last uses are held by other open checkouts).
 const applied = await pocketsflow.discounts.apply('SUMMER20', 'product_id');
 
 // Does any active discount apply to this product or subscription offer?
@@ -385,6 +388,15 @@ const { subscriber, payments } = await pocketsflow.subscribers.get('subscriber_i
 await pocketsflow.subscribers.cancel('mem_123'); // at the end of the billing period
 await pocketsflow.subscribers.pause('mem_123'); // stop charging, keep access
 await pocketsflow.subscribers.resume('mem_123'); // resume, or undo a pending cancel
+
+// Move a subscriber to another offer now, prorated, on their saved card
+const quote = await pocketsflow.subscribers.upgradeQuote('mem_123', 'offer_id');
+quote.chargeAmount; // newPrice - credit for the unused part of the period
+const upgrade = await pocketsflow.subscribers.upgrade('mem_123', {
+  subscriptionId: 'offer_id',
+  idempotencyKey: 'upgrade-7f3c2a', // also sent as the Idempotency-Key header
+});
+upgrade.status; // 'succeeded', or 'processing' (subscription.upgraded / .upgrade_failed follows)
 ```
 
 ### Webhooks
@@ -859,6 +871,11 @@ const check = await pocketsflow.licenses.activate({
 if (!check.valid) console.log(check.code); // e.g. 'activation_limit_reached'
 await pocketsflow.licenses.validate({ productId: 'product_id', licenseKey: '…', instanceId: check.instance?.id });
 await pocketsflow.licenses.deactivate({ productId: 'product_id', licenseKey: '…', instanceId: check.instance!.id });
+
+// Moving from another platform: import existing keys (up to 1,000 per call)
+const { created, exists, errors, results } = await pocketsflow.licenses.import([
+  { licenseKey: 'OLD-KEY-1234', productId: 'product_id', customerEmail: 'a@b.com', activationLimit: 3 },
+]);
 ```
 
 ### Paid newsletter, segments, resends and subject tests
@@ -928,7 +945,7 @@ await pocketsflow.products.setPriceSteps('product_id', { enabled: true, steps: [
 const quote = await pocketsflow.pricing.quote('product_id', { tz: 'Asia/Kolkata', orderBumpIds: ['bump_id'] });
 ```
 
-Bundles and "Buy more, save more" (Growth plan):
+Bundles (Growth plan) and "Buy more, save more" (every plan):
 
 ```typescript
 await pocketsflow.bundles.update('product_id', { productIds: ['a', 'b', 'c'] });
@@ -980,7 +997,7 @@ await pocketsflow.analytics.mrr({ subscriptionId: 'offer_id' }); // Pro
 ### Unique coupons and personal deadlines
 
 ```typescript
-// One-time codes on a discount with `uniquePerRecipient: true` (Growth plan)
+// One-time codes on a discount with `uniquePerRecipient: true` (every plan)
 await pocketsflow.discounts.createUniqueCodes('discount_id', { emails: ['a@b.com'] });
 const { codes, stats, nextCursor } = await pocketsflow.discounts.listUniqueCodes('discount_id');
 const csv = await pocketsflow.discounts.exportUniqueCodes('discount_id'); // CSV text
@@ -1146,8 +1163,8 @@ await pocketsflow.affiliateTiers.listProgress();
 
 ### Migrations
 
-Import products, customers, orders and subscribers from another platform
-(Volume plan):
+Import products, customers, orders, subscribers and license keys from another
+platform (every plan, including Free):
 
 ```typescript
 const job = await pocketsflow.migrations.create({ source: 'gumroad' });
@@ -1157,6 +1174,34 @@ if (dryRun.canStart) await pocketsflow.migrations.start(job._id);
 await pocketsflow.migrations.get(job._id); // poll progress
 const report = await pocketsflow.migrations.report(job._id);
 const problems = await pocketsflow.migrations.errorsCsv(job._id); // CSV text
+
+// Review and publish the products it created
+const review = await pocketsflow.migrations.publishReview(job._id);
+const ready = review.rows.filter((r) => r.state === 'ready').map((r) => r.productId);
+const { results, counts } = await pocketsflow.migrations.publish(job._id, ready); // 1 – 200 ids
+```
+
+### Credits
+
+Prepaid balances on `credits` products, one per buyer per product:
+
+```typescript
+const accounts = await pocketsflow.credits.listAccounts({ productId: 'product_id', status: 'active' });
+const account = await pocketsflow.credits.getAccount(accounts[0].id);
+
+// Record usage; emptying the balance runs one auto-refill if the buyer opted in
+const { account: after, refill } = await pocketsflow.credits.deduct({
+  accountId: account.id,
+  amountCents: 250,
+  reason: 'Image generation',
+});
+
+// Charge the buyer's saved card for a top-up (needs their consent to saved-card charges)
+const { charge } = await pocketsflow.credits.topUp(account.id, {
+  amountCents: 2000, // $0.50 – $10,000
+  idempotencyKey: 'topup-42', // also sent as the Idempotency-Key header
+});
+charge.status; // 'succeeded', or 'processing' (credit.top_up.succeeded / .failed follows)
 ```
 
 ### Search
@@ -1268,11 +1313,10 @@ in `paidNewsletter`, `segments`, `usage`, `subscriptions.updateSeats` /
 `.updateUsagePricing`, `products` (payment plan, exit offer, price steps,
 fair pricing, limited drop, PDF stamping, download limits), `flashSales`,
 `fairPricing`, `courses`, `analytics` (every report but `preview`),
-`discounts.createUniqueCodes`, `personalDeadlines`, `retention`, `bundles`,
-`tieredDiscounts`, `revenueSplits.create` / `.resend`, `signupForms`,
-`testimonials`, `attributionSurvey`, `customers` (CRM methods), `benchmarks`,
-`memberships`, `creatorServices`, `sheetsSync`, `abTests.create`, `loyalty`,
-`affiliateTiers` and `migrations`. Check ahead with
+`personalDeadlines`, `retention`, `bundles`, `revenueSplits.create` /
+`.resend`, `signupForms`, `testimonials`, `attributionSurvey`, `customers`
+(CRM methods), `benchmarks`, `memberships`, `creatorServices`, `sheetsSync`,
+`abTests.create`, `loyalty` and `affiliateTiers`. Check ahead with
 `(await pocketsflow.plans.entitlements()).can('upsells')`.
 
 ## TypeScript

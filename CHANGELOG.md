@@ -4,6 +4,26 @@
 
 ### Added
 
+- `subscribers.upgradeQuote(id, subscriptionId)` (`GET
+  /subscriptions/{id}/upgrade-quote`): what moving a subscriber to another
+  subscription offer would charge now, the new price minus `credit` for the
+  unused part of the current period. Charges nothing.
+- `subscribers.upgrade(id, { subscriptionId, idempotencyKey })` (`POST
+  /subscriptions/{id}/upgrade`): move a subscriber to another offer now,
+  charging the prorated amount on their saved card with no checkout page.
+  `idempotencyKey` is also sent as the `Idempotency-Key` header, so a retry
+  never charges twice. Resolves with `status` `succeeded` or `processing`; a
+  decline throws a `402` `PocketsflowError`.
+- `credits`, a new resource for prepaid balances on `credits` products:
+  `credits.listAccounts({ productId?, status? })` (`GET /credits/accounts`),
+  `credits.getAccount(id)` (`GET /credits/accounts/{id}`),
+  `credits.deduct({ accountId, amountCents, reason? })` (`POST
+  /credits/deduct`: record usage; emptying the balance runs one auto-refill
+  when the buyer opted in, returned as `refill`) and `credits.topUp(id, {
+  amountCents, idempotencyKey, reason? })` (`POST
+  /credits/accounts/{id}/charge`: charge the buyer's saved card for a top-up,
+  $0.50 to $10,000, `idempotencyKey` also sent as the `Idempotency-Key`
+  header).
 - `licenses.import(keys)` (`POST /licenses/import`): import license keys you
   sold on another platform, up to 1,000 per call, so your buyers keep the
   keys they have. Each key keeps its exact text (any format), its activation
@@ -15,9 +35,41 @@
   `ImportLicenseKeyResult`, `ImportLicenseKeysResponse`.
 - `LicenseKey.source` (`sale` | `import`), `LicenseKey.importedOrderId` and
   `LicenseKey.customerId`. `LicenseKey.orderId` is `null` for an imported key.
+- `migrations.publishReview(id)` (`GET /migrations/{id}/publish`) and
+  `migrations.publish(id, productIds)` (`POST /migrations/{id}/publish`,
+  1-200 ids): review every product an import created (`published`, `ready`
+  or `needs_fix` with its `issues`) and publish them, one result per product
+  (`published`, `already_published`, `needs_fix` or `error` with a `code`).
+- `maxRedemptions` (1-1,000,000, `null` = unlimited) on `Discount`,
+  `CreateDiscountParams` and `UpdateDiscountParams`: cap how many checkouts
+  can use a regular code (`1` makes a one-use code). Not allowed with
+  `uniquePerRecipient: true` or on a discount that targets a subscription
+  offer. `discounts.get()` now also returns `used`.
+- Webhook events `subscription.upgraded`, `subscription.upgrade_failed`,
+  `credit.top_up.succeeded` and `credit.top_up.failed` in `WEBHOOK_EVENTS`.
+- New types: `SubscriptionUpgradeQuote`, `UpgradeSubscriptionParams`,
+  `SubscriptionUpgradeStatus`, `SubscriptionUpgrade`, `CreditAccountStatus`,
+  `CreditAccount`, `ListCreditAccountsParams`, `DeductCreditsParams`,
+  `CreditRefillAttempt`, `DeductCreditsResult`, `ChargeCreditTopUpParams`,
+  `CreditTopUpStatus`, `CreditTopUpResult`, `MigrationProductState`,
+  `MigrationPublishIssue`, `MigrationPublishReviewRow`,
+  `MigrationPublishReview`, `MigrationPublishRowStatus`,
+  `MigrationPublishErrorCode`, `MigrationPublishRowResult`,
+  `MigrationPublishResult`.
 
 ### Changed
 
+- `discounts.apply()` documents the redemption-cap answers: a used-up code
+  throws `410` with `code` `DISCOUNT_USED_UP`, and `409` `DISCOUNT_IN_USE`
+  means its last uses are held by other open checkouts (pass the checkout's
+  own `reservation` so its hold doesn't count), next to the one-time code
+  errors.
+- Unique coupons (`uniquePerRecipient`, `discounts.createUniqueCodes()`) and
+  "Buy more, save more" (`tieredDiscounts`) are on every plan, so they no
+  longer throw `FeatureLockedError`; docs updated. Bundles stay on Growth.
+- Migrations are on every plan, including Free (docs said Volume).
+- `test/fixtures/public-api.json` refreshed from the production spec (356
+  operations, 50 webhook events).
 - The public license endpoints match an imported key by its exact text first,
   then the forgiving form (case, spaces, dashes) for keys issued by
   Pocketsflow. Doc comments updated.

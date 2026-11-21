@@ -54,6 +54,16 @@
     },
     {
       "method": "GET",
+      "path": "/orders/{id}/payment-details",
+      "operationId": "getOrderPaymentDetails"
+    },
+    {
+      "method": "GET",
+      "path": "/orders/{id}/journey",
+      "operationId": "getOrderJourney"
+    },
+    {
+      "method": "GET",
       "path": "/orders/{id}",
       "operationId": "getOrder"
     },
@@ -151,6 +161,16 @@
       "method": "GET",
       "path": "/subscriptions/subscribers",
       "operationId": "listSubscribers"
+    },
+    {
+      "method": "GET",
+      "path": "/subscriptions/{id}/upgrade-quote",
+      "operationId": "quoteSubscriptionUpgrade"
+    },
+    {
+      "method": "POST",
+      "path": "/subscriptions/{id}/upgrade",
+      "operationId": "upgradeSubscription"
     },
     {
       "method": "GET",
@@ -363,6 +383,31 @@
       "operationId": "deleteEmailSubscriber"
     },
     {
+      "method": "GET",
+      "path": "/newsletters/paid",
+      "operationId": "getPaidNewsletter"
+    },
+    {
+      "method": "PUT",
+      "path": "/newsletters/paid",
+      "operationId": "updatePaidNewsletter"
+    },
+    {
+      "method": "GET",
+      "path": "/newsletters/paid/stats",
+      "operationId": "getNewsletterStats"
+    },
+    {
+      "method": "POST",
+      "path": "/newsletters/paid/sync",
+      "operationId": "syncPaidSubscribers"
+    },
+    {
+      "method": "POST",
+      "path": "/newsletters/posts/{id}/audience",
+      "operationId": "setPostAudience"
+    },
+    {
       "method": "POST",
       "path": "/images",
       "operationId": "uploadImage"
@@ -391,6 +436,26 @@
       "method": "DELETE",
       "path": "/refunds/{id}",
       "operationId": "deleteRefundPolicy"
+    },
+    {
+      "method": "GET",
+      "path": "/credits/accounts",
+      "operationId": "listCreditAccounts"
+    },
+    {
+      "method": "GET",
+      "path": "/credits/accounts/{id}",
+      "operationId": "getCreditAccount"
+    },
+    {
+      "method": "POST",
+      "path": "/credits/deduct",
+      "operationId": "deductCredits"
+    },
+    {
+      "method": "POST",
+      "path": "/credits/accounts/{id}/charge",
+      "operationId": "chargeCreditTopUp"
     },
     {
       "method": "POST",
@@ -463,6 +528,11 @@
       "operationId": "listLicenseKeys"
     },
     {
+      "method": "POST",
+      "path": "/licenses/import",
+      "operationId": "importLicenseKeys"
+    },
+    {
       "method": "GET",
       "path": "/licenses/{id}",
       "operationId": "getLicenseKey"
@@ -481,181 +551,6 @@
       "method": "POST",
       "path": "/licenses/{id}/reset-activations",
       "operationId": "resetLicenseKeyActivations"
-    },
-    {
-      "method": "POST",
-      "path": "/licenses/import",
-      "operationId": "importLicenseKeys"
-    },
-    {
-      "method": "GET",
-      "path": "/tracked-links",
-      "operationId": "listTrackedLinks"
-    },
-    {
-      "method": "POST",
-      "path": "/tracked-links",
-      "operationId": "createTrackedLink"
-    },
-    {
-      "method": "GET",
-      "path": "/tracked-links/{id}",
-      "operationId": "getTrackedLinkStats"
-    },
-    {
-      "method": "PATCH",
-      "path": "/tracked-links/{id}",
-      "operationId": "updateTrackedLink"
-    },
-    {
-      "method": "GET",
-      "path": "/tracked-links/slug-available",
-      "operationId": "checkTrackedLinkSlug"
-    },
-    {
-      "method": "GET",
-      "path": "/team",
-      "operationId": "getTeam"
-    },
-    {
-      "method": "GET",
-      "path": "/team/activity",
-      "operationId": "listTeamActivity"
-    },
-    {
-      "method": "POST",
-      "path": "/team/invites",
-      "operationId": "inviteTeamMember"
-    },
-    {
-      "method": "POST",
-      "path": "/team/invites/{id}/resend",
-      "operationId": "resendTeamInvite"
-    },
-    {
-      "method": "DELETE",
-      "path": "/team/invites/{id}",
-      "operationId": "cancelTeamInvite"
-    },
-    {
-      "method": "PATCH",
-      "path": "/team/members/{id}",
-      "operationId": "updateTeamMember"
-    },
-    {
-      "method": "DELETE",
-      "path": "/team/members/{id}",
-      "operationId": "removeTeamMember"
-    },
-    {
-      "method": "POST",
-      "path": "/team/teams",
-      "operationId": "createTeam"
-    },
-    {
-      "method": "PATCH",
-      "path": "/team/teams/{id}",
-      "operationId": "updateTeam"
-    },
-    {
-      "method": "DELETE",
-      "path": "/team/teams/{id}",
-      "operationId": "deleteTeam"
-    },
-    {
-      "method": "GET",
-      "path": "/post-purchase/products/{id}",
-      "operationId": "getPostPurchaseOffer"
-    },
-    {
-      "method": "PUT",
-      "path": "/post-purchase/products/{id}",
-      "operationId": "updatePostPurchaseOffer"
-    },
-    {
-      "method": "GET",
-      "path": "/social-proof/products/{id}/settings",
-      "operationId": "getSocialProofSettings"
-    },
-    {
-      "method": "PUT",
-      "path": "/social-proof/products/{id}/settings",
-      "operationId": "updateSocialProofSettings"
-    },
-    {
-      "method": "GET",
-      "path": "/social-proof/products/{id}",
-      "operationId": "getSocialProof"
-    },
-    {
-      "method": "GET",
-      "path": "/funnels/templates",
-      "operationId": "listFunnelTemplates"
-    },
-    {
-      "method": "GET",
-      "path": "/funnels",
-      "operationId": "listFunnels"
-    },
-    {
-      "method": "POST",
-      "path": "/funnels",
-      "operationId": "createFunnel"
-    },
-    {
-      "method": "GET",
-      "path": "/funnels/{id}",
-      "operationId": "getFunnel"
-    },
-    {
-      "method": "PUT",
-      "path": "/funnels/{id}",
-      "operationId": "renameFunnel"
-    },
-    {
-      "method": "DELETE",
-      "path": "/funnels/{id}",
-      "operationId": "deleteFunnel"
-    },
-    {
-      "method": "POST",
-      "path": "/funnels/{id}/activate",
-      "operationId": "activateFunnel"
-    },
-    {
-      "method": "POST",
-      "path": "/funnels/{id}/pause",
-      "operationId": "pauseFunnel"
-    },
-    {
-      "method": "GET",
-      "path": "/funnels/{id}/stats",
-      "operationId": "getFunnelStats"
-    },
-    {
-      "method": "GET",
-      "path": "/newsletters/paid",
-      "operationId": "getPaidNewsletter"
-    },
-    {
-      "method": "PUT",
-      "path": "/newsletters/paid",
-      "operationId": "updatePaidNewsletter"
-    },
-    {
-      "method": "GET",
-      "path": "/newsletters/paid/stats",
-      "operationId": "getNewsletterStats"
-    },
-    {
-      "method": "POST",
-      "path": "/newsletters/paid/sync",
-      "operationId": "syncPaidSubscribers"
-    },
-    {
-      "method": "POST",
-      "path": "/newsletters/posts/{id}/audience",
-      "operationId": "setPostAudience"
     },
     {
       "method": "GET",
@@ -733,6 +628,61 @@
       "operationId": "listSegmentSubscribers"
     },
     {
+      "method": "GET",
+      "path": "/customers/profiles",
+      "operationId": "listCustomerProfiles"
+    },
+    {
+      "method": "GET",
+      "path": "/customers/profiles/tags",
+      "operationId": "listCustomerTags"
+    },
+    {
+      "method": "GET",
+      "path": "/customers/{id}/profile",
+      "operationId": "getCustomerProfile"
+    },
+    {
+      "method": "GET",
+      "path": "/customers/{id}/notes",
+      "operationId": "listCustomerNotes"
+    },
+    {
+      "method": "POST",
+      "path": "/customers/{id}/notes",
+      "operationId": "addCustomerNote"
+    },
+    {
+      "method": "DELETE",
+      "path": "/customers/{id}/notes/{noteId}",
+      "operationId": "deleteCustomerNote"
+    },
+    {
+      "method": "PUT",
+      "path": "/customers/{id}/tags",
+      "operationId": "setCustomerTags"
+    },
+    {
+      "method": "GET",
+      "path": "/benchmarks",
+      "operationId": "getBenchmarks"
+    },
+    {
+      "method": "GET",
+      "path": "/search",
+      "operationId": "searchStore"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/penny/decide",
+      "operationId": "pennyDecide"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/penny/usage",
+      "operationId": "getPennyUsage"
+    },
+    {
       "method": "PUT",
       "path": "/subscriptions/{id}/usage-pricing",
       "operationId": "updateSubscriptionUsagePricing"
@@ -799,6 +749,31 @@
     },
     {
       "method": "GET",
+      "path": "/tracked-links",
+      "operationId": "listTrackedLinks"
+    },
+    {
+      "method": "POST",
+      "path": "/tracked-links",
+      "operationId": "createTrackedLink"
+    },
+    {
+      "method": "GET",
+      "path": "/tracked-links/{id}",
+      "operationId": "getTrackedLinkStats"
+    },
+    {
+      "method": "PATCH",
+      "path": "/tracked-links/{id}",
+      "operationId": "updateTrackedLink"
+    },
+    {
+      "method": "GET",
+      "path": "/tracked-links/slug-available",
+      "operationId": "checkTrackedLinkSlug"
+    },
+    {
+      "method": "GET",
       "path": "/courses/{id}",
       "operationId": "getCourseSettings"
     },
@@ -831,6 +806,241 @@
       "method": "GET",
       "path": "/certificates/{verifyId}",
       "operationId": "verifyCertificate"
+    },
+    {
+      "method": "GET",
+      "path": "/team",
+      "operationId": "getTeam"
+    },
+    {
+      "method": "GET",
+      "path": "/team/activity",
+      "operationId": "listTeamActivity"
+    },
+    {
+      "method": "POST",
+      "path": "/team/invites",
+      "operationId": "inviteTeamMember"
+    },
+    {
+      "method": "POST",
+      "path": "/team/invites/{id}/resend",
+      "operationId": "resendTeamInvite"
+    },
+    {
+      "method": "DELETE",
+      "path": "/team/invites/{id}",
+      "operationId": "cancelTeamInvite"
+    },
+    {
+      "method": "PATCH",
+      "path": "/team/members/{id}",
+      "operationId": "updateTeamMember"
+    },
+    {
+      "method": "DELETE",
+      "path": "/team/members/{id}",
+      "operationId": "removeTeamMember"
+    },
+    {
+      "method": "POST",
+      "path": "/team/teams",
+      "operationId": "createTeam"
+    },
+    {
+      "method": "PATCH",
+      "path": "/team/teams/{id}",
+      "operationId": "updateTeam"
+    },
+    {
+      "method": "DELETE",
+      "path": "/team/teams/{id}",
+      "operationId": "deleteTeam"
+    },
+    {
+      "method": "GET",
+      "path": "/referrals/me",
+      "operationId": "getReferralStats"
+    },
+    {
+      "method": "GET",
+      "path": "/referrals/referred",
+      "operationId": "listReferredStores"
+    },
+    {
+      "method": "GET",
+      "path": "/recommendations",
+      "operationId": "getRecommendations"
+    },
+    {
+      "method": "PUT",
+      "path": "/recommendations",
+      "operationId": "updateRecommendations"
+    },
+    {
+      "method": "GET",
+      "path": "/recommendations/search",
+      "operationId": "searchRecommendableCreators"
+    },
+    {
+      "method": "GET",
+      "path": "/agency",
+      "operationId": "getAgency"
+    },
+    {
+      "method": "POST",
+      "path": "/agency",
+      "operationId": "createAgency"
+    },
+    {
+      "method": "PATCH",
+      "path": "/agency",
+      "operationId": "updateAgency"
+    },
+    {
+      "method": "GET",
+      "path": "/agency/clients",
+      "operationId": "listAgencyClients"
+    },
+    {
+      "method": "DELETE",
+      "path": "/agency/clients/{storeUserId}",
+      "operationId": "removeAgencyClient"
+    },
+    {
+      "method": "GET",
+      "path": "/agency/statements",
+      "operationId": "listAgencyStatements"
+    },
+    {
+      "method": "GET",
+      "path": "/agency/statements/{month}",
+      "operationId": "getAgencyStatement"
+    },
+    {
+      "method": "GET",
+      "path": "/agency-access",
+      "operationId": "getStoreAgency"
+    },
+    {
+      "method": "POST",
+      "path": "/agency-access",
+      "operationId": "inviteAgency"
+    },
+    {
+      "method": "DELETE",
+      "path": "/agency-access",
+      "operationId": "removeStoreAgency"
+    },
+    {
+      "method": "GET",
+      "path": "/agency-access/preview/{code}",
+      "operationId": "previewAgency"
+    },
+    {
+      "method": "GET",
+      "path": "/post-purchase/products/{id}",
+      "operationId": "getPostPurchaseOffer"
+    },
+    {
+      "method": "PUT",
+      "path": "/post-purchase/products/{id}",
+      "operationId": "updatePostPurchaseOffer"
+    },
+    {
+      "method": "GET",
+      "path": "/social-proof/products/{id}/settings",
+      "operationId": "getSocialProofSettings"
+    },
+    {
+      "method": "PUT",
+      "path": "/social-proof/products/{id}/settings",
+      "operationId": "updateSocialProofSettings"
+    },
+    {
+      "method": "GET",
+      "path": "/social-proof/products/{id}",
+      "operationId": "getSocialProof"
+    },
+    {
+      "method": "GET",
+      "path": "/loyalty",
+      "operationId": "getLoyaltySettings"
+    },
+    {
+      "method": "PUT",
+      "path": "/loyalty",
+      "operationId": "updateLoyaltySettings"
+    },
+    {
+      "method": "GET",
+      "path": "/loyalty/summary",
+      "operationId": "getLoyaltySummary"
+    },
+    {
+      "method": "GET",
+      "path": "/loyalty/members",
+      "operationId": "listLoyaltyMembers"
+    },
+    {
+      "method": "GET",
+      "path": "/loyalty/ledger",
+      "operationId": "listLoyaltyLedger"
+    },
+    {
+      "method": "POST",
+      "path": "/loyalty/members/adjust",
+      "operationId": "adjustLoyaltyPoints"
+    },
+    {
+      "method": "GET",
+      "path": "/affiliate-program",
+      "operationId": "getAffiliateTiers"
+    },
+    {
+      "method": "PUT",
+      "path": "/affiliate-program",
+      "operationId": "updateAffiliateTiers"
+    },
+    {
+      "method": "GET",
+      "path": "/affiliate-program/affiliates",
+      "operationId": "listAffiliateTierProgress"
+    },
+    {
+      "method": "GET",
+      "path": "/affiliate-program/affiliates/{id}",
+      "operationId": "getAffiliateTierProgress"
+    },
+    {
+      "method": "GET",
+      "path": "/affiliate-program/bonuses",
+      "operationId": "listAffiliateBonuses"
+    },
+    {
+      "method": "GET",
+      "path": "/affiliate-program/mine",
+      "operationId": "getMyAffiliateTierProgress"
+    },
+    {
+      "method": "GET",
+      "path": "/payouts/status",
+      "operationId": "getPayoutStatus"
+    },
+    {
+      "method": "GET",
+      "path": "/payouts/balances",
+      "operationId": "getPayoutBalance"
+    },
+    {
+      "method": "GET",
+      "path": "/payouts",
+      "operationId": "listPayouts"
+    },
+    {
+      "method": "GET",
+      "path": "/payouts/{id}",
+      "operationId": "getPayout"
     },
     {
       "method": "GET",
@@ -876,6 +1086,51 @@
       "method": "POST",
       "path": "/orders/{id}/downloads/reset",
       "operationId": "resetOrderDownloads"
+    },
+    {
+      "method": "GET",
+      "path": "/funnels/templates",
+      "operationId": "listFunnelTemplates"
+    },
+    {
+      "method": "GET",
+      "path": "/funnels",
+      "operationId": "listFunnels"
+    },
+    {
+      "method": "POST",
+      "path": "/funnels",
+      "operationId": "createFunnel"
+    },
+    {
+      "method": "GET",
+      "path": "/funnels/{id}",
+      "operationId": "getFunnel"
+    },
+    {
+      "method": "PUT",
+      "path": "/funnels/{id}",
+      "operationId": "renameFunnel"
+    },
+    {
+      "method": "DELETE",
+      "path": "/funnels/{id}",
+      "operationId": "deleteFunnel"
+    },
+    {
+      "method": "POST",
+      "path": "/funnels/{id}/activate",
+      "operationId": "activateFunnel"
+    },
+    {
+      "method": "POST",
+      "path": "/funnels/{id}/pause",
+      "operationId": "pauseFunnel"
+    },
+    {
+      "method": "GET",
+      "path": "/funnels/{id}/stats",
+      "operationId": "getFunnelStats"
     },
     {
       "method": "GET",
@@ -981,6 +1236,111 @@
       "method": "GET",
       "path": "/attribution-survey/report",
       "operationId": "getAttributionReport"
+    },
+    {
+      "method": "GET",
+      "path": "/memberships",
+      "operationId": "listMemberships"
+    },
+    {
+      "method": "POST",
+      "path": "/memberships",
+      "operationId": "createMembership"
+    },
+    {
+      "method": "POST",
+      "path": "/memberships/members/ban",
+      "operationId": "banMember"
+    },
+    {
+      "method": "POST",
+      "path": "/memberships/members/unban",
+      "operationId": "unbanMember"
+    },
+    {
+      "method": "GET",
+      "path": "/memberships/{id}",
+      "operationId": "getMembership"
+    },
+    {
+      "method": "PUT",
+      "path": "/memberships/{id}",
+      "operationId": "updateMembership"
+    },
+    {
+      "method": "DELETE",
+      "path": "/memberships/{id}",
+      "operationId": "deleteMembership"
+    },
+    {
+      "method": "GET",
+      "path": "/memberships/{id}/members",
+      "operationId": "listMembershipMembers"
+    },
+    {
+      "method": "GET",
+      "path": "/memberships/{id}/posts",
+      "operationId": "listMemberPosts"
+    },
+    {
+      "method": "POST",
+      "path": "/memberships/{id}/posts",
+      "operationId": "createMemberPost"
+    },
+    {
+      "method": "GET",
+      "path": "/memberships/{id}/posts/{postId}",
+      "operationId": "getMemberPost"
+    },
+    {
+      "method": "PUT",
+      "path": "/memberships/{id}/posts/{postId}",
+      "operationId": "updateMemberPost"
+    },
+    {
+      "method": "DELETE",
+      "path": "/memberships/{id}/posts/{postId}",
+      "operationId": "deleteMemberPost"
+    },
+    {
+      "method": "GET",
+      "path": "/memberships/{id}/threads",
+      "operationId": "listCommunityThreads"
+    },
+    {
+      "method": "POST",
+      "path": "/memberships/{id}/threads",
+      "operationId": "createCommunityThread"
+    },
+    {
+      "method": "GET",
+      "path": "/memberships/{id}/threads/{threadId}",
+      "operationId": "getCommunityThread"
+    },
+    {
+      "method": "PATCH",
+      "path": "/memberships/{id}/threads/{threadId}",
+      "operationId": "moderateCommunityThread"
+    },
+    {
+      "method": "DELETE",
+      "path": "/memberships/{id}/threads/{threadId}",
+      "operationId": "deleteCommunityThread"
+    },
+    {
+      "method": "POST",
+      "path": "/memberships/{id}/threads/{threadId}/replies",
+      "operationId": "replyToCommunityThread"
+    },
+    {
+      "method": "PATCH",
+      "path": "/memberships/{id}/replies/{replyId}",
+      "operationId": "moderateCommunityReply"
+    },
+    {
+      "method": "DELETE",
+      "path": "/memberships/{id}/replies/{replyId}",
+      "operationId": "deleteCommunityReply"
     },
     {
       "method": "GET",
@@ -1169,211 +1529,6 @@
     },
     {
       "method": "GET",
-      "path": "/discounts/{id}/unique-codes",
-      "operationId": "listUniqueCodes"
-    },
-    {
-      "method": "POST",
-      "path": "/discounts/{id}/unique-codes",
-      "operationId": "createUniqueCodes"
-    },
-    {
-      "method": "GET",
-      "path": "/discounts/{id}/unique-codes/export",
-      "operationId": "exportUniqueCodes"
-    },
-    {
-      "method": "GET",
-      "path": "/personal-deadlines",
-      "operationId": "listPersonalDeadlines"
-    },
-    {
-      "method": "POST",
-      "path": "/personal-deadlines",
-      "operationId": "createPersonalDeadline"
-    },
-    {
-      "method": "GET",
-      "path": "/personal-deadlines/public/offer",
-      "operationId": "getPersonalOffer"
-    },
-    {
-      "method": "GET",
-      "path": "/personal-deadlines/{id}",
-      "operationId": "getPersonalDeadline"
-    },
-    {
-      "method": "POST",
-      "path": "/personal-deadlines/{id}",
-      "operationId": "updatePersonalDeadline"
-    },
-    {
-      "method": "DELETE",
-      "path": "/personal-deadlines/{id}",
-      "operationId": "deletePersonalDeadline"
-    },
-    {
-      "method": "GET",
-      "path": "/personal-deadlines/{id}/entries",
-      "operationId": "listPersonalDeadlineEntries"
-    },
-    {
-      "method": "POST",
-      "path": "/personal-deadlines/{id}/start",
-      "operationId": "startPersonalDeadline"
-    },
-    {
-      "method": "GET",
-      "path": "/personal-deadlines/{id}/link",
-      "operationId": "getPersonalDeadlineLink"
-    },
-    {
-      "method": "GET",
-      "path": "/customers/profiles",
-      "operationId": "listCustomerProfiles"
-    },
-    {
-      "method": "GET",
-      "path": "/customers/profiles/tags",
-      "operationId": "listCustomerTags"
-    },
-    {
-      "method": "GET",
-      "path": "/customers/{id}/profile",
-      "operationId": "getCustomerProfile"
-    },
-    {
-      "method": "GET",
-      "path": "/customers/{id}/notes",
-      "operationId": "listCustomerNotes"
-    },
-    {
-      "method": "POST",
-      "path": "/customers/{id}/notes",
-      "operationId": "addCustomerNote"
-    },
-    {
-      "method": "DELETE",
-      "path": "/customers/{id}/notes/{noteId}",
-      "operationId": "deleteCustomerNote"
-    },
-    {
-      "method": "PUT",
-      "path": "/customers/{id}/tags",
-      "operationId": "setCustomerTags"
-    },
-    {
-      "method": "GET",
-      "path": "/benchmarks",
-      "operationId": "getBenchmarks"
-    },
-    {
-      "method": "GET",
-      "path": "/memberships",
-      "operationId": "listMemberships"
-    },
-    {
-      "method": "POST",
-      "path": "/memberships",
-      "operationId": "createMembership"
-    },
-    {
-      "method": "POST",
-      "path": "/memberships/members/ban",
-      "operationId": "banMember"
-    },
-    {
-      "method": "POST",
-      "path": "/memberships/members/unban",
-      "operationId": "unbanMember"
-    },
-    {
-      "method": "GET",
-      "path": "/memberships/{id}",
-      "operationId": "getMembership"
-    },
-    {
-      "method": "PUT",
-      "path": "/memberships/{id}",
-      "operationId": "updateMembership"
-    },
-    {
-      "method": "DELETE",
-      "path": "/memberships/{id}",
-      "operationId": "deleteMembership"
-    },
-    {
-      "method": "GET",
-      "path": "/memberships/{id}/members",
-      "operationId": "listMembershipMembers"
-    },
-    {
-      "method": "GET",
-      "path": "/memberships/{id}/posts",
-      "operationId": "listMemberPosts"
-    },
-    {
-      "method": "POST",
-      "path": "/memberships/{id}/posts",
-      "operationId": "createMemberPost"
-    },
-    {
-      "method": "GET",
-      "path": "/memberships/{id}/posts/{postId}",
-      "operationId": "getMemberPost"
-    },
-    {
-      "method": "PUT",
-      "path": "/memberships/{id}/posts/{postId}",
-      "operationId": "updateMemberPost"
-    },
-    {
-      "method": "DELETE",
-      "path": "/memberships/{id}/posts/{postId}",
-      "operationId": "deleteMemberPost"
-    },
-    {
-      "method": "GET",
-      "path": "/memberships/{id}/threads",
-      "operationId": "listCommunityThreads"
-    },
-    {
-      "method": "POST",
-      "path": "/memberships/{id}/threads",
-      "operationId": "createCommunityThread"
-    },
-    {
-      "method": "GET",
-      "path": "/memberships/{id}/threads/{threadId}",
-      "operationId": "getCommunityThread"
-    },
-    {
-      "method": "PATCH",
-      "path": "/memberships/{id}/threads/{threadId}",
-      "operationId": "moderateCommunityThread"
-    },
-    {
-      "method": "DELETE",
-      "path": "/memberships/{id}/threads/{threadId}",
-      "operationId": "deleteCommunityThread"
-    },
-    {
-      "method": "POST",
-      "path": "/memberships/{id}/threads/{threadId}/replies",
-      "operationId": "replyToCommunityThread"
-    },
-    {
-      "method": "PATCH",
-      "path": "/memberships/{id}/replies/{replyId}",
-      "operationId": "moderateCommunityReply"
-    },
-    {
-      "method": "DELETE",
-      "path": "/memberships/{id}/replies/{replyId}",
-      "operationId": "deleteCommunityReply"
-    },
-    {
-      "method": "GET",
       "path": "/creator-services",
       "operationId": "getCreatorServices"
     },
@@ -1449,83 +1604,63 @@
     },
     {
       "method": "GET",
-      "path": "/referrals/me",
-      "operationId": "getReferralStats"
-    },
-    {
-      "method": "GET",
-      "path": "/referrals/referred",
-      "operationId": "listReferredStores"
-    },
-    {
-      "method": "GET",
-      "path": "/recommendations",
-      "operationId": "getRecommendations"
-    },
-    {
-      "method": "PUT",
-      "path": "/recommendations",
-      "operationId": "updateRecommendations"
-    },
-    {
-      "method": "GET",
-      "path": "/recommendations/search",
-      "operationId": "searchRecommendableCreators"
-    },
-    {
-      "method": "GET",
-      "path": "/agency",
-      "operationId": "getAgency"
+      "path": "/discounts/{id}/unique-codes",
+      "operationId": "listUniqueCodes"
     },
     {
       "method": "POST",
-      "path": "/agency",
-      "operationId": "createAgency"
-    },
-    {
-      "method": "PATCH",
-      "path": "/agency",
-      "operationId": "updateAgency"
+      "path": "/discounts/{id}/unique-codes",
+      "operationId": "createUniqueCodes"
     },
     {
       "method": "GET",
-      "path": "/agency/clients",
-      "operationId": "listAgencyClients"
-    },
-    {
-      "method": "DELETE",
-      "path": "/agency/clients/{storeUserId}",
-      "operationId": "removeAgencyClient"
+      "path": "/discounts/{id}/unique-codes/export",
+      "operationId": "exportUniqueCodes"
     },
     {
       "method": "GET",
-      "path": "/agency/statements",
-      "operationId": "listAgencyStatements"
-    },
-    {
-      "method": "GET",
-      "path": "/agency/statements/{month}",
-      "operationId": "getAgencyStatement"
-    },
-    {
-      "method": "GET",
-      "path": "/agency-access",
-      "operationId": "getStoreAgency"
+      "path": "/personal-deadlines",
+      "operationId": "listPersonalDeadlines"
     },
     {
       "method": "POST",
-      "path": "/agency-access",
-      "operationId": "inviteAgency"
-    },
-    {
-      "method": "DELETE",
-      "path": "/agency-access",
-      "operationId": "removeStoreAgency"
+      "path": "/personal-deadlines",
+      "operationId": "createPersonalDeadline"
     },
     {
       "method": "GET",
-      "path": "/agency-access/preview/{code}",
-      "operationId": "previewAgency"
+      "path": "/personal-deadlines/public/offer",
+      "operationId": "getPersonalOffer"
+    },
+    {
+      "method": "GET",
+      "path": "/personal-deadlines/{id}",
+      "operationId": "getPersonalDeadline"
+    },
+    {
+      "method": "POST",
+      "path": "/personal-deadlines/{id}",
+      "operationId": "updatePersonalDeadline"
+    },
+    {
+      "method": "DELETE",
+      "path": "/personal-deadlines/{id}",
+      "operationId": "deletePersonalDeadline"
+    },
+    {
+      "method": "GET",
+      "path": "/personal-deadlines/{id}/entries",
+      "operationId": "listPersonalDeadlineEntries"
+    },
+    {
+      "method": "POST",
+      "path": "/personal-deadlines/{id}/start",
+      "operationId": "startPersonalDeadline"
+    },
+    {
+      "method": "GET",
+      "path": "/personal-deadlines/{id}/link",
+      "operationId": "getPersonalDeadlineLink"
     },
     {
       "method": "GET",
@@ -1566,66 +1701,6 @@
       "method": "POST",
       "path": "/ab-tests/{id}/winner",
       "operationId": "declareAbTestWinner"
-    },
-    {
-      "method": "GET",
-      "path": "/loyalty",
-      "operationId": "getLoyaltySettings"
-    },
-    {
-      "method": "PUT",
-      "path": "/loyalty",
-      "operationId": "updateLoyaltySettings"
-    },
-    {
-      "method": "GET",
-      "path": "/loyalty/summary",
-      "operationId": "getLoyaltySummary"
-    },
-    {
-      "method": "GET",
-      "path": "/loyalty/members",
-      "operationId": "listLoyaltyMembers"
-    },
-    {
-      "method": "GET",
-      "path": "/loyalty/ledger",
-      "operationId": "listLoyaltyLedger"
-    },
-    {
-      "method": "POST",
-      "path": "/loyalty/members/adjust",
-      "operationId": "adjustLoyaltyPoints"
-    },
-    {
-      "method": "GET",
-      "path": "/affiliate-program",
-      "operationId": "getAffiliateTiers"
-    },
-    {
-      "method": "PUT",
-      "path": "/affiliate-program",
-      "operationId": "updateAffiliateTiers"
-    },
-    {
-      "method": "GET",
-      "path": "/affiliate-program/affiliates",
-      "operationId": "listAffiliateTierProgress"
-    },
-    {
-      "method": "GET",
-      "path": "/affiliate-program/affiliates/{id}",
-      "operationId": "getAffiliateTierProgress"
-    },
-    {
-      "method": "GET",
-      "path": "/affiliate-program/bonuses",
-      "operationId": "listAffiliateBonuses"
-    },
-    {
-      "method": "GET",
-      "path": "/affiliate-program/mine",
-      "operationId": "getMyAffiliateTierProgress"
     },
     {
       "method": "GET",
@@ -1699,48 +1774,13 @@
     },
     {
       "method": "GET",
-      "path": "/search",
-      "operationId": "searchStore"
+      "path": "/migrations/{id}/publish",
+      "operationId": "getMigrationPublishReview"
     },
     {
       "method": "POST",
-      "path": "/v1/penny/decide",
-      "operationId": "pennyDecide"
-    },
-    {
-      "method": "GET",
-      "path": "/v1/penny/usage",
-      "operationId": "getPennyUsage"
-    },
-    {
-      "method": "GET",
-      "path": "/orders/{id}/payment-details",
-      "operationId": "getOrderPaymentDetails"
-    },
-    {
-      "method": "GET",
-      "path": "/orders/{id}/journey",
-      "operationId": "getOrderJourney"
-    },
-    {
-      "method": "GET",
-      "path": "/payouts/status",
-      "operationId": "getPayoutStatus"
-    },
-    {
-      "method": "GET",
-      "path": "/payouts/balances",
-      "operationId": "getPayoutBalance"
-    },
-    {
-      "method": "GET",
-      "path": "/payouts",
-      "operationId": "listPayouts"
-    },
-    {
-      "method": "GET",
-      "path": "/payouts/{id}",
-      "operationId": "getPayout"
+      "path": "/migrations/{id}/publish",
+      "operationId": "publishMigrationProducts"
     }
   ],
   "webhookEvents": [
@@ -1763,21 +1803,28 @@
     "invoice.payment_failed",
     "payment_intent.succeeded",
     "payment_intent.payment_failed",
+    "subscription.payment_failed",
+    "subscription.recovered",
+    "subscription.saved",
+    "subscription.upgraded",
+    "subscription.upgrade_failed",
     "credit.granted",
     "credit.balance_changed",
     "credit.auto_refill.succeeded",
     "credit.auto_refill.failed",
+    "credit.top_up.succeeded",
+    "credit.top_up.failed",
     "credit.consent.enabled",
     "credit.consent.disabled",
-    "order.post_purchase_accepted",
-    "funnel.lead",
-    "subscription.payment_failed",
-    "subscription.recovered",
-    "subscription.saved",
     "usage.recorded",
     "usage.period_closed",
+    "order.post_purchase_accepted",
+    "funnel.lead",
     "installment.paid",
     "installment.failed",
+    "ab_test.completed",
+    "affiliate.tier_changed",
+    "loyalty.credit_redeemed",
     "split.created",
     "split.paid",
     "course.completed",
@@ -1785,9 +1832,6 @@
     "testimonial.submitted",
     "member.joined",
     "member.left",
-    "ab_test.completed",
-    "affiliate.tier_changed",
-    "loyalty.credit_redeemed",
     "payout.created",
     "payout.updated"
   ]
