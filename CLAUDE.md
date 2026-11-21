@@ -18,9 +18,12 @@ it from npm, on every push to `main`, every 6 hours and on demand.
 1. npm is the source of truth: publish to npm first, never only to GitHub.
 2. Every release adds its `## <version>` section to `CHANGELOG.md` before it
    is published; that section becomes the GitHub release notes.
-3. After `npm publish`, merge the release's commit to `main` (or run the
-   workflow) and confirm the run is green and the release and package version
-   are on GitHub. A release is not done until they are.
+3. Releases publish themselves: merging a release PR (new `version` +
+   `CHANGELOG.md` section) to `main` runs **Publish to npm**
+   (`.github/workflows/publish.yml`, repository secret `NPM_TOKEN`), and
+   **Sync npm releases** follows it. Confirm both runs are green and the
+   release and package version are on GitHub. A release is not done until
+   they are.
 4. Never hand-make a tag, release or package version npm doesn't have, and
    never delete one npm still has.
 5. A failing sync run blocks the release: fix the cause (or the script), never

@@ -63,8 +63,11 @@ export function releaseNotes({ version, section, commitLines, exact, gitHead, pu
   else parts.push('No changelog entry for this version.');
   if (!exact) {
     parts.push(
-      `> Published to npm from an earlier repository${gitHead ? ` (commit \`${gitHead.slice(0, 7)}\`)` : ''}. ` +
-        'This tag points at the closest commit in this repository; the attached tarball is the exact npm package.',
+      gitHead
+        ? `> Published to npm from an earlier repository (commit \`${gitHead.slice(0, 7)}\`). ` +
+            'This tag points at the closest commit in this repository; the attached tarball is the exact npm package.'
+        : '> npm recorded no commit for this publish. This tag points at the last commit in this repository ' +
+            'before it was published; the attached tarball is the exact npm package.',
     );
   }
   parts.push(

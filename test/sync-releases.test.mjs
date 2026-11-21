@@ -89,4 +89,9 @@ test('releaseNotes prefers the changelog, then commits, and flags inexact tags',
   });
   assert.match(fromCommits, /### Changes\n\n- x \(1\)/);
   assert.match(fromCommits, /earlier repository \(commit `bd136c1`\)/);
+
+  // Published without a recorded commit (gitHead): say so, not "earlier repository".
+  const noGitHead = releaseNotes({ ...base, gitHead: undefined, section: '- y', commitLines: [], exact: false });
+  assert.match(noGitHead, /npm recorded no commit for this publish/);
+  assert.doesNotMatch(noGitHead, /earlier repository/);
 });
