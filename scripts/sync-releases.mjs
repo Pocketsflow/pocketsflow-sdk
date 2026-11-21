@@ -9,6 +9,12 @@
 //   DRY_RUN=1 node scripts/sync-releases.mjs   (prints the plan, writes nothing)
 // A real run needs `gh` signed in (GH_TOKEN) and NODE_AUTH_TOKEN with
 // packages:write for GitHub Packages.
+//
+// Release notes come from CHANGELOG.md at the commit each version was
+// published from. To rewrite the notes of releases that already exist (the
+// only change it ever makes to one), name them:
+//   REFRESH_NOTES=3.7.0 node scripts/sync-releases.mjs
+// or run the workflow by hand with the "refresh_notes" input.
 
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
@@ -33,6 +39,29 @@ export function changelogSection(changelog, version) {
     .join('\n')
     .trim();
   return body || null;
+}
+
+/**
+ * The changelog section for a release. A version's notes come from
+ * CHANGELOG.md as it was at the commit that version was published from
+ * (`atCommit`), not from the branch the sync happens to run on: `main` can
+ * briefly carry a later release's entries under this version's heading (it
+ * did for 3.7.0, whose release then shipped 3.8.0's notes). `head` (the
+ * checkout's CHANGELOG.md) is the fallback when the published commit has no
+ * entry for the version, e.g. versions published from an earlier repository.
+ */
+export function notesSection(version, { atCommit, head }) {
+  return (atCommit ? changelogSection(atCommit, version) : null) ?? changelogSection(head, version);
+}
+
+/** `REFRESH_NOTES="3.7.0, v3.8.0"` → Set { "3.7.0", "3.8.0" }. */
+export function parseRefreshNotes(value) {
+  return new Set(
+    String(value ?? '')
+      .split(/[\s,]+/)
+      .map((v) => v.trim().replace(/^v/, ''))
+      .filter(Boolean),
+  );
 }
 
 /**
@@ -109,6 +138,8 @@ function tryRun(cmd, args, opts) {
 
 async function main() {
   const dry = !!process.env.DRY_RUN;
+  // Existing releases are never touched, except the ones named here.
+  const refresh = parseRefreshNotes(process.env.REFRESH_NOTES);
   const log = (msg) => console.log(dry ? `[dry-run] ${msg}` : msg);
 
   const meta = JSON.parse(run('npm', ['view', NPM_NAME, '--json']));
@@ -173,19 +204,35 @@ async function main() {
         return tarball;
       };
 
-      if (!releases.has(tag)) {
+      const buildNotes = () => {
         const range = prevSha && prevSha !== sha ? [`${prevSha}..${sha}`] : [sha, '-1'];
         const commitLines = tryRun('git', ['log', ...range, '--no-merges', '--format=- %s (%h)'])
           .out.split('\n')
           .filter((l) => l.startsWith('- '));
-        const notes = releaseNotes({
+        const atCommit = tryRun('git', ['show', `${sha}:CHANGELOG.md`]);
+        return releaseNotes({
           version,
-          section: changelogSection(changelog, version),
+          section: notesSection(version, { atCommit: atCommit.ok ? atCommit.out : null, head: changelog }),
           commitLines,
           exact,
           gitHead: info.gitHead,
           publishedAt,
         });
+      };
+
+      if (releases.has(tag) && refresh.has(version)) {
+        // Opt-in repair of notes written wrongly before (REFRESH_NOTES).
+        log(`release ${tag}: notes rewritten`);
+        if (!dry) {
+          const notesFile = join(work, `notes-${version}.md`);
+          writeFileSync(notesFile, buildNotes());
+          run('gh', ['release', 'edit', tag, '--notes-file', notesFile]);
+        }
+        changed++;
+      }
+
+      if (!releases.has(tag)) {
+        const notes = buildNotes();
         log(`release ${tag}${version === latest ? ' (latest)' : ''}`);
         if (!dry) {
           const notesFile = join(work, `notes-${version}.md`);

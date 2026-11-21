@@ -3,6 +3,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   changelogSection,
+  notesSection,
+  parseRefreshNotes,
   pickCommit,
   toGithubPackageJson,
   releaseNotes,
@@ -94,4 +96,53 @@ test('releaseNotes prefers the changelog, then commits, and flags inexact tags',
   const noGitHead = releaseNotes({ ...base, gitHead: undefined, section: '- y', commitLines: [], exact: false });
   assert.match(noGitHead, /npm recorded no commit for this publish/);
   assert.doesNotMatch(noGitHead, /earlier repository/);
+});
+
+// The 3.7.0 incident: for a few minutes main carried 3.8.0's entries under
+// the 3.7.0 heading, and the release created then shipped them as 3.7.0's
+// notes. Notes must come from the changelog at the published commit.
+const AT_PUBLISHED_COMMIT = `# Changelog
+
+## 3.7.0
+
+### Added
+
+- \`licenses.import(keys)\`
+
+## 3.6.0
+
+- penny
+`;
+const MAIN_MID_MERGE = `# Changelog
+
+## 3.7.0
+
+### Added
+
+- \`subscribers.upgradeQuote(id, subscriptionId)\`
+- \`licenses.import(keys)\`
+
+## 3.6.0
+
+- penny
+`;
+
+test('notesSection uses the changelog of the published commit, not the branch head', () => {
+  const section = notesSection('3.7.0', { atCommit: AT_PUBLISHED_COMMIT, head: MAIN_MID_MERGE });
+  assert.equal(section, '### Added\n\n- `licenses.import(keys)`');
+  assert.doesNotMatch(section, /upgradeQuote/);
+});
+
+test('notesSection falls back to the head changelog when the commit has no entry', () => {
+  // Older versions were published from another repository: the closest commit
+  // here has no CHANGELOG.md (null) or no section for that version.
+  assert.equal(notesSection('3.6.0', { atCommit: null, head: CHANGELOG }), '### Added\n\n- penny');
+  assert.equal(notesSection('3.5.0', { atCommit: AT_PUBLISHED_COMMIT, head: CHANGELOG }), '- payouts');
+  assert.equal(notesSection('1.0.0', { atCommit: AT_PUBLISHED_COMMIT, head: CHANGELOG }), null);
+});
+
+test('parseRefreshNotes reads the versions to rewrite, with or without a v', () => {
+  assert.deepEqual([...parseRefreshNotes('3.7.0, v3.8.0  3.6.0')], ['3.7.0', '3.8.0', '3.6.0']);
+  assert.equal(parseRefreshNotes('').size, 0);
+  assert.equal(parseRefreshNotes(undefined).size, 0);
 });
