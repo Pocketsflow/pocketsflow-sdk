@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.7.0
+## 3.8.0
 
 ### Added
 
@@ -24,17 +24,6 @@
   /credits/accounts/{id}/charge`: charge the buyer's saved card for a top-up,
   $0.50 to $10,000, `idempotencyKey` also sent as the `Idempotency-Key`
   header).
-- `licenses.import(keys)` (`POST /licenses/import`): import license keys you
-  sold on another platform, up to 1,000 per call, so your buyers keep the
-  keys they have. Each key keeps its exact text (any format), its activation
-  limit (`null` = unlimited; omitted = the product's current limit) and the
-  devices it is already activated on (`activations`), and is created in the
-  API key's mode. Every row gets its own result: `created`, `exists` (already
-  imported on the same product, left as it is, so a re-run is safe) or
-  `error` with the reason. New types: `ImportLicenseKeyParams`,
-  `ImportLicenseKeyResult`, `ImportLicenseKeysResponse`.
-- `LicenseKey.source` (`sale` | `import`), `LicenseKey.importedOrderId` and
-  `LicenseKey.customerId`. `LicenseKey.orderId` is `null` for an imported key.
 - `migrations.publishReview(id)` (`GET /migrations/{id}/publish`) and
   `migrations.publish(id, productIds)` (`POST /migrations/{id}/publish`,
   1-200 ids): review every product an import created (`published`, `ready`
@@ -70,6 +59,25 @@
 - Migrations are on every plan, including Free (docs said Volume).
 - `test/fixtures/public-api.json` refreshed from the production spec (356
   operations, 50 webhook events).
+
+## 3.7.0
+
+### Added
+
+- `licenses.import(keys)` (`POST /licenses/import`): import license keys you
+  sold on another platform, up to 1,000 per call, so your buyers keep the
+  keys they have. Each key keeps its exact text (any format), its activation
+  limit (`null` = unlimited; omitted = the product's current limit) and the
+  devices it is already activated on (`activations`), and is created in the
+  API key's mode. Every row gets its own result: `created`, `exists` (already
+  imported on the same product, left as it is, so a re-run is safe) or
+  `error` with the reason. New types: `ImportLicenseKeyParams`,
+  `ImportLicenseKeyResult`, `ImportLicenseKeysResponse`.
+- `LicenseKey.source` (`sale` | `import`), `LicenseKey.importedOrderId` and
+  `LicenseKey.customerId`. `LicenseKey.orderId` is `null` for an imported key.
+
+### Changed
+
 - The public license endpoints match an imported key by its exact text first,
   then the forgiving form (case, spaces, dashes) for keys issued by
   Pocketsflow. Doc comments updated.
