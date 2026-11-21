@@ -134,6 +134,8 @@ import {
   LicenseKeyCheckParams,
   DeactivateLicenseKeyParams,
   LicenseValidation,
+  ImportLicenseKeyParams,
+  ImportLicenseKeysResponse,
   AbAssignment,
   AbTest,
   AbTestResults,
@@ -2121,6 +2123,20 @@ class LicensesResource {
   /** Free every activation of a key. */
   async resetActivations(id: string): Promise<LicenseKey> {
     return this.client.request<LicenseKey>('POST', `/licenses/${seg(id)}/reset-activations`);
+  }
+
+  /**
+   * Import keys you sold on another platform (up to 1,000 per call), so your
+   * buyers keep the keys they have: each key keeps its exact text, its
+   * activation limit and its activated devices, and is created in the API
+   * key's mode. Every row gets its own result (`created`, `exists` or
+   * `error`); one bad row never fails the others, and re-running the same
+   * import is safe.
+   */
+  async import(keys: ImportLicenseKeyParams[]): Promise<ImportLicenseKeysResponse> {
+    return this.client.request<ImportLicenseKeysResponse>('POST', '/licenses/import', {
+      body: { keys },
+    });
   }
 
   /**

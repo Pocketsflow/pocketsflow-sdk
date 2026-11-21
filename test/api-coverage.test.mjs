@@ -132,6 +132,7 @@ const SDK = {
   disableLicenseKey: () => pf.licenses.disable(ID),
   enableLicenseKey: () => pf.licenses.enable(ID),
   resetLicenseKeyActivations: () => pf.licenses.resetActivations(ID),
+  importLicenseKeys: () => pf.licenses.import([{ licenseKey: 'K', productId: ID }]),
   listTrackedLinks: () => pf.trackedLinks.list(),
   createTrackedLink: () => pf.trackedLinks.create({ destination: 'https://x.test/p' }),
   getTrackedLinkStats: () => pf.trackedLinks.get(ID),
@@ -415,7 +416,7 @@ const pathPattern = (path) =>
   new RegExp(`^${path.replace(/\{[^}]+\}/g, '[^/]+')}$`);
 
 test('the fixture lists the public API operations', () => {
-  assert.ok(spec.operations.length >= 347);
+  assert.ok(spec.operations.length >= 348);
 });
 
 test('every public API operation has an SDK method', () => {
