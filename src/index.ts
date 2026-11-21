@@ -290,10 +290,9 @@ export type {
   LicenseKeyCheckParams,
   DeactivateLicenseKeyParams,
   LicenseValidation,
-  LicenseImportActivation,
-  LicenseImportRow,
-  LicenseImportRowStatus,
-  LicenseImportResult,
+  ImportLicenseKeyParams,
+  ImportLicenseKeyResult,
+  ImportLicenseKeysResponse,
 
   // Orders (upgrade playbook additions)
   TieredDiscountApplied,

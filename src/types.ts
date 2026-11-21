@@ -3295,8 +3295,14 @@ export interface LicenseKey {
   id: string;
   key: string;
   productId: string;
-  /** The order (sale) it was issued for. */
-  orderId: string;
+  /** The order (sale) it was issued for; null for an imported key. */
+  orderId: string | null;
+  /** `sale` = issued on a Pocketsflow order, `import` = brought over from another platform. */
+  source?: 'sale' | 'import';
+  /** Imported keys: the imported purchase it belongs to, when known. */
+  importedOrderId?: string | null;
+  /** Imported keys: the customer it belongs to, when known. */
+  customerId?: string | null;
   buyerEmail: string;
   status: 'active' | 'disabled';
   disabledReason: 'creator' | 'refunded' | 'disputed' | 'subscription_ended' | null;
@@ -3333,7 +3339,11 @@ export interface LicenseKeysResponse {
 export interface LicenseKeyCheckParams {
   /** The product the key was sold with. */
   productId: string;
-  /** The key the buyer entered (case, spaces and dashes are ignored). */
+  /**
+   * The key the buyer entered. Matched exactly first (imported keys keep
+   * their own format); for keys issued by Pocketsflow, case, spaces and
+   * dashes are ignored.
+   */
   licenseKey: string;
   /**
    * Your id for this install (1 – 128 letters, digits, `.`, `_`, `:`, `-`).
@@ -3348,41 +3358,31 @@ export interface DeactivateLicenseKeyParams extends LicenseKeyCheckParams {
   instanceId: string;
 }
 
-/** An instance an imported key is already activated on. */
-export interface LicenseImportActivation {
-  /** 1-128 characters: letters, digits, `.`, `_`, `:`, `-`. */
-  instanceId: string;
-  /** At most 120 characters. */
-  instanceName?: string;
-  /** ISO 8601. */
-  createdAt?: string;
-}
-
-/** One key of `licenses.import()`. */
-export interface LicenseImportRow {
+/** One key of `licenses.import()`: a key you sold on another platform. */
+export interface ImportLicenseKeyParams {
   /**
-   * The buyer's existing key, in any format (at most 256 characters). Stored
+   * The buyer's existing key, in any format (up to 256 characters). Stored
    * exactly as sent (only surrounding whitespace is trimmed) and matched
    * exactly by validate / activate / deactivate.
    */
   licenseKey: string;
-  /** One of your products (in the API key's mode). */
+  /** One of your products, in the API key's mode. */
   productId: string;
   /** The buyer's email (stored lower-cased). */
   customerEmail?: string;
   /**
-   * Maximum activations (1-10,000); `null` = unlimited. Omitted: the
+   * Maximum activations (1 – 10,000), or `null` for unlimited. Omitted: the
    * product's current license key activation limit.
    */
   activationLimit?: number | null;
   /**
-   * Instances the key is already activated on. They count toward the limit
-   * and keep validating; more than a finite limit is an error.
+   * Devices the key is already activated on. They count toward the limit and
+   * keep validating. More than a finite limit is an error on that row.
    */
-  activations?: LicenseImportActivation[];
+  activations?: Array<{ instanceId: string; instanceName?: string; createdAt?: string }>;
   /** Defaults to `active`. */
   status?: 'active' | 'disabled';
-  /** ISO 8601: when the key was originally issued. */
+  /** When the key was originally issued (ISO date). */
   createdAt?: string;
   /** Id of one of your imported purchases (migration import) to link. */
   importedOrderId?: string;
@@ -3390,27 +3390,27 @@ export interface LicenseImportRow {
   customerId?: string;
 }
 
-/**
- * `created`: a new key. `exists`: the same key was already imported on the
- * same product and was left exactly as it is (a re-run is safe). `error`:
- * not imported, see `error`.
- */
-export type LicenseImportRowStatus = 'created' | 'exists' | 'error';
+/** One row's outcome in `licenses.import()`. */
+export interface ImportLicenseKeyResult {
+  /** 0-based position in the keys you sent. */
+  index: number;
+  /**
+   * `created`; `exists` (the same key was already imported on the same
+   * product: left exactly as it is, so a re-run is safe); or `error`.
+   */
+  status: 'created' | 'exists' | 'error';
+  /** Why the row was not imported (`status: "error"`). */
+  error?: string;
+  /** The license key id (`created` / `exists`). */
+  id?: string;
+}
 
-/** Result of `licenses.import()`: one row per key sent, plus the counts. */
-export interface LicenseImportResult {
+/** Response of `licenses.import()`. */
+export interface ImportLicenseKeysResponse {
   created: number;
   exists: number;
   errors: number;
-  results: Array<{
-    /** 0-based position in the request. */
-    index: number;
-    status: LicenseImportRowStatus;
-    /** Why an `error` row was not imported. */
-    error?: string;
-    /** The license key id (`created` or `exists`). */
-    id?: string;
-  }>;
+  results: ImportLicenseKeyResult[];
 }
 
 /**

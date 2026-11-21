@@ -137,8 +137,8 @@ import {
   LicenseKeyCheckParams,
   DeactivateLicenseKeyParams,
   LicenseValidation,
-  LicenseImportRow,
-  LicenseImportResult,
+  ImportLicenseKeyParams,
+  ImportLicenseKeysResponse,
   AbAssignment,
   AbTest,
   AbTestResults,
@@ -2196,15 +2196,15 @@ class LicensesResource {
   }
 
   /**
-   * Bring over keys you sold on another platform (1-1,000 per call), so your
-   * buyers keep the keys they have. Each key keeps its exact text, activation
-   * limit and activated instances, and is created in the API key's mode.
-   * Every row gets its own result: `created`, `exists` (already imported on
-   * the same product and left as it is, so a re-run is safe) or `error` with
-   * the reason. One bad row never fails the others.
+   * Import keys you sold on another platform (up to 1,000 per call), so your
+   * buyers keep the keys they have: each key keeps its exact text, its
+   * activation limit and its activated devices, and is created in the API
+   * key's mode. Every row gets its own result (`created`, `exists` or
+   * `error`); one bad row never fails the others, and re-running the same
+   * import is safe.
    */
-  async import(keys: LicenseImportRow[]): Promise<LicenseImportResult> {
-    return this.client.request<LicenseImportResult>('POST', '/licenses/import', {
+  async import(keys: ImportLicenseKeyParams[]): Promise<ImportLicenseKeysResponse> {
+    return this.client.request<ImportLicenseKeysResponse>('POST', '/licenses/import', {
       body: { keys },
     });
   }
