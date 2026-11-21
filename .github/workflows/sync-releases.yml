@@ -1,10 +1,13 @@
 # Mirrors npm onto GitHub: a v<version> tag, a GitHub release and a
 # GitHub Packages copy (@pocketsflow/pocketsflow) for every `pocketsflow`
-# version on npm. npm publishes are manual (PUBLISHING.md), so this runs on
-# every push to main, every 6 hours, and on demand. See scripts/sync-releases.mjs.
+# version on npm. It runs right after "Publish to npm" succeeds, on every push
+# to main, every 6 hours, and on demand. See scripts/sync-releases.mjs.
 name: Sync npm releases
 
 on:
+  workflow_run:
+    workflows: [Publish to npm]
+    types: [completed]
   push:
     branches: [main]
   schedule:
@@ -21,6 +24,8 @@ concurrency:
 
 jobs:
   sync:
+    # After a publish run, only when it succeeded.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
