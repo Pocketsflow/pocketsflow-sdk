@@ -70,6 +70,9 @@ const SDK = {
   cancelSubscription: () => pf.subscribers.cancel(ID),
   pauseSubscription: () => pf.subscribers.pause(ID),
   resumeSubscription: () => pf.subscribers.resume(ID),
+  quoteSubscriptionUpgrade: () => pf.subscribers.upgradeQuote(ID, 'offer_2'),
+  upgradeSubscription: () =>
+    pf.subscribers.upgrade(ID, { subscriptionId: 'offer_2', idempotencyKey: 'upgrade-1' }),
   listWebhooks: () => pf.webhooks.list(),
   createWebhook: () => pf.webhooks.create({ url: 'https://x.test', events: ['order.completed'] }),
   getWebhook: () => pf.webhooks.get(ID),
@@ -132,6 +135,7 @@ const SDK = {
   disableLicenseKey: () => pf.licenses.disable(ID),
   enableLicenseKey: () => pf.licenses.enable(ID),
   resetLicenseKeyActivations: () => pf.licenses.resetActivations(ID),
+  importLicenseKeys: () => pf.licenses.import([{ licenseKey: 'K', productId: ID }]),
   listTrackedLinks: () => pf.trackedLinks.list(),
   createTrackedLink: () => pf.trackedLinks.create({ destination: 'https://x.test/p' }),
   getTrackedLinkStats: () => pf.trackedLinks.get(ID),
@@ -408,6 +412,14 @@ const SDK = {
   cancelMigration: () => pf.migrations.cancel(ID),
   getMigrationReport: () => pf.migrations.report(ID),
   downloadMigrationErrors: () => pf.migrations.errorsCsv(ID),
+  getMigrationPublishReview: () => pf.migrations.publishReview(ID),
+  publishMigrationProducts: () => pf.migrations.publish(ID, ['p_1']),
+  // Credits
+  listCreditAccounts: () => pf.credits.listAccounts(),
+  getCreditAccount: () => pf.credits.getAccount(ID),
+  deductCredits: () => pf.credits.deduct({ accountId: ID, amountCents: 100 }),
+  chargeCreditTopUp: () =>
+    pf.credits.topUp(ID, { amountCents: 500, idempotencyKey: 'topup-1' }),
 };
 
 /** `/discounts/apply/{discountCode}/{productId}` -> a matcher for the real path. */
@@ -415,7 +427,7 @@ const pathPattern = (path) =>
   new RegExp(`^${path.replace(/\{[^}]+\}/g, '[^/]+')}$`);
 
 test('the fixture lists the public API operations', () => {
-  assert.ok(spec.operations.length >= 347);
+  assert.ok(spec.operations.length >= 356);
 });
 
 test('every public API operation has an SDK method', () => {

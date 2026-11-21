@@ -128,6 +128,10 @@ export type {
   SubscribersResponse,
   GetSubscriberParams,
   MembershipActionResult,
+  SubscriptionUpgradeQuote,
+  UpgradeSubscriptionParams,
+  SubscriptionUpgradeStatus,
+  SubscriptionUpgrade,
   SubscriberOrderHistory,
   SubscriptionOffer,
   CreateSubscriptionOfferParams,
@@ -286,6 +290,10 @@ export type {
   LicenseKeyCheckParams,
   DeactivateLicenseKeyParams,
   LicenseValidation,
+  LicenseImportActivation,
+  LicenseImportRow,
+  LicenseImportRowStatus,
+  LicenseImportResult,
 
   // Orders (upgrade playbook additions)
   TieredDiscountApplied,
@@ -431,7 +439,7 @@ export type {
   MrrSummary,
   MrrReport,
 
-  // Unique coupons (Growth `uniqueCoupons`)
+  // Unique coupons (`uniqueCoupons`, every plan)
   UniqueCodeStatus,
   ListUniqueCodesParams,
   UniqueCode,
@@ -478,7 +486,7 @@ export type {
   RetentionOffersList,
   UpdateRetentionOfferParams,
 
-  // Bundles and "Buy more, save more" (Growth `bundles`, `tieredDiscounts`)
+  // Bundles (Growth `bundles`) and "Buy more, save more" (`tieredDiscounts`, every plan)
   BundleItem,
   Bundle,
   UpdateBundleParams,
@@ -664,7 +672,7 @@ export type {
   AffiliateBonusesResponse,
   MyAffiliateTierProgress,
 
-  // Migration from another platform (Volume `migration`)
+  // Migration from another platform (`migration`, every plan)
   MigrationSource,
   MigrationKind,
   MigrationStatus,
@@ -683,6 +691,25 @@ export type {
   MigrationRowsPage,
   MigrationReport,
   MigrationPlatform,
+  MigrationProductState,
+  MigrationPublishIssue,
+  MigrationPublishReviewRow,
+  MigrationPublishReview,
+  MigrationPublishRowStatus,
+  MigrationPublishErrorCode,
+  MigrationPublishRowResult,
+  MigrationPublishResult,
+
+  // Credits (prepaid balances on `credits` products)
+  CreditAccountStatus,
+  CreditAccount,
+  ListCreditAccountsParams,
+  DeductCreditsParams,
+  CreditRefillAttempt,
+  DeductCreditsResult,
+  ChargeCreditTopUpParams,
+  CreditTopUpStatus,
+  CreditTopUpResult,
 
   // Global search (⌘K)
   SearchType,
