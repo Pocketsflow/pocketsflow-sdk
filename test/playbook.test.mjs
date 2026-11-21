@@ -533,6 +533,36 @@ test('licenses creator methods', async () => {
   assert.deepEqual(query(calls[0]), { productId: 'p1', status: 'active', page: '2', pageSize: '50' });
 });
 
+test('licenses.import sends the keys and returns per-row results', async () => {
+  const client = pf();
+  reply({
+    body: {
+      created: 1,
+      exists: 1,
+      errors: 0,
+      results: [
+        { index: 0, status: 'created', id: 'k1' },
+        { index: 1, status: 'exists', id: 'k2' },
+      ],
+    },
+  });
+  const keys = [
+    {
+      licenseKey: 'LS-TEST-KEY-0001',
+      productId: 'p1',
+      customerEmail: 'anna@example.com',
+      activationLimit: 3,
+      activations: [{ instanceId: 'mac-1', instanceName: 'MacBook' }],
+    },
+    { licenseKey: 'LS-TEST-KEY-0002', productId: 'p1', activationLimit: null },
+  ];
+  const res = await client.licenses.import(keys);
+  assert.deepEqual(calls.map(route), ['POST /licenses/import']);
+  assert.deepEqual(json(calls[0]), { keys });
+  assert.equal(res.created, 1);
+  assert.deepEqual(res.results.map((r) => r.status), ['created', 'exists']);
+});
+
 test('licenses.validate / activate / deactivate send the key', async () => {
   const client = pf();
   reply({ body: { valid: true, code: null } }, { status: 201, body: { valid: true, instance: { id: 'ins_1' } } }, { body: { valid: true } });

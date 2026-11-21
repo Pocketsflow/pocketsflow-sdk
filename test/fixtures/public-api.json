@@ -483,6 +483,11 @@
       "operationId": "resetLicenseKeyActivations"
     },
     {
+      "method": "POST",
+      "path": "/licenses/import",
+      "operationId": "importLicenseKeys"
+    },
+    {
       "method": "GET",
       "path": "/tracked-links",
       "operationId": "listTrackedLinks"
