@@ -375,3 +375,133 @@ test('payouts are read only: status, balance, list and get are GETs', async () =
     ]
   );
 });
+
+test('subscribers.upgradeQuote -> GET /subscriptions/{id}/upgrade-quote and unwraps { quote }', async () => {
+  nextBody = { quote: { chargeAmount: 13.55, credit: 6.45, newPrice: 20 } };
+  const quote = await pf().subscribers.upgradeQuote('mem_1', 'offer_2');
+  const call = only();
+  assert.equal(call.method, 'GET');
+  assert.equal(call.url.pathname, '/subscriptions/mem_1/upgrade-quote');
+  assert.equal(call.url.searchParams.get('subscriptionId'), 'offer_2');
+  assert.equal(call.body, undefined);
+  assert.equal(quote.chargeAmount, 13.55);
+});
+
+test('subscribers.upgrade -> POST /subscriptions/{id}/upgrade with the key as header and body', async () => {
+  nextBody = { upgrade: { upgradeId: 'up_1', status: 'processing', paymentId: 'pay_1' } };
+  const upgrade = await pf().subscribers.upgrade('mem 1', {
+    subscriptionId: 'offer_2',
+    idempotencyKey: 'upgrade-7f3c2a',
+  });
+  const call = only();
+  assert.equal(call.method, 'POST');
+  assert.equal(call.url.pathname, '/subscriptions/mem%201/upgrade');
+  assert.deepEqual(JSON.parse(call.body), { subscriptionId: 'offer_2', idempotencyKey: 'upgrade-7f3c2a' });
+  assert.equal(call.headers['Idempotency-Key'], 'upgrade-7f3c2a');
+  assert.equal(upgrade.status, 'processing');
+});
+
+test('credits.listAccounts / getAccount send filters and unwrap { accounts } / { account }', async () => {
+  const client = pf();
+  nextBody = { accounts: [{ id: 'ca_1', balanceCents: 500 }] };
+  const accounts = await client.credits.listAccounts({ productId: 'prod_1', status: 'paused' });
+  assert.equal(accounts[0].id, 'ca_1');
+  nextBody = { account: { id: 'ca_1', balanceCents: 500 } };
+  const account = await client.credits.getAccount('ca_1');
+  assert.equal(account.balanceCents, 500);
+  assert.deepEqual(
+    calls.map((c) => `${c.method} ${c.url.pathname}${c.url.search}`),
+    ['GET /credits/accounts?productId=prod_1&status=paused', 'GET /credits/accounts/ca_1']
+  );
+});
+
+test('credits.deduct -> POST /credits/deduct with the usage as the body', async () => {
+  nextBody = { account: { id: 'ca_1', balanceCents: 0 }, refill: { attempted: true, success: true, balanceCents: 2000 } };
+  const res = await pf().credits.deduct({ accountId: 'ca_1', amountCents: 250, reason: 'Image generation' });
+  const call = only();
+  assert.equal(call.method, 'POST');
+  assert.equal(call.url.pathname, '/credits/deduct');
+  assert.deepEqual(JSON.parse(call.body), { accountId: 'ca_1', amountCents: 250, reason: 'Image generation' });
+  assert.equal(res.refill.balanceCents, 2000);
+});
+
+test('credits.topUp -> POST /credits/accounts/{id}/charge with the key as header and body', async () => {
+  nextBody = { charge: { status: 'succeeded', paymentId: 'pay_1', amountCents: 2000 }, account: { id: 'ca_1' } };
+  const res = await pf().credits.topUp('ca_1', { amountCents: 2000, idempotencyKey: 'topup-42' });
+  const call = only();
+  assert.equal(call.method, 'POST');
+  assert.equal(call.url.pathname, '/credits/accounts/ca_1/charge');
+  assert.deepEqual(JSON.parse(call.body), { amountCents: 2000, idempotencyKey: 'topup-42' });
+  assert.equal(call.headers['Idempotency-Key'], 'topup-42');
+  assert.equal(res.charge.status, 'succeeded');
+});
+
+test('licenses.import -> POST /licenses/import with the rows under keys', async () => {
+  nextBody = { created: 1, exists: 0, errors: 0, results: [{ index: 0, status: 'created', id: 'lk_1' }] };
+  const rows = [
+    {
+      licenseKey: 'OLD-KEY-1234',
+      productId: 'prod_1',
+      customerEmail: 'a@b.test',
+      activationLimit: null,
+      activations: [{ instanceId: 'ins_1', instanceName: 'MacBook' }],
+    },
+  ];
+  const res = await pf().licenses.import(rows);
+  const call = only();
+  assert.equal(call.method, 'POST');
+  assert.equal(call.url.pathname, '/licenses/import');
+  assert.deepEqual(JSON.parse(call.body), { keys: rows });
+  assert.equal(res.results[0].status, 'created');
+});
+
+test('migrations.publishReview / publish -> GET and POST /migrations/{id}/publish', async () => {
+  const client = pf();
+  nextBody = { jobId: 'job_1', counts: { total: 2, published: 0, ready: 1, needsFix: 1 }, rows: [] };
+  const review = await client.migrations.publishReview('job_1');
+  assert.equal(review.counts.ready, 1);
+  nextBody = {
+    results: [{ productId: 'p_1', status: 'published' }],
+    counts: { published: 1, alreadyPublished: 0, needsFix: 0, errors: 0 },
+  };
+  const res = await client.migrations.publish('job_1', ['p_1', 'p_2']);
+  assert.equal(res.counts.published, 1);
+  assert.deepEqual(
+    calls.map((c) => `${c.method} ${c.url.pathname}`),
+    ['GET /migrations/job_1/publish', 'POST /migrations/job_1/publish']
+  );
+  assert.equal(calls[0].body, undefined);
+  assert.deepEqual(JSON.parse(calls[1].body), { productIds: ['p_1', 'p_2'] });
+});
+
+test('discounts.create / update send maxRedemptions (null clears the cap)', async () => {
+  const client = pf();
+  await client.discounts.create({ name: 'Press', code: 'PRESS', value: 100, mainProductIds: ['p_1'], maxRedemptions: 1 });
+  await client.discounts.update('d_1', { maxRedemptions: null });
+  assert.deepEqual(
+    calls.map((c) => `${c.method} ${c.url.pathname}`),
+    ['POST /discounts', 'POST /discounts/d_1']
+  );
+  assert.equal(JSON.parse(calls[0].body).maxRedemptions, 1);
+  assert.deepEqual(JSON.parse(calls[1].body), { maxRedemptions: null });
+});
+
+test('discounts.apply: a used-up code throws 410 DISCOUNT_USED_UP', async () => {
+  globalThis.fetch = async (url, init) => {
+    calls.push({ url: new URL(url), method: init.method });
+    return new Response(JSON.stringify({ message: 'This code has been used up.', code: 'DISCOUNT_USED_UP' }), {
+      status: 410,
+    });
+  };
+  await assert.rejects(
+    () => pf().discounts.apply('PRESS', 'p_1', { reservation: 'tok_1' }),
+    (err) => {
+      assert.equal(err.status, 410);
+      assert.equal(err.code, 'DISCOUNT_USED_UP');
+      assert.equal(err.message, 'This code has been used up.');
+      return true;
+    }
+  );
+  assert.equal(only().url.pathname, '/discounts/apply/PRESS/p_1');
+  assert.equal(only().url.searchParams.get('reservation'), 'tok_1');
+});

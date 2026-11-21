@@ -31,6 +31,9 @@ import {
   SubscribersResponse,
   GetSubscriberParams,
   MembershipActionResult,
+  SubscriptionUpgradeQuote,
+  UpgradeSubscriptionParams,
+  SubscriptionUpgrade,
   PaymentDetail,
   ListPaymentsParams,
   PaymentsResponse,
@@ -251,6 +254,14 @@ import {
   MigrationKind,
   MigrationListResponse,
   MigrationPlatform,
+  MigrationPublishReview,
+  MigrationPublishResult,
+  CreditAccount,
+  ListCreditAccountsParams,
+  DeductCreditsParams,
+  DeductCreditsResult,
+  ChargeCreditTopUpParams,
+  CreditTopUpResult,
   SearchParams,
   SearchResponse,
   PennyDecideParams,
@@ -481,7 +492,7 @@ export class Pocketsflow {
   public retention: RetentionResource;
   /** Product bundles (Growth plan). */
   public bundles: BundlesResource;
-  /** "Buy more, save more" cart discounts (Growth plan). */
+  /** "Buy more, save more" cart discounts (every plan). */
   public tieredDiscounts: TieredDiscountsResource;
   /** Revenue splits with co-creators (Growth plan to invite). */
   public revenueSplits: RevenueSplitsResource;
@@ -513,12 +524,14 @@ export class Pocketsflow {
   public loyalty: LoyaltyResource;
   /** Tiered affiliate commissions and bonuses (Pro plan). */
   public affiliateTiers: AffiliateTiersResource;
-  /** Imports from another platform (Volume plan). */
+  /** Imports from another platform (every plan, including Free). */
   public migrations: MigrationsResource;
   /** Global search (⌘K) across orders, customers, products, subscribers and discounts. */
   public search: SearchResource;
   /** Pocketsflow Penny 1, the decision model (API keys only). */
   public penny: PennyResource;
+  /** Prepaid credit balances on `credits` products: usage and saved-card top-ups. */
+  public credits: CreditsResource;
 
   constructor(config: PocketsflowConfig) {
     if (!config.apiKey) {
@@ -592,6 +605,7 @@ export class Pocketsflow {
     this.migrations = new MigrationsResource(this);
     this.search = new SearchResource(this);
     this.penny = new PennyResource(this);
+    this.credits = new CreditsResource(this);
   }
 
   async request<T>(
@@ -1060,22 +1074,28 @@ class ReviewsResource {
 class DiscountsResource {
   constructor(private client: Pocketsflow) {}
 
-  /** List all discounts */
+  /** List all discounts in the key's mode, each with `used` (sales that used it). */
   async list(): Promise<Discount[]> {
     return this.client.request<Discount[]>('GET', '/discounts');
   }
 
-  /** Get a discount by ID */
+  /** Get a discount by ID, with `used` (sales that used it) next to `maxRedemptions`. */
   async get(id: string): Promise<Discount> {
     return this.client.request<Discount>('GET', `/discounts/${id}`);
   }
 
-  /** Create a new discount */
+  /**
+   * Create a new discount. Set `maxRedemptions` to cap how many checkouts
+   * can use the code (`1` = one-use); not allowed with `uniquePerRecipient`.
+   */
   async create(params: CreateDiscountParams): Promise<Discount> {
     return this.client.request<Discount>('POST', '/discounts', { body: params });
   }
 
-  /** Update a discount */
+  /**
+   * Update a discount (only the fields you send change). `maxRedemptions:
+   * null` removes the cap, `expiration: null` the expiry date.
+   */
   async update(id: string, params: UpdateDiscountParams): Promise<Discount> {
     return this.client.request<Discount>('POST', `/discounts/${id}`, { body: params });
   }
@@ -1088,8 +1108,16 @@ class DiscountsResource {
   /**
    * Look up a discount code as a buyer would at checkout: resolves to the
    * discount when `code` is active and applies to `productId` (a product or
-   * subscription offer). Throws a 404 `PocketsflowError` otherwise. Public
-   * endpoint: it does not need your API key.
+   * subscription offer). Public endpoint: it does not need your API key.
+   *
+   * Throws a `PocketsflowError` otherwise: `404` (not found, inactive,
+   * expired or not for this product); `410` with `code` `DISCOUNT_USED_UP`
+   * when a code's `maxRedemptions` are used up ("This code has been used
+   * up."); `409` `DISCOUNT_IN_USE` when its last uses are held by other open
+   * checkouts (pass the checkout's own `reservation` so its hold doesn't
+   * count). One-time codes: `403` `UNIQUE_CODE_EMAIL_MISMATCH`, `409`
+   * `UNIQUE_CODE_IN_USE`, `410` `UNIQUE_CODE_REDEEMED` / `UNIQUE_CODE_EXPIRED`
+   * / `UNIQUE_CODE_UNAVAILABLE` and `422` `UNIQUE_CODE_EMAIL_REQUIRED`.
    */
   async apply(
     code: string,
@@ -1112,7 +1140,7 @@ class DiscountsResource {
 
   /**
    * Issue one-time codes for a list of `emails` or `count` bearer codes (at
-   * most 5,000). The discount needs `uniquePerRecipient` (Growth plan).
+   * most 5,000). The discount needs `uniquePerRecipient` (every plan).
    */
   async createUniqueCodes(id: string, params: CreateUniqueCodesParams): Promise<CreatedUniqueCodes> {
     return this.client.request<CreatedUniqueCodes>('POST', `/discounts/${seg(id)}/unique-codes`, {
@@ -1293,6 +1321,48 @@ class SubscribersResource {
       'POST',
       `/subscriptions/${seg(id)}/resume`
     );
+  }
+
+  /**
+   * What moving a subscriber (`_id` or `mem_…` id) to another subscription
+   * offer would charge now: the new price minus `credit` for the unused part
+   * of the current period. Charges nothing. A `409` `PocketsflowError` says
+   * why the upgrade isn't possible (`SUBSCRIPTION_INACTIVE`,
+   * `SUBSCRIPTION_PAUSED`, `SAME_SUBSCRIPTION`, `USAGE_PRICED`,
+   * `FREE_SUBSCRIPTION` or `NOT_AN_UPGRADE`: it would charge less than 1.00).
+   */
+  async upgradeQuote(id: string, subscriptionId: string): Promise<SubscriptionUpgradeQuote> {
+    const res = await this.client.request<unknown>(
+      'GET',
+      `/subscriptions/${seg(id)}/upgrade-quote`,
+      { params: { subscriptionId } }
+    );
+    return unwrap<SubscriptionUpgradeQuote>(res, 'quote');
+  }
+
+  /**
+   * Move a subscriber (`_id` or `mem_…` id) to another subscription offer
+   * now, charging the prorated amount (`upgradeQuote()`) on their saved card
+   * with no checkout page. The new subscription renews at the new price
+   * every period from today and the old one ends at once. `idempotencyKey`
+   * is also sent as the `Idempotency-Key` header: a retry with the same key
+   * returns the original upgrade and never charges twice.
+   *
+   * Resolves with `status: 'succeeded'` (paid; `subscription.upgraded`
+   * follows within seconds) or `'processing'` (the charge is clearing;
+   * `subscription.upgraded` or `subscription.upgrade_failed` follows).
+   * Throws a `PocketsflowError` on `402` `DECLINED` (nothing changed),
+   * `409` (`UPGRADE_IN_PROGRESS`, `NO_SAVED_CARD`, `NO_PAYOUTS_ACCOUNT` or a
+   * quote reason), `422` `KEY_REUSED` (the key was used for an upgrade to
+   * another offer) and `503` `UNAVAILABLE` (the payments partner did not
+   * answer, so the charge may still go through: wait for the webhook).
+   */
+  async upgrade(id: string, params: UpgradeSubscriptionParams): Promise<SubscriptionUpgrade> {
+    const res = await this.client.request<unknown>('POST', `/subscriptions/${seg(id)}/upgrade`, {
+      body: params,
+      headers: params.idempotencyKey ? { 'Idempotency-Key': params.idempotencyKey } : undefined,
+    });
+    return unwrap<SubscriptionUpgrade>(res, 'upgrade');
   }
 }
 
@@ -2636,7 +2706,7 @@ class BundlesResource {
   }
 }
 
-/** "Buy more, save more": a percent off carts with more items (Growth plan). */
+/** "Buy more, save more": a percent off carts with more items (every plan). */
 class TieredDiscountsResource {
   constructor(private client: Pocketsflow) {}
 
@@ -3370,8 +3440,9 @@ class AffiliateTiersResource {
 }
 
 /**
- * Import products, customers, orders and subscribers from another platform
- * (Volume plan to write; reads and `cancel` are never locked).
+ * Import products, customers, orders, subscribers and license keys from
+ * another platform (every plan, including Free), then review and publish the
+ * products it created.
  */
 class MigrationsResource {
   constructor(private client: Pocketsflow) {}
@@ -3460,6 +3531,31 @@ class MigrationsResource {
       responseType: 'text',
     });
   }
+
+  /**
+   * Review and publish: every product the import created (in the import's
+   * mode), each with its `state` (`published`, `ready`, `needs_fix`) and the
+   * `issues` still in the way. Saving a price with `products.update()` clears
+   * `price_unconfirmed`; uploading the file clears `file_missing`. Writes
+   * nothing.
+   */
+  async publishReview(id: string): Promise<MigrationPublishReview> {
+    return this.client.request<MigrationPublishReview>('GET', `/migrations/${seg(id)}/publish`);
+  }
+
+  /**
+   * Publish products the import created (1-200 ids per call; duplicates are
+   * ignored) through the same checks as publishing one product. One result
+   * per product (`published`, `already_published`, `needs_fix` with its
+   * `issues`, or `error` with a `code`) plus the counts: one product failing
+   * never fails the others, and ids that are not this import's products come
+   * back as `not_in_import` errors. A `409` means the import is still running.
+   */
+  async publish(id: string, productIds: string[]): Promise<MigrationPublishResult> {
+    return this.client.request<MigrationPublishResult>('POST', `/migrations/${seg(id)}/publish`, {
+      body: { productIds },
+    });
+  }
 }
 
 /** Global search (⌘K): one query across the store, grouped by record type. */
@@ -3501,5 +3597,60 @@ class PennyResource {
   /** Free decisions used and left this month, credits left and a link to buy more. */
   async usage(): Promise<PennyUsage> {
     return this.client.request<PennyUsage>('GET', '/v1/penny/usage');
+  }
+}
+
+/**
+ * Prepaid credit balances on `credits` products: one balance per buyer per
+ * product. Record usage with `deduct()` and charge a buyer's saved card for
+ * a top-up with `topUp()`.
+ */
+class CreditsResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Credit balances, newest activity first (at most 200). */
+  async listAccounts(params: ListCreditAccountsParams = {}): Promise<CreditAccount[]> {
+    const res = await this.client.request<unknown>('GET', '/credits/accounts', { params });
+    return unwrap<CreditAccount[]>(res, 'accounts');
+  }
+
+  /** One credit balance. */
+  async getAccount(id: string): Promise<CreditAccount> {
+    const res = await this.client.request<unknown>('GET', `/credits/accounts/${seg(id)}`);
+    return unwrap<CreditAccount>(res, 'account');
+  }
+
+  /**
+   * Take `amountCents` off a buyer's balance. When this brings it to zero
+   * and the buyer opted in to auto-refill, one top-off charge runs on their
+   * saved card and its outcome comes back as `refill`. A `409`
+   * `PocketsflowError` has `code` `paused` (a failed top-off paused the
+   * balance) or `insufficient` (not enough balance).
+   */
+  async deduct(params: DeductCreditsParams): Promise<DeductCreditsResult> {
+    return this.client.request<DeductCreditsResult>('POST', '/credits/deduct', { body: params });
+  }
+
+  /**
+   * Charge the buyer's saved card off-session for `amountCents` and add it
+   * to their balance, with no checkout page. Needs the buyer's consent to
+   * saved-card charges (they opted in to auto-refill at checkout).
+   * `idempotencyKey` is also sent as the `Idempotency-Key` header: a retry
+   * with the same key returns the original charge and never charges twice.
+   *
+   * Resolves with `charge.status` `succeeded` (charged and added) or
+   * `processing` (`credit.top_up.succeeded` or `credit.top_up.failed`
+   * follows). Throws a `PocketsflowError` on `402` `declined` (the balance is
+   * unchanged), `409` (`no_consent`, `no_saved_card`, `no_payouts_account`
+   * or `in_progress`), `422` `key_reused` (the key was used for a different
+   * amount) and `503` `unavailable` (the payments partner did not answer, so
+   * the charge may still go through: wait for the webhook before charging
+   * again with a new key).
+   */
+  async topUp(id: string, params: ChargeCreditTopUpParams): Promise<CreditTopUpResult> {
+    return this.client.request<CreditTopUpResult>('POST', `/credits/accounts/${seg(id)}/charge`, {
+      body: params,
+      headers: params.idempotencyKey ? { 'Idempotency-Key': params.idempotencyKey } : undefined,
+    });
   }
 }

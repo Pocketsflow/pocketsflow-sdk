@@ -1016,9 +1016,19 @@ export interface Discount {
   mainProductIds: string[];
   /** ISO 8601 date-time, or null for no expiry. */
   expiration?: string | null;
-  /** Times redeemed. */
+  /**
+   * Sales that used the code (every order placed with it). Returned by
+   * `discounts.list()` and `discounts.get()`. With `maxRedemptions` set, the
+   * code is used up once `used` (plus checkouts still open) reaches it.
+   */
   used?: number;
-  /** One-time codes: every recipient gets their own code (Growth plan). */
+  /**
+   * The most successful checkouts the code may have (1–1,000,000; `1` makes
+   * a one-use code). `null` or absent = unlimited. An open checkout holds one
+   * use for 30 minutes. Never set together with `uniquePerRecipient: true`.
+   */
+  maxRedemptions?: number | null;
+  /** One-time codes: every recipient gets their own code (every plan). */
   uniquePerRecipient?: boolean;
   /** Hours a one-time code stays valid (1–720, default 48). */
   uniqueExpiryHours?: number;
@@ -1054,10 +1064,20 @@ export interface CreateDiscountParams {
   mainProductIds: string[];
   /** Expiration date-time (ISO 8601), or null for no expiry */
   expiration?: string | null;
-  /** One-time codes per recipient (turning it on needs the Growth plan) */
+  /** One-time codes per recipient (every plan) */
   uniquePerRecipient?: boolean;
   /** Hours a one-time code stays valid, 1–720 (default 48) */
   uniqueExpiryHours?: number;
+  /**
+   * The most successful checkouts the code may have: a whole number from 1
+   * to 1,000,000 (`1` makes a one-use code, e.g. for press or reviewers).
+   * `null` or absent = unlimited. Every order placed with the code counts,
+   * and an open checkout holds one use for 30 minutes. Not allowed with
+   * `uniquePerRecipient: true` (each one-time code already works once) or on
+   * a discount that targets a subscription offer: the API answers `400`.
+   * A used-up code answers `410` (`DISCOUNT_USED_UP`) at checkout.
+   */
+  maxRedemptions?: number | null;
 }
 
 export interface UpdateDiscountParams {
@@ -1071,6 +1091,16 @@ export interface UpdateDiscountParams {
   expiration?: string | null;
   uniquePerRecipient?: boolean;
   uniqueExpiryHours?: number;
+  /**
+   * The most successful checkouts the code may have: a whole number from 1
+   * to 1,000,000 (`1` makes a one-use code, e.g. for press or reviewers).
+   * `null` = unlimited. Every order placed with the code counts,
+   * and an open checkout holds one use for 30 minutes. Not allowed with
+   * `uniquePerRecipient: true` (each one-time code already works once) or on
+   * a discount that targets a subscription offer: the API answers `400`.
+   * A used-up code answers `410` (`DISCOUNT_USED_UP`) at checkout.
+   */
+  maxRedemptions?: number | null;
 }
 
 // ----------------------------------------------------------------------------
@@ -1310,6 +1340,60 @@ export interface MembershipActionResult {
   manageUrl?: string;
 }
 
+/**
+ * What moving a subscriber to another subscription offer would charge now
+ * (`subscribers.upgradeQuote()`): the new price minus `credit` for the
+ * unused part of what they paid for the current period. Amounts are decimal
+ * major currency units (e.g. `29.99`), not cents.
+ */
+export interface SubscriptionUpgradeQuote {
+  from: { subscriptionCustomerId: string; subscriptionId: string };
+  to: { subscriptionId: string; name: string };
+  /** e.g. `usd`. */
+  currency: string;
+  /** What the subscriber paid for the current period (0 while trialing). */
+  currentPeriodPaid: number;
+  /** Share of the current period not used yet, 0 to 1. */
+  unusedFraction: number;
+  /** Credit for the unused part of the current period. */
+  credit: number;
+  /** The new subscription's price per period. */
+  newPrice: number;
+  /** Charged now: `newPrice - credit`. */
+  chargeAmount: number;
+  billingPeriodDays: number;
+  /** ISO 8601: when the new subscription renews if upgraded now. */
+  nextRenewalAt: string;
+}
+
+/** Body of `subscribers.upgrade()`. */
+export interface UpgradeSubscriptionParams {
+  /** The subscription offer to move to. */
+  subscriptionId: string;
+  /**
+   * Unique per upgrade (8-100 letters, digits, `-` `_` `:` `.`). Sent as the
+   * `Idempotency-Key` header and in the body: a retry with the same key
+   * returns the original upgrade and never charges twice.
+   */
+  idempotencyKey: string;
+}
+
+/** `succeeded`: paid. `processing`: the charge is still clearing. */
+export type SubscriptionUpgradeStatus = 'succeeded' | 'processing';
+
+/** Result of `subscribers.upgrade()`. */
+export interface SubscriptionUpgrade {
+  upgradeId: string;
+  /**
+   * `succeeded` (HTTP 200): the new subscription activates within seconds
+   * (`subscription.upgraded`). `processing` (HTTP 202): the charge is
+   * clearing; `subscription.upgraded` or `subscription.upgrade_failed` follows.
+   */
+  status: SubscriptionUpgradeStatus;
+  paymentId: string;
+  quote: SubscriptionUpgradeQuote;
+}
+
 /** A subscription offer — a recurring product you sell. */
 export interface SubscriptionOffer {
   _id: string;
@@ -1486,6 +1570,8 @@ export const WEBHOOK_EVENTS = [
   'credit.balance_changed',
   'credit.auto_refill.succeeded',
   'credit.auto_refill.failed',
+  'credit.top_up.succeeded',
+  'credit.top_up.failed',
   'credit.consent.enabled',
   'credit.consent.disabled',
   'order.post_purchase_accepted',
@@ -1493,6 +1579,8 @@ export const WEBHOOK_EVENTS = [
   'subscription.payment_failed',
   'subscription.recovered',
   'subscription.saved',
+  'subscription.upgraded',
+  'subscription.upgrade_failed',
   'usage.recorded',
   'usage.period_closed',
   'installment.paid',
@@ -4370,7 +4458,7 @@ export interface MrrReport {
 }
 
 // ----------------------------------------------------------------------------
-// Unique coupons (Growth `uniqueCoupons`)
+// Unique coupons (`uniqueCoupons`, every plan)
 // ----------------------------------------------------------------------------
 
 export type UniqueCodeStatus = 'active' | 'redeemed' | 'expired';
@@ -4718,7 +4806,7 @@ export interface UpdateRetentionOfferParams {
 }
 
 // ----------------------------------------------------------------------------
-// Bundles and "Buy more, save more" (Growth `bundles`, `tieredDiscounts`)
+// Bundles (Growth `bundles`) and "Buy more, save more" (`tieredDiscounts`, every plan)
 // ----------------------------------------------------------------------------
 
 export interface BundleItem {
@@ -6365,7 +6453,7 @@ export interface MyAffiliateTierProgress {
 }
 
 // ----------------------------------------------------------------------------
-// Migration from another platform (Volume `migration`)
+// Migration from another platform (`migration`, every plan)
 // ----------------------------------------------------------------------------
 
 export type MigrationSource = 'gumroad' | 'lemonsqueezy' | 'stan' | 'csv';
@@ -6510,6 +6598,187 @@ export interface MigrationPlatform {
   columns: Partial<
     Record<MigrationKind, Array<{ field: string; label: string; required: boolean; headers: string[] }>>
   >;
+}
+
+/** Where an imported product stands in Review and publish. */
+export type MigrationProductState = 'published' | 'ready' | 'needs_fix';
+
+/**
+ * What still keeps an imported product from going live: `price_unconfirmed`
+ * (the export had no readable price), `cover_missing`, `file_missing` (or
+ * `link_missing` / `lessons_missing` for link and course products),
+ * `payouts_missing` (live mode, paid product, no payouts account),
+ * `selling_paused`, `rejected`, `not_approved`.
+ */
+export type MigrationPublishIssue =
+  | 'price_unconfirmed'
+  | 'cover_missing'
+  | 'file_missing'
+  | 'link_missing'
+  | 'lessons_missing'
+  | 'payouts_missing'
+  | 'selling_paused'
+  | 'rejected'
+  | 'not_approved';
+
+/** One product an import created, in `migrations.publishReview()`. */
+export interface MigrationPublishReviewRow {
+  productId: string;
+  name: string;
+  price: number;
+  payWant: boolean;
+  /** Cover image URL. */
+  cover: string | null;
+  /** Product type: `file`, `url`, `course`, `credits`… */
+  deliverable: string;
+  published: boolean;
+  state: MigrationProductState;
+  issues: MigrationPublishIssue[];
+}
+
+/** `migrations.publishReview()`: every product the import created. Writes nothing. */
+export interface MigrationPublishReview {
+  jobId: string;
+  /** The import's mode; its products are in the same mode. */
+  testMode: boolean;
+  /** A payouts account is connected for this mode. */
+  payoutsConnected: boolean;
+  sellingPaused: boolean;
+  counts: { total: number; published: number; ready: number; needsFix: number };
+  /** At most 1,000 rows (`counts` covers them all). */
+  rows: MigrationPublishReviewRow[];
+  /** More products than `rows` holds. */
+  truncated: boolean;
+}
+
+export type MigrationPublishRowStatus = 'published' | 'already_published' | 'needs_fix' | 'error';
+
+/** Why an `error` row of `migrations.publish()` was not published. */
+export type MigrationPublishErrorCode =
+  | 'not_in_import'
+  | 'not_found'
+  | 'selling_paused'
+  | 'rejected'
+  | 'not_approved'
+  | 'failed';
+
+/** One product of `migrations.publish()`. */
+export interface MigrationPublishRowResult {
+  productId: string;
+  status: MigrationPublishRowStatus;
+  /** What to fix first, on a `needs_fix` row. */
+  issues?: MigrationPublishIssue[];
+  /** Why an `error` row was not published. */
+  code?: MigrationPublishErrorCode;
+  /** What went wrong, for an `error` row. */
+  error?: string;
+}
+
+/** `migrations.publish()`: one result per product and the counts. */
+export interface MigrationPublishResult {
+  results: MigrationPublishRowResult[];
+  counts: { published: number; alreadyPublished: number; needsFix: number; errors: number };
+}
+
+// ----------------------------------------------------------------------------
+// Credits (prepaid balances on `credits` products)
+// ----------------------------------------------------------------------------
+
+/** `paused`: a failed auto-refill paused usage until the buyer fixes their card. */
+export type CreditAccountStatus = 'active' | 'paused';
+
+/**
+ * One buyer's balance on one `credits` product. Never includes the saved
+ * card itself, only whether there is one (`hasSavedCard`).
+ */
+export interface CreditAccount {
+  /** Credit account id (24-character hex). */
+  id: string;
+  /** Balance in the account currency, decimal major units (e.g. `29.99`). */
+  balance: number;
+  /** Balance, integer cents. */
+  balanceCents: number;
+  currency: string;
+  status: CreditAccountStatus;
+  /** The buyer agreed to charges on their saved card (auto-refill and top-ups). */
+  autoRefillOptIn: boolean;
+  hasSavedCard: boolean;
+  /** An auto-refill charge is still clearing. */
+  refillPending: boolean;
+  lastRefillAt: string | null;
+  buyerEmail: string;
+  buyerName: string;
+  consecutiveFailures: number;
+  lastFailureAt: string | null;
+  lastFailureMessage: string;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+/** Filters of `credits.listAccounts()`. */
+export interface ListCreditAccountsParams {
+  /** Only balances for this product. */
+  productId?: string;
+  status?: CreditAccountStatus;
+}
+
+/** Body of `credits.deduct()`. */
+export interface DeductCreditsParams {
+  /** Credit account id. */
+  accountId: string;
+  /** Usage to deduct, integer cents (at least 1). */
+  amountCents: number;
+  /** Shown in the balance's ledger (at most 200 characters). */
+  reason?: string;
+}
+
+/** The auto-refill attempt a deduction triggered by emptying the balance. */
+export interface CreditRefillAttempt {
+  attempted: boolean;
+  success: boolean;
+  pending?: boolean;
+  balanceCents: number;
+  message?: string;
+}
+
+/** Result of `credits.deduct()`. */
+export interface DeductCreditsResult {
+  /** The balance after the deduction. */
+  account: CreditAccount;
+  /** The auto-refill attempt, when this deduction emptied the balance; else null. */
+  refill: CreditRefillAttempt | null;
+}
+
+/** Body of `credits.topUp()`. */
+export interface ChargeCreditTopUpParams {
+  /** Amount to charge and add, integer cents in the balance's currency (50 to 1,000,000: $0.50 to $10,000). */
+  amountCents: number;
+  /**
+   * Unique per top-up (8-100 letters, digits, `-` `_` `:` `.`). Sent as the
+   * `Idempotency-Key` header and in the body: a retry with the same key
+   * returns the original charge and never charges twice.
+   */
+  idempotencyKey: string;
+  /** Attached to the charge's metadata (at most 200 characters). */
+  reason?: string;
+}
+
+/** `succeeded`: charged and added. `processing`: the charge is still clearing. */
+export type CreditTopUpStatus = 'succeeded' | 'processing';
+
+/** Result of `credits.topUp()`. */
+export interface CreditTopUpResult {
+  charge: {
+    /**
+     * `succeeded` (HTTP 200): charged and added to the balance. `processing`
+     * (HTTP 202): `credit.top_up.succeeded` or `credit.top_up.failed` follows.
+     */
+    status: CreditTopUpStatus;
+    /** The payments partner's payment id. */
+    paymentId: string;
+    amountCents: number;
+  };
+  account: CreditAccount;
 }
 
 /** `{ message }` answers of delete routes. */
