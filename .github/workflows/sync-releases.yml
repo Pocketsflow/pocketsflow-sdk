@@ -13,6 +13,11 @@ on:
   schedule:
     - cron: '17 */6 * * *'
   workflow_dispatch:
+    inputs:
+      refresh_notes:
+        description: 'Versions whose existing release notes to rewrite from CHANGELOG.md, e.g. "3.7.0" (optional)'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -38,3 +43,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REFRESH_NOTES: ${{ inputs.refresh_notes }}
