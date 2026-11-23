@@ -1,5 +1,23 @@
 # Changelog
 
+## 3.9.0
+
+### Added
+
+- `variantId` on `CreateCheckoutParams` (`checkout.create()`, `POST
+  /checkout/sessions`): open the checkout on one of a product's variants.
+  Optional; leave it out for a product without variants. The API answers
+  `404` `VARIANT_NOT_FOUND` when the variant isn't that product's, and `400`
+  on a subscription offer.
+
+### Changed
+
+- `creatorServices.createDisputeHelp()` (`POST /creator-services/dispute-help`)
+  works on every plan, Free included: the API no longer answers `403
+  FEATURE_LOCKED` below Pro. On plans with priority support (Pro and above)
+  the request is answered first (`priority: true`). Docs only: no signature
+  change.
+
 ## 3.8.0
 
 ### Added

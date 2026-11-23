@@ -583,7 +583,8 @@ Supported pixel fields: `facebookPixel`, `googlePixel`, `googleTagManager`,
 ```typescript
 // Create a checkout session
 const session = await pocketsflow.checkout.create({
-  productId: 'product_id',
+  productId: 'product_id', // the only required field
+  variantId: 'variant_id', // optional: only for a product with variants
   successUrl: 'https://your-site.com/success',
   cancelUrl: 'https://your-site.com/cancel',
   customerEmail: 'customer@example.com', // optional
@@ -1096,7 +1097,7 @@ await pocketsflow.memberships.banMember({ email: 'troll@example.com', hideConten
 
 ```typescript
 const services = await pocketsflow.creatorServices.get();
-await pocketsflow.creatorServices.createDisputeHelp({ saleId: 'order_id', message: 'The buyer says…' }); // Pro
+await pocketsflow.creatorServices.createDisputeHelp({ saleId: 'order_id', message: 'The buyer says…' }); // every plan (priority on Pro)
 await pocketsflow.creatorServices.getAccountManager(); // Volume
 await pocketsflow.creatorServices.listDisputeCovers(); // Volume
 

@@ -3143,8 +3143,10 @@ class CreatorServicesResource {
   }
 
   /**
-   * Ask the team to answer a dispute for you (Pro plan). One open request
-   * per order: a second one is a 409 with `code: "ALREADY_REQUESTED"`.
+   * Ask the team to answer a dispute for you. Every plan, Free included; on
+   * plans with priority support (Pro and above) the request is answered
+   * first (`priority: true`). One open request per order: a second one is a
+   * 409 with `code: "ALREADY_REQUESTED"`.
    */
   async createDisputeHelp(params: CreateDisputeHelpParams): Promise<DisputeHelpRequest> {
     const res = await this.client.request<unknown>('POST', '/creator-services/dispute-help', {
