@@ -280,6 +280,12 @@ test('checkout.create sends clientReferenceId and lockEmail', async () => {
   assert.equal(session.url, 'https://checkout.example.test/cs_1');
 });
 
+test('checkout.create sends variantId only when given', async () => {
+  nextBody = { id: 'cs_2', url: 'https://checkout.example.test/cs_2' };
+  await pf().checkout.create({ productId: 'p1', variantId: 'v1' });
+  assert.deepEqual(JSON.parse(only().body), { productId: 'p1', variantId: 'v1' });
+});
+
 test('subscriptionOffers.delete -> DELETE /subscriptions/{id}', async () => {
   nextBody = { message: 'Subscription deleted', id: 'o1' };
   const res = await pf().subscriptionOffers.delete('o1');

@@ -1,6 +1,14 @@
 # Changelog
 
-## 3.8.1
+## 3.9.0
+
+### Added
+
+- `variantId` on `CreateCheckoutParams` (`checkout.create()`, `POST
+  /checkout/sessions`): open the checkout on one of a product's variants.
+  Optional; leave it out for a product without variants. The API answers
+  `404` `VARIANT_NOT_FOUND` when the variant isn't that product's, and `400`
+  on a subscription offer.
 
 ### Changed
 

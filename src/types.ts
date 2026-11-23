@@ -2175,8 +2175,15 @@ export interface UpdateUserParams extends TrackingPixelsUpdate {
 // ----------------------------------------------------------------------------
 
 export interface CreateCheckoutParams {
-  /** A product or subscription offer id (required). */
+  /** A product or subscription offer id (required, and the only required field). */
   productId: string;
+  /**
+   * One of the product's variants: the checkout opens on that option and
+   * price. Leave it out for a product without variants. One-time products
+   * only: a 404 `VARIANT_NOT_FOUND` when it isn't this product's, a 400 on a
+   * subscription offer.
+   */
+  variantId?: string;
   /** Where the buyer lands after paying. */
   successUrl?: string;
   /** Where the buyer lands if they leave the checkout. */

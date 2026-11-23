@@ -583,7 +583,8 @@ Supported pixel fields: `facebookPixel`, `googlePixel`, `googleTagManager`,
 ```typescript
 // Create a checkout session
 const session = await pocketsflow.checkout.create({
-  productId: 'product_id',
+  productId: 'product_id', // the only required field
+  variantId: 'variant_id', // optional: only for a product with variants
   successUrl: 'https://your-site.com/success',
   cancelUrl: 'https://your-site.com/cancel',
   customerEmail: 'customer@example.com', // optional
