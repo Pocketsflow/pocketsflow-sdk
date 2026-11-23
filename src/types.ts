@@ -5780,6 +5780,7 @@ export interface DisputeHelpRequest {
   _id: string;
   kind: 'dispute_help';
   status: 'open' | 'in_progress' | 'done' | 'cancelled';
+  /** True on plans with priority support (Pro and above): answered first. */
   priority: boolean;
   saleId: string;
   message: string;

@@ -1096,7 +1096,7 @@ await pocketsflow.memberships.banMember({ email: 'troll@example.com', hideConten
 
 ```typescript
 const services = await pocketsflow.creatorServices.get();
-await pocketsflow.creatorServices.createDisputeHelp({ saleId: 'order_id', message: 'The buyer says…' }); // Pro
+await pocketsflow.creatorServices.createDisputeHelp({ saleId: 'order_id', message: 'The buyer says…' }); // every plan (priority on Pro)
 await pocketsflow.creatorServices.getAccountManager(); // Volume
 await pocketsflow.creatorServices.listDisputeCovers(); // Volume
 

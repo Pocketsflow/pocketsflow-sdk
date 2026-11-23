@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.8.1
+
+### Changed
+
+- `creatorServices.createDisputeHelp()` (`POST /creator-services/dispute-help`)
+  works on every plan, Free included: the API no longer answers `403
+  FEATURE_LOCKED` below Pro. On plans with priority support (Pro and above)
+  the request is answered first (`priority: true`). Docs only: no signature
+  change.
+
 ## 3.8.0
 
 ### Added
