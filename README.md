@@ -1263,6 +1263,51 @@ up, `decide` throws a `PocketsflowError` with `status` 402 and
 `body.error === 'penny_credits_exhausted'`; `body.buy_url` links to more
 credits.
 
+### Enterprise
+
+Pocketsflow Enterprise runs a white-label workspace of sellers
+(sub-accounts). Its API takes an **enterprise API key** (`ek_live_...`),
+created by an owner in the Enterprise Admin (Settings > API keys); a creator
+`pk_` key gets `401`. Every call only sees your own workspace.
+
+```typescript
+const pf = new Pocketsflow({ apiKey: 'ek_live_your_enterprise_key' });
+
+// Sellers, newest first: search by email, name or subdomain
+const { items, total } = await pf.enterprise.subaccounts.list({ search: 'maya', filter: 'selling' });
+const seller = await pf.enterprise.subaccounts.get(items[0].userId); // profile, stats, payouts, recent activity
+await pf.enterprise.subaccounts.listProducts(seller.profile.userId, { pageSize: 50 });
+await pf.enterprise.subaccounts.getBalance(seller.profile.userId); // { balances } or { error }
+
+// Pause selling or hold payouts (the reason goes to your audit log)
+await pf.enterprise.subaccounts.pause(seller.profile.userId, { reason: 'Chargeback review' });
+await pf.enterprise.subaccounts.unpause(seller.profile.userId);
+await pf.enterprise.subaccounts.holdPayouts(seller.profile.userId);
+await pf.enterprise.subaccounts.releasePayouts(seller.profile.userId);
+
+// Sales across every seller, with the platform fee split
+await pf.enterprise.transactions.list({ status: 'paid', from: '2026-11-01', to: '2026-11-30' });
+
+// Withdrawal approvals
+const pending = await pf.enterprise.withdrawals.list({ status: 'pending' });
+await pf.enterprise.withdrawals.approve(pending.items[0].id); // 'paid', or 'failed' with a reason
+await pf.enterprise.withdrawals.reject(pending.items[1].id, { reason: 'Duplicate request' });
+
+// Your earnings: totals, lines (negative on refunds) and settlements
+const earnings = await pf.enterprise.earnings.list({ from: '2026-11-01', to: '2026-11-30' });
+earnings.totals.unsettledUsd;
+```
+
+Lists take `page` (1-based) and `pageSize` (default `25`, maximum `100`) and
+resolve to `{ items, page, pageSize, total }`; `from` / `to` are days
+(`YYYY-MM-DD`, UTC, inclusive). Money moved is a decimal string (`amount`,
+`available`) with a `usd` number for display. Errors are `PocketsflowError`s
+with the API's `code`: `not_found` (`404`, not in your workspace),
+`platform_hold` (`409`, `unpause` can't lift a hold by the platform),
+`not_pending`, `payouts_held` (`409` on a withdrawal),
+`partner_unavailable` (`503`: approve again, it never pays twice) and
+`tenant_suspended` (`403`).
+
 ## Error Handling
 
 ```typescript

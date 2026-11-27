@@ -1,5 +1,58 @@
 # Changelog
 
+## 3.10.0
+
+### Added
+
+- `enterprise`, a new namespace for Pocketsflow Enterprise (`/v1/enterprise`),
+  used with an enterprise API key: `new Pocketsflow({ apiKey: 'ek_live_...' })`.
+  Every call only sees your own white-label workspace.
+  - `enterprise.subaccounts.list({ search?, filter?, page?, pageSize? })`
+    (`GET /v1/enterprise/subaccounts`; `filter` is `all`, `selling`,
+    `paused`, `held` or `unverified`).
+  - `enterprise.subaccounts.get(userId)` (`GET
+    /v1/enterprise/subaccounts/{userId}`): profile, stats, payout account
+    (or `{ error }`), the last 10 sales and withdrawal requests.
+  - `enterprise.subaccounts.listProducts(userId, { page?, pageSize? })` (`GET
+    /v1/enterprise/subaccounts/{userId}/products`).
+  - `enterprise.subaccounts.getBalance(userId)` (`GET
+    /v1/enterprise/subaccounts/{userId}/balance`): available and pending per
+    currency, read live from the payouts provider.
+  - `enterprise.subaccounts.pause(userId, { reason? })`, `.unpause()`,
+    `.holdPayouts()` and `.releasePayouts()` (`POST
+    /v1/enterprise/subaccounts/{userId}/pause` | `unpause` | `hold-payouts` |
+    `release-payouts`): resolve with the updated sub-account. `unpause`
+    throws a `409` `platform_hold` when the platform holds the account.
+  - `enterprise.transactions.list({ search?, status?, userId?, from?, to?,
+    page?, pageSize? })` (`GET /v1/enterprise/transactions`).
+  - `enterprise.withdrawals.list({ status?, userId?, page?, pageSize? })`
+    (`GET /v1/enterprise/withdrawals`), `enterprise.withdrawals.approve(id)`
+    (`POST /v1/enterprise/withdrawals/{id}/approve`: pays out at most once,
+    safe to repeat) and `enterprise.withdrawals.reject(id, { reason? })`
+    (`POST /v1/enterprise/withdrawals/{id}/reject`).
+  - `enterprise.earnings.list({ from?, to?, page?, pageSize? })` (`GET
+    /v1/enterprise/earnings`): totals (accrued, settled, unsettled), a page
+    of earning lines and your settlements.
+- New types: `EnterprisePage`, `EnterprisePageParams`,
+  `EnterpriseVerification`, `EnterpriseSubAccountFilter`,
+  `ListEnterpriseSubAccountsParams`, `EnterpriseSubAccount`,
+  `EnterprisePayoutsStatus`, `EnterpriseBalance`, `EnterprisePayoutMethod`,
+  `EnterpriseRecentPayout`, `EnterprisePartnerAccount`,
+  `EnterprisePartnerError`, `EnterpriseSubAccountBalance`,
+  `EnterpriseSubAccountDetail`, `EnterpriseProduct`,
+  `EnterpriseActionParams`, `EnterpriseTransaction`,
+  `EnterpriseTransactionStatusFilter`, `ListEnterpriseTransactionsParams`,
+  `EnterpriseWithdrawalStatus`, `EnterpriseWithdrawal`,
+  `ListEnterpriseWithdrawalsParams`, `RejectEnterpriseWithdrawalParams`,
+  `EnterpriseEarning`, `EnterpriseSettlement`, `EnterpriseEarnings`,
+  `ListEnterpriseEarningsParams`.
+
+### Changed
+
+- `test/fixtures/public-api.json` refreshed from the production spec (369
+  operations, the 13 Enterprise operations added); every one has an SDK
+  method.
+
 ## 3.9.0
 
 ### Added
