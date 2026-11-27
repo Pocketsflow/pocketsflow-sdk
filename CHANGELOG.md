@@ -1,5 +1,20 @@
 # Changelog
 
+## 3.11.0
+
+### Added
+
+- `Product.priceCurrency` and `ProductFields.priceCurrency`: price one product
+  in another currency than your account's (uppercase ISO, e.g. `EUR` on a USD
+  store). It is charged and paid out in that currency, with no conversion to
+  the buyer's local currency, and its checkout shows no order bumps. Send
+  `null`, `''` or your account currency to follow your account currency
+  again. An unsupported code is a `400`.
+- `Product.paymentLink` and `ProductFields.paymentLink`: a payment link, a
+  product with nothing to deliver (the buyer pays the amount and gets a
+  receipt). Pair it with `hasProductPage: 'no'` so the link opens the
+  checkout.
+
 ## 3.10.0
 
 ### Added

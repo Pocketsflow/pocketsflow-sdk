@@ -511,3 +511,30 @@ test('discounts.apply: a used-up code throws 410 DISCOUNT_USED_UP', async () => 
   assert.equal(only().url.pathname, '/discounts/apply/PRESS/p_1');
   assert.equal(only().url.searchParams.get('reservation'), 'tok_1');
 });
+
+test('products.create sends priceCurrency and paymentLink (a EUR payment link)', async () => {
+  nextBody = { _id: 'pl_1', name: 'Annual licence', price: 10000, priceCurrency: 'EUR', paymentLink: true };
+  const product = await pf().products.create({
+    name: 'Annual licence',
+    price: 10000,
+    priceCurrency: 'EUR',
+    paymentLink: true,
+    hasProductPage: 'no',
+  });
+  const call = only();
+  assert.equal(call.method, 'POST');
+  assert.equal(call.url.pathname, '/products');
+  const body = JSON.parse(call.body);
+  assert.equal(body.priceCurrency, 'EUR');
+  assert.equal(body.paymentLink, true);
+  assert.equal(product.priceCurrency, 'EUR');
+  assert.equal(product.paymentLink, true);
+});
+
+test('products.update can clear priceCurrency with null', async () => {
+  nextBody = { _id: 'p_1', priceCurrency: null };
+  await pf().products.update('p_1', { priceCurrency: null });
+  const call = only();
+  assert.equal(call.url.pathname, '/products/update/p_1');
+  assert.deepEqual(JSON.parse(call.body), { priceCurrency: null });
+});
