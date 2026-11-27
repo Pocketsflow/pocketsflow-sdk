@@ -68,7 +68,15 @@ export interface Product {
   price: number;
   /** Struck-through "was" price shown next to `price`. */
   compareAtPrice?: number;
-  /** @deprecated Not returned by the API; products are priced in your account currency. */
+  /**
+   * The currency this product's prices are in when it is not your account
+   * currency (uppercase ISO, e.g. `EUR`). `null` or absent: your account
+   * currency. Such a product is charged and paid out in this currency.
+   */
+  priceCurrency?: string | null;
+  /** A payment link: the buyer pays the amount and gets a receipt; nothing is delivered. */
+  paymentLink?: boolean;
+  /** @deprecated Not returned by the API; read `priceCurrency` (else your account currency). */
   currency: string;
   /** @deprecated Not returned by the API. Subscriptions are `SubscriptionOffer`s. */
   type: 'one-time' | 'subscription';
@@ -178,10 +186,24 @@ export interface CopyCatalogItemParams {
 
 /** Writable product fields, shared by `products.create()` and `products.update()`. */
 export interface ProductFields {
-  /** Product price (defaults to 0) */
+  /** Product price (defaults to 0), in `priceCurrency` when set, else your account currency */
   price?: number;
   /** Struck-through "was" price shown next to `price` */
   compareAtPrice?: number;
+  /**
+   * Price this product in another currency than your account's (uppercase
+   * ISO, e.g. `EUR` on a USD store). It is charged and paid out in it, with
+   * no conversion to the buyer's local currency, and its checkout shows no
+   * order bumps. `null`, `''` or your account currency: follow your account
+   * currency. An unsupported code is a `400`.
+   */
+  priceCurrency?: string | null;
+  /**
+   * A payment link: nothing to deliver (no file or URL); the buyer pays the
+   * amount and gets a receipt. Pair it with `hasProductPage: 'no'` so the
+   * link opens the checkout.
+   */
+  paymentLink?: boolean;
   /** Product description */
   description?: string;
   /** Product subtitle */
