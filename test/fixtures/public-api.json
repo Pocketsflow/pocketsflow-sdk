@@ -1781,6 +1781,71 @@
       "method": "POST",
       "path": "/migrations/{id}/publish",
       "operationId": "publishMigrationProducts"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/enterprise/subaccounts",
+      "operationId": "listEnterpriseSubaccounts"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/enterprise/subaccounts/{userId}",
+      "operationId": "getEnterpriseSubaccount"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/enterprise/subaccounts/{userId}/products",
+      "operationId": "listEnterpriseSubaccountProducts"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/enterprise/subaccounts/{userId}/balance",
+      "operationId": "getEnterpriseSubaccountBalance"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/enterprise/subaccounts/{userId}/pause",
+      "operationId": "pauseEnterpriseSubaccount"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/enterprise/subaccounts/{userId}/unpause",
+      "operationId": "unpauseEnterpriseSubaccount"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/enterprise/subaccounts/{userId}/hold-payouts",
+      "operationId": "holdEnterpriseSubaccountPayouts"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/enterprise/subaccounts/{userId}/release-payouts",
+      "operationId": "releaseEnterpriseSubaccountPayouts"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/enterprise/transactions",
+      "operationId": "listEnterpriseTransactions"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/enterprise/withdrawals",
+      "operationId": "listEnterpriseWithdrawals"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/enterprise/withdrawals/{id}/approve",
+      "operationId": "approveEnterpriseWithdrawal"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/enterprise/withdrawals/{id}/reject",
+      "operationId": "rejectEnterpriseWithdrawal"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/enterprise/earnings",
+      "operationId": "listEnterpriseEarnings"
     }
   ],
   "webhookEvents": [

@@ -420,6 +420,20 @@ const SDK = {
   deductCredits: () => pf.credits.deduct({ accountId: ID, amountCents: 100 }),
   chargeCreditTopUp: () =>
     pf.credits.topUp(ID, { amountCents: 500, idempotencyKey: 'topup-1' }),
+  // Pocketsflow Enterprise
+  listEnterpriseSubaccounts: () => pf.enterprise.subaccounts.list({ search: 'maya' }),
+  getEnterpriseSubaccount: () => pf.enterprise.subaccounts.get(ID),
+  listEnterpriseSubaccountProducts: () => pf.enterprise.subaccounts.listProducts(ID),
+  getEnterpriseSubaccountBalance: () => pf.enterprise.subaccounts.getBalance(ID),
+  pauseEnterpriseSubaccount: () => pf.enterprise.subaccounts.pause(ID, { reason: 'Review' }),
+  unpauseEnterpriseSubaccount: () => pf.enterprise.subaccounts.unpause(ID),
+  holdEnterpriseSubaccountPayouts: () => pf.enterprise.subaccounts.holdPayouts(ID),
+  releaseEnterpriseSubaccountPayouts: () => pf.enterprise.subaccounts.releasePayouts(ID),
+  listEnterpriseTransactions: () => pf.enterprise.transactions.list({ status: 'paid' }),
+  listEnterpriseWithdrawals: () => pf.enterprise.withdrawals.list({ status: 'pending' }),
+  approveEnterpriseWithdrawal: () => pf.enterprise.withdrawals.approve(ID),
+  rejectEnterpriseWithdrawal: () => pf.enterprise.withdrawals.reject(ID, { reason: 'Duplicate' }),
+  listEnterpriseEarnings: () => pf.enterprise.earnings.list({ from: '2026-11-01' }),
 };
 
 /** `/discounts/apply/{discountCode}/{productId}` -> a matcher for the real path. */
@@ -427,7 +441,7 @@ const pathPattern = (path) =>
   new RegExp(`^${path.replace(/\{[^}]+\}/g, '[^/]+')}$`);
 
 test('the fixture lists the public API operations', () => {
-  assert.ok(spec.operations.length >= 356);
+  assert.ok(spec.operations.length >= 369);
 });
 
 test('every public API operation has an SDK method', () => {

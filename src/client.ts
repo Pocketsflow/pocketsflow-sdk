@@ -385,6 +385,21 @@ import {
   PayoutStatus,
   ListPayoutsParams,
   PayoutsResponse,
+  EnterprisePage,
+  EnterprisePageParams,
+  EnterpriseSubAccount,
+  EnterpriseSubAccountDetail,
+  EnterpriseSubAccountBalance,
+  EnterpriseProduct,
+  EnterpriseTransaction,
+  EnterpriseWithdrawal,
+  EnterpriseEarnings,
+  EnterpriseActionParams,
+  ListEnterpriseSubAccountsParams,
+  ListEnterpriseTransactionsParams,
+  ListEnterpriseWithdrawalsParams,
+  ListEnterpriseEarningsParams,
+  RejectEnterpriseWithdrawalParams,
 } from './types';
 
 const DEFAULT_BASE_URL = 'https://api.pocketsflow.com';
@@ -532,6 +547,12 @@ export class Pocketsflow {
   public penny: PennyResource;
   /** Prepaid credit balances on `credits` products: usage and saved-card top-ups. */
   public credits: CreditsResource;
+  /**
+   * Pocketsflow Enterprise: your white-label workspace's sub-accounts,
+   * transactions, withdrawals and earnings. Needs an enterprise API key
+   * (`ek_live_...`).
+   */
+  public enterprise: EnterpriseResource;
 
   constructor(config: PocketsflowConfig) {
     if (!config.apiKey) {
@@ -606,6 +627,7 @@ export class Pocketsflow {
     this.search = new SearchResource(this);
     this.penny = new PennyResource(this);
     this.credits = new CreditsResource(this);
+    this.enterprise = new EnterpriseResource(this);
   }
 
   async request<T>(
@@ -3654,5 +3676,177 @@ class CreditsResource {
       body: params,
       headers: params.idempotencyKey ? { 'Idempotency-Key': params.idempotencyKey } : undefined,
     });
+  }
+}
+
+/**
+ * Pocketsflow Enterprise, sub-accounts: the sellers of your white-label
+ * workspace. Needs an enterprise API key (`ek_live_...`).
+ */
+class EnterpriseSubAccountsResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Your workspace's sellers, newest first, with lifetime volume. */
+  async list(params: ListEnterpriseSubAccountsParams = {}): Promise<EnterprisePage<EnterpriseSubAccount>> {
+    return this.client.request<EnterprisePage<EnterpriseSubAccount>>('GET', '/v1/enterprise/subaccounts', {
+      params,
+    });
+  }
+
+  /**
+   * One seller: profile, stats, payout account (or `{ error }`), the last 10
+   * sales and the last 10 withdrawal requests. A seller outside your
+   * workspace throws a `404` `PocketsflowError`.
+   */
+  async get(userId: string): Promise<EnterpriseSubAccountDetail> {
+    return this.client.request<EnterpriseSubAccountDetail>('GET', `/v1/enterprise/subaccounts/${seg(userId)}`);
+  }
+
+  /** The seller's live products with their paid sales. */
+  async listProducts(
+    userId: string,
+    params: EnterprisePageParams = {}
+  ): Promise<EnterprisePage<EnterpriseProduct>> {
+    return this.client.request<EnterprisePage<EnterpriseProduct>>(
+      'GET',
+      `/v1/enterprise/subaccounts/${seg(userId)}/products`,
+      { params }
+    );
+  }
+
+  /**
+   * Available and pending money per currency, read live from the payouts
+   * provider. `error` is set instead of `balances` when payouts aren't set up
+   * or the provider can't be reached.
+   */
+  async getBalance(userId: string): Promise<EnterpriseSubAccountBalance> {
+    return this.client.request<EnterpriseSubAccountBalance>(
+      'GET',
+      `/v1/enterprise/subaccounts/${seg(userId)}/balance`
+    );
+  }
+
+  /** Turn checkout off for this seller (their dashboard keeps working). Resolves with the updated row. */
+  async pause(userId: string, params: EnterpriseActionParams = {}): Promise<EnterpriseSubAccount> {
+    return this.action(userId, 'pause', params);
+  }
+
+  /**
+   * Turn checkout back on, when you paused it. A hold by the platform is
+   * never lifted from here: it throws a `409` `PocketsflowError` with
+   * `code: 'platform_hold'`.
+   */
+  async unpause(userId: string, params: EnterpriseActionParams = {}): Promise<EnterpriseSubAccount> {
+    return this.action(userId, 'unpause', params);
+  }
+
+  /** Hold this seller's withdrawals until you release them. */
+  async holdPayouts(userId: string, params: EnterpriseActionParams = {}): Promise<EnterpriseSubAccount> {
+    return this.action(userId, 'hold-payouts', params);
+  }
+
+  /** Let this seller withdraw again. */
+  async releasePayouts(userId: string, params: EnterpriseActionParams = {}): Promise<EnterpriseSubAccount> {
+    return this.action(userId, 'release-payouts', params);
+  }
+
+  private action(
+    userId: string,
+    action: 'pause' | 'unpause' | 'hold-payouts' | 'release-payouts',
+    params: EnterpriseActionParams
+  ): Promise<EnterpriseSubAccount> {
+    return this.client.request<EnterpriseSubAccount>(
+      'POST',
+      `/v1/enterprise/subaccounts/${seg(userId)}/${action}`,
+      { body: params }
+    );
+  }
+}
+
+/** Pocketsflow Enterprise, transactions: every sale across your sub-accounts. */
+class EnterpriseTransactionsResource {
+  constructor(private client: Pocketsflow) {}
+
+  /**
+   * Sales across your sub-accounts, newest first, with the platform fee split
+   * between Pocketsflow and you. Filter by `status`, `userId`, `search` and a
+   * `from` / `to` day range (`YYYY-MM-DD`, UTC, inclusive).
+   */
+  async list(params: ListEnterpriseTransactionsParams = {}): Promise<EnterprisePage<EnterpriseTransaction>> {
+    return this.client.request<EnterprisePage<EnterpriseTransaction>>('GET', '/v1/enterprise/transactions', {
+      params,
+    });
+  }
+}
+
+/** Pocketsflow Enterprise, withdrawals: your sellers' requests waiting for approval. */
+class EnterpriseWithdrawalsResource {
+  constructor(private client: Pocketsflow) {}
+
+  /** Withdrawal requests, newest first. */
+  async list(params: ListEnterpriseWithdrawalsParams = {}): Promise<EnterprisePage<EnterpriseWithdrawal>> {
+    return this.client.request<EnterprisePage<EnterpriseWithdrawal>>('GET', '/v1/enterprise/withdrawals', {
+      params,
+    });
+  }
+
+  /**
+   * Approve a request: it is paid out to the seller's own bank and resolves
+   * `paid` (or `failed` with a `reason`). Safe to repeat: a request is paid
+   * at most once. Throws a `409` `PocketsflowError` when it was rejected
+   * (`not_pending`), the seller's payouts are held (`payouts_held`) or their
+   * account is on hold, and a `503` `partner_unavailable` when the payouts
+   * provider is slow (approve again in a moment: it won't pay twice).
+   */
+  async approve(id: string): Promise<EnterpriseWithdrawal> {
+    return this.client.request<EnterpriseWithdrawal>('POST', `/v1/enterprise/withdrawals/${seg(id)}/approve`);
+  }
+
+  /**
+   * Reject a pending request: the money stays in the seller's balance.
+   * Throws a `409` `not_pending` when it was approved already.
+   */
+  async reject(id: string, params: RejectEnterpriseWithdrawalParams = {}): Promise<EnterpriseWithdrawal> {
+    return this.client.request<EnterpriseWithdrawal>('POST', `/v1/enterprise/withdrawals/${seg(id)}/reject`, {
+      body: params,
+    });
+  }
+}
+
+/** Pocketsflow Enterprise, earnings: your markup on your sellers' sales. */
+class EnterpriseEarningsResource {
+  constructor(private client: Pocketsflow) {}
+
+  /**
+   * Totals for the range (all time without one), a page of earning lines
+   * (a negative line per refund) and Pocketsflow's settlements with you.
+   */
+  async list(params: ListEnterpriseEarningsParams = {}): Promise<EnterpriseEarnings> {
+    return this.client.request<EnterpriseEarnings>('GET', '/v1/enterprise/earnings', { params });
+  }
+}
+
+/**
+ * Pocketsflow Enterprise: read and control the sub-accounts of your
+ * white-label workspace. Use an enterprise API key (`ek_live_...`, created by
+ * an owner in the Enterprise Admin): `new Pocketsflow({ apiKey: 'ek_live_...' })`.
+ * Every call only sees your own workspace. Errors are `PocketsflowError`s
+ * with the API's `code` (e.g. `not_found`, `platform_hold`, `tenant_suspended`).
+ */
+class EnterpriseResource {
+  /** Your sellers: list, details, products, balance, pause and payout holds. */
+  public subaccounts: EnterpriseSubAccountsResource;
+  /** Every sale across your sub-accounts. */
+  public transactions: EnterpriseTransactionsResource;
+  /** Withdrawal requests: list, approve, reject. */
+  public withdrawals: EnterpriseWithdrawalsResource;
+  /** Your earnings and settlements. */
+  public earnings: EnterpriseEarningsResource;
+
+  constructor(client: Pocketsflow) {
+    this.subaccounts = new EnterpriseSubAccountsResource(client);
+    this.transactions = new EnterpriseTransactionsResource(client);
+    this.withdrawals = new EnterpriseWithdrawalsResource(client);
+    this.earnings = new EnterpriseEarningsResource(client);
   }
 }

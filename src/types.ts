@@ -7,7 +7,10 @@
 // ----------------------------------------------------------------------------
 
 export interface PocketsflowConfig {
-  /** Your Pocketsflow API key (pk_live_... or pk_test_...) */
+  /**
+   * Your Pocketsflow API key (pk_live_... or pk_test_...), or an enterprise
+   * API key (ek_live_...) for the `enterprise` namespace.
+   */
   apiKey: string;
   /** Base URL for the API (defaults to https://api.pocketsflow.com) */
   baseUrl?: string;
@@ -6948,6 +6951,294 @@ export interface PennyUsage {
   credits_remaining: number | null;
   /** A checkout link for more credits, or `null` when credits are not on sale. */
   buy_url: string | null;
+}
+
+// ----------------------------------------------------------------------------
+// Pocketsflow Enterprise — /v1/enterprise (enterprise API keys, ek_live_...)
+// ----------------------------------------------------------------------------
+
+/**
+ * One page of an Enterprise list. `page` is 1-based; keep requesting
+ * `page + 1` while `page * pageSize < total`.
+ */
+export interface EnterprisePage<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
+/** Paging for the Enterprise lists: `pageSize` defaults to 25, at most 100. */
+export interface EnterprisePageParams {
+  /** 1-based page number (defaults to 1). */
+  page?: number;
+  /** Items per page (defaults to 25, maximum 100: larger values are capped). */
+  pageSize?: number;
+}
+
+/** A sub-account's identity verification at the payouts provider. */
+export type EnterpriseVerification = 'none' | 'pending' | 'verified' | 'rejected';
+
+/** `filter` of `enterprise.subaccounts.list()`. */
+export type EnterpriseSubAccountFilter = 'all' | 'selling' | 'paused' | 'held' | 'unverified';
+
+export interface ListEnterpriseSubAccountsParams extends EnterprisePageParams {
+  /** Email, name or subdomain (partial, case-insensitive) or an exact user id. */
+  search?: string;
+  /**
+   * `selling`: can sell and has at least one paid sale; `paused`: selling
+   * paused; `held`: payouts held by you; `unverified`: not verified yet.
+   * Defaults to `all`.
+   */
+  filter?: EnterpriseSubAccountFilter;
+}
+
+/** A seller (sub-account) of your white-label workspace. */
+export interface EnterpriseSubAccount {
+  userId: string;
+  name: string;
+  email: string;
+  subdomain: string;
+  /** ISO date-time. */
+  createdAt: string | null;
+  /** False while selling is paused (by you or by the platform). */
+  canSell: boolean;
+  /** True while you hold this seller's withdrawals. */
+  payoutsHeld: boolean;
+  verification: EnterpriseVerification;
+  /** Lifetime live volume in USD, refunds excluded. */
+  volumeUsd: number;
+  /** Lifetime paid sales, refunds excluded. */
+  transactions: number;
+  /** Not loaded in lists (always `null`); read `subaccounts.getBalance()`. */
+  balanceUsd: number | null;
+}
+
+/** Whether a seller can be paid out right now, and if not why. */
+export type EnterprisePayoutsStatus = 'active' | 'held' | 'paused' | 'under_review';
+
+/** Money in one currency at the payouts provider. */
+export interface EnterpriseBalance {
+  /** ISO currency code, e.g. `USD`. */
+  currency: string;
+  /** Decimal string in `currency`, e.g. `"1250.00"`. */
+  available: string;
+  /** Decimal string in `currency`. */
+  pending: string;
+  /** The whole balance in USD, for display. */
+  usd: number;
+}
+
+/** A saved payout method of the seller (never a full account number). */
+export interface EnterprisePayoutMethod {
+  id: string;
+  /** e.g. `Chase •• 4242`. */
+  label: string;
+  currency: string;
+}
+
+/** One of the seller's recent payouts. */
+export interface EnterpriseRecentPayout {
+  id: string;
+  status: 'requested' | 'in_review' | 'on_the_way' | 'arrived' | 'failed';
+  /** Decimal string in `currency`. */
+  amount: string;
+  currency: string;
+  /** The bank's display name. */
+  destination: string;
+  createdAt: string | null;
+  /** Estimated or actual arrival, ISO date-time. */
+  arrival: string | null;
+}
+
+/** The seller's payout account, read live from the payouts provider. */
+export interface EnterprisePartnerAccount {
+  /** The seller's payout account id. */
+  accountId: string;
+  status: EnterprisePayoutsStatus;
+  balances: EnterpriseBalance[];
+  payoutMethods: EnterprisePayoutMethod[];
+  recentPayouts: EnterpriseRecentPayout[];
+}
+
+/** Set instead of the account when payouts aren't set up or the provider can't be reached. */
+export interface EnterprisePartnerError {
+  error: string;
+}
+
+/** `enterprise.subaccounts.getBalance()`: `error` is set instead of `balances` when unavailable. */
+export interface EnterpriseSubAccountBalance {
+  userId: string;
+  accountId?: string;
+  status?: EnterprisePayoutsStatus;
+  balances?: EnterpriseBalance[];
+  /** Why the balance couldn't be read (payouts not set up, provider unreachable). */
+  error?: string;
+}
+
+/** A sale across your sub-accounts, with the platform fee split between Pocketsflow and you. */
+export interface EnterpriseTransaction {
+  id: string;
+  /** ISO date-time. */
+  createdAt: string;
+  userId: string;
+  sellerName: string;
+  buyerEmail: string;
+  /** The product's name (empty when it was deleted). */
+  product: string;
+  amountUsd: number;
+  /** ISO currency code the buyer paid in. */
+  currency: string;
+  /** Decimal string in `currency`. */
+  amount: string;
+  status: 'paid' | 'refunded';
+  pocketsflowFeeUsd: number;
+  tenantFeeUsd: number;
+}
+
+/** `status` of `enterprise.transactions.list()`. */
+export type EnterpriseTransactionStatusFilter = 'all' | 'paid' | 'refunded' | 'subscription';
+
+export interface ListEnterpriseTransactionsParams extends EnterprisePageParams {
+  /** Buyer email, payment id, sale id, or a seller's email / name / subdomain. */
+  search?: string;
+  /** Defaults to `all`. */
+  status?: EnterpriseTransactionStatusFilter;
+  /** One sub-account's sales only. */
+  userId?: string;
+  /** First day, `YYYY-MM-DD` (UTC), inclusive. */
+  from?: string;
+  /** Last day, `YYYY-MM-DD` (UTC), inclusive. */
+  to?: string;
+}
+
+export type EnterpriseWithdrawalStatus = 'pending' | 'approved' | 'rejected' | 'paid' | 'failed';
+
+/** A seller's withdrawal request. */
+export interface EnterpriseWithdrawal {
+  id: string;
+  /** ISO date-time. */
+  createdAt: string;
+  userId: string;
+  sellerName: string;
+  /** Decimal string in `currency`, e.g. `"500.00"`. */
+  amount: string;
+  currency: string;
+  /** What `amount` was worth in USD when asked. */
+  usd: number;
+  /** The withdrawal fee in USD, decimal string. */
+  feeUsd: string;
+  status: EnterpriseWithdrawalStatus;
+  /** Why it was rejected or failed. */
+  reason: string | null;
+  /** The admin id, or `api_key:<id>` when an API key decided. */
+  decidedBy: string | null;
+  decidedAt: string | null;
+}
+
+export interface ListEnterpriseWithdrawalsParams extends EnterprisePageParams {
+  /** Defaults to `all`. */
+  status?: EnterpriseWithdrawalStatus | 'all';
+  /** One sub-account's requests only. */
+  userId?: string;
+}
+
+/** Body of the sub-account actions (pause, unpause, hold and release payouts). */
+export interface EnterpriseActionParams {
+  /** Kept in your audit log (at most 500 characters). */
+  reason?: string;
+}
+
+/** Body of `enterprise.withdrawals.reject()`. */
+export interface RejectEnterpriseWithdrawalParams {
+  /** Kept on the request and in your audit log (at most 500 characters). */
+  reason?: string;
+}
+
+/** A product of a sub-account. */
+export interface EnterpriseProduct {
+  id: string;
+  name: string;
+  priceUsd: number;
+  status: 'published' | 'draft';
+  /** Paid sales, refunds excluded. */
+  sales: number;
+}
+
+/** `enterprise.subaccounts.get()`: profile, stats, payout account, recent activity. */
+export interface EnterpriseSubAccountDetail {
+  profile: {
+    userId: string;
+    name: string;
+    email: string;
+    subdomain: string;
+    country: string | null;
+    picture: string | null;
+    createdAt: string | null;
+    canSell: boolean;
+    payoutsHeld: boolean;
+    verification: EnterpriseVerification;
+  };
+  stats: {
+    volumeUsd: number;
+    transactions: number;
+    refunds: number;
+    products: number;
+    customers: number;
+  };
+  /** The payout account, or `{ error }`. */
+  partner: EnterprisePartnerAccount | EnterprisePartnerError;
+  /** The last 10 sales. */
+  recentTransactions: EnterpriseTransaction[];
+  /** The last 10 withdrawal requests. */
+  withdrawals: EnterpriseWithdrawal[];
+}
+
+/** Your cut of one sale (`sale`) or its reversal on refund (`refund`, negative). */
+export interface EnterpriseEarning {
+  id: string;
+  /** ISO date-time. */
+  createdAt: string;
+  saleId: string;
+  sellerName: string;
+  kind: 'sale' | 'refund';
+  /** USD, negative for refunds. */
+  amountUsd: number;
+  /** Your markup rate on the sale, e.g. `0.015`. */
+  rate: number;
+}
+
+/** A period of earnings Pocketsflow pays you. */
+export interface EnterpriseSettlement {
+  id: string;
+  periodStart: string | null;
+  periodEnd: string;
+  amountUsd: number;
+  status: 'open' | 'paid';
+  method: 'netted' | 'transfer' | 'wire' | null;
+  reference: string | null;
+  paidAt: string | null;
+}
+
+/** `enterprise.earnings.list()`: totals for the range, a page of lines, and the settlements. */
+export interface EnterpriseEarnings extends EnterprisePage<EnterpriseEarning> {
+  totals: {
+    /** Every line in the range. */
+    accruedUsd: number;
+    /** Lines in a paid settlement. */
+    settledUsd: number;
+    /** Lines not paid yet. */
+    unsettledUsd: number;
+  };
+  /** Your settlements, newest first (at most 120), whatever the range. */
+  settlements: EnterpriseSettlement[];
+}
+
+export interface ListEnterpriseEarningsParams extends EnterprisePageParams {
+  /** First day, `YYYY-MM-DD` (UTC), inclusive. */
+  from?: string;
+  /** Last day, `YYYY-MM-DD` (UTC), inclusive. */
+  to?: string;
 }
 
 // ----------------------------------------------------------------------------
